@@ -188,6 +188,9 @@ The benchmark reports direct SVG bytes, `.vizasset` bytes, model bytes, preview
 bytes, fidelity metrics, the direct-SVG-to-package size ratio, and the first
 observed sample count where the model-backed package wins.
 Rows also include `x_domain_mode`, so irregular time-axis overhead is visible.
+For irregular time series, package builds can use `--x-domain-policy compressed`
+to store the x-axis as a linear domain plus compressed delta instead of full
+`x_values`.
 
 Use `--synthetic-kind all` to run the same sweep across every built-in synthetic
 fixture.

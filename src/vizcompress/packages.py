@@ -10,6 +10,7 @@ import numpy as np
 
 from vizcompress.analyzers import analyze_time_series
 from vizcompress.core import CompressionReport, TimeSeries
+from vizcompress.domains import encode_x_domain, reconstruct_x_domain
 
 
 ASSET_SCHEMA_VERSION = "0.1"
@@ -24,6 +25,8 @@ def write_vizasset(
     metrics_json: str | Path,
     demo_py: str | Path,
     package_profile: str = "retain-residual",
+    x_domain_policy: str = "preserve",
+    x_domain_epsilon: float = 0.002,
 ) -> Path:
     output = Path(path)
     output.mkdir(parents=True, exist_ok=True)
@@ -34,7 +37,13 @@ def write_vizasset(
     demo_path = output / "demo.py"
     asset_path = output / "asset.json"
 
-    _write_model_npz(model_path, series, report)
+    x_domain = _write_model_npz(
+        model_path,
+        series,
+        report,
+        x_domain_policy=x_domain_policy,
+        x_domain_epsilon=x_domain_epsilon,
+    )
     shutil.copyfile(preview_svg, preview_path)
     shutil.copyfile(metrics_json, metrics_path)
     shutil.copyfile(demo_py, demo_path)
@@ -43,6 +52,7 @@ def write_vizasset(
         series=series,
         report=report,
         package_profile=package_profile,
+        x_domain=x_domain,
         files={
             "model": model_path,
             "preview": preview_path,
@@ -65,7 +75,7 @@ def reconstruct_fourier(path: str | Path, samples: int | None = None) -> TimeSer
     with np.load(model_path, allow_pickle=False) as data:
         full_n = int(data["sample_count"])
         y_full = _reconstruct_fourier_y(data, full_n)
-        x_full = _reconstruct_x(data, full_n)
+        x_full = reconstruct_x_domain(data, full_n)
         if samples is None or samples == full_n:
             x = x_full
             y = y_full
@@ -87,7 +97,7 @@ def reconstruct_channel(path: str | Path, samples: int | None = None) -> dict[st
             raise ValueError("package does not contain a channel model")
         full_n = int(data["sample_count"])
         center_full = _reconstruct_fourier_y(data, full_n)
-        x_full = _reconstruct_x(data, full_n)
+        x_full = reconstruct_x_domain(data, full_n)
         band_full = np.interp(x_full, data["channel_band_x"], data["channel_band_y"])
         k = float(data["channel_k"])
         if samples is None or samples == full_n:
@@ -110,15 +120,28 @@ def reconstruct_channel(path: str | Path, samples: int | None = None) -> dict[st
     }
 
 
-def _write_model_npz(path: Path, series: TimeSeries, report: CompressionReport) -> None:
+def _write_model_npz(
+    path: Path,
+    series: TimeSeries,
+    report: CompressionReport,
+    *,
+    x_domain_policy: str,
+    x_domain_epsilon: float,
+) -> dict[str, Any]:
     x_uniform = bool((report.input_profile or analyze_time_series(series).as_dict()).get("x_uniform", False))
+    x_domain = encode_x_domain(
+        series,
+        x_uniform=x_uniform,
+        policy=x_domain_policy,
+        epsilon=x_domain_epsilon,
+    )
     data: dict[str, Any] = {
         "schema_version": np.array(ASSET_SCHEMA_VERSION),
         "source": np.array(series.source),
         "sample_count": np.array(series.sample_count, dtype=np.int64),
         "x_min": np.array(float(np.min(series.x)), dtype=np.float64),
         "x_max": np.array(float(np.max(series.x)), dtype=np.float64),
-        "x_domain_mode": np.array("linspace_from_min_max" if x_uniform else "stored_x"),
+        "x_domain_mode": np.array(x_domain.mode),
         "rdp_epsilon": np.array(report.rdp.epsilon, dtype=np.float64),
         "rdp_kept_indices": report.rdp.kept_indices,
         "rdp_x": report.rdp.x,
@@ -128,8 +151,7 @@ def _write_model_npz(path: Path, series: TimeSeries, report: CompressionReport) 
         "fourier_frequencies": report.fourier.selected_frequencies,
         "fourier_coefficients": report.fourier.coefficients,
     }
-    if not x_uniform:
-        data["x_values"] = series.x
+    data.update(x_domain.data)
     if report.channel is not None:
         channel = report.channel
         data.update(
@@ -172,6 +194,7 @@ def _write_model_npz(path: Path, series: TimeSeries, report: CompressionReport) 
     else:
         data["sparse_residual_present"] = np.array(False)
     np.savez_compressed(path, **data)
+    return x_domain.metadata()
 
 
 def _build_manifest(
@@ -179,6 +202,7 @@ def _build_manifest(
     series: TimeSeries,
     report: CompressionReport,
     package_profile: str,
+    x_domain: dict[str, Any],
     files: dict[str, Path],
 ) -> dict[str, Any]:
     profile = report.as_dict()["input"]
@@ -193,7 +217,8 @@ def _build_manifest(
             "sample_count": series.sample_count,
             "x_min": float(np.min(series.x)),
             "x_max": float(np.max(series.x)),
-            "x_domain_mode": profile.get("x_domain_mode", "linspace_from_min_max" if profile.get("x_uniform") else "stored_x"),
+            "x_domain_mode": x_domain["mode"],
+            "x_domain": x_domain,
             "profile": profile,
         },
         "model": {
@@ -249,12 +274,3 @@ def _reconstruct_fourier_y(data: Any, n: int) -> np.ndarray:
     frequencies = data["fourier_frequencies"].astype(np.int64)
     compact[frequencies] = data["fourier_coefficients"]
     return np.fft.irfft(compact, n=n) + float(data["fourier_mean"])
-
-
-def _reconstruct_x(data: Any, n: int) -> np.ndarray:
-    mode = str(data["x_domain_mode"])
-    if mode == "stored_x":
-        return data["x_values"]
-    if mode == "linspace_from_min_max":
-        return np.linspace(float(data["x_min"]), float(data["x_max"]), n, dtype=np.float64)
-    raise ValueError(f"unknown x domain mode: {mode}")

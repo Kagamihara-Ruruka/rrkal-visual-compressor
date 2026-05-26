@@ -39,6 +39,8 @@ def benchmark_synthetic_sizes(
     sigma_clip: float | None = None,
     noise_layer_terms: int = 0,
     auto_noise_layer: bool = False,
+    x_domain_policy: str = "preserve",
+    x_domain_epsilon: float = 0.002,
 ) -> dict[str, Any]:
     kinds = list(SYNTHETIC_KINDS) if synthetic_kind == "all" else [synthetic_kind]
     rows = [
@@ -56,6 +58,8 @@ def benchmark_synthetic_sizes(
             sigma_clip=sigma_clip,
             noise_layer_terms=noise_layer_terms,
             auto_noise_layer=auto_noise_layer,
+            x_domain_policy=x_domain_policy,
+            x_domain_epsilon=x_domain_epsilon,
         )
         for kind in kinds
         for size in sample_sizes
@@ -76,6 +80,8 @@ def benchmark_synthetic_sizes(
             "sigma_clip": sigma_clip,
             "noise_layer_terms": noise_layer_terms,
             "auto_noise_layer": auto_noise_layer,
+            "x_domain_policy": x_domain_policy,
+            "x_domain_epsilon": x_domain_epsilon,
         },
         "summary": _summarize_rows(rows),
         "rows": rows,
@@ -104,6 +110,8 @@ def _benchmark_one(
     sigma_clip: float | None,
     noise_layer_terms: int,
     auto_noise_layer: bool,
+    x_domain_policy: str,
+    x_domain_epsilon: float,
 ) -> dict[str, Any]:
     raw_series = series
     cleaning_steps = []
@@ -143,7 +151,11 @@ def _benchmark_one(
     profile = analyze_time_series(series).as_dict()
     if cleaning_steps:
         profile["cleaning"] = cleaning_steps
-    x_domain_mode = "linspace_from_min_max" if profile["x_uniform"] else "stored_x"
+    x_domain_mode = (
+        "linspace_from_min_max"
+        if profile["x_uniform"]
+        else "linear_plus_rdp_delta" if x_domain_policy == "compressed" else "stored_x"
+    )
     report = CompressionReport(
         series.sample_count,
         rdp,
@@ -175,6 +187,8 @@ def _benchmark_one(
             metrics_json=metrics,
             demo_py=demo,
             package_profile="retain-residual",
+            x_domain_policy=x_domain_policy,
+            x_domain_epsilon=x_domain_epsilon,
         )
         package_bytes = _directory_size(package)
         model_bytes = (package / "model.npz").stat().st_size
