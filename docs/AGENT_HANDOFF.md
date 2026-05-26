@@ -36,6 +36,7 @@ Implemented mainline:
 - source-backed package fidelity verification with optional RMSE/MAE/max-error budgets
 - `review.json` packet generation with source fingerprints and accepted metrics
 - `--require-review-pass` build gate for rejecting packages that exceed review budgets
+- `compare` CLI for raw/gzip baseline size evidence against existing packages
 
 Current local verification command:
 
@@ -43,7 +44,7 @@ Current local verification command:
 py -m pytest -q
 ```
 
-Latest known passing count: `34 passed`.
+Latest known passing count: `35 passed`.
 
 ## Original First Task
 

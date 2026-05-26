@@ -167,6 +167,12 @@ py -m vizcompress.cli build --synthetic 100000 --fourier-terms 96 --direct-svg -
 
 如果 review 不通過時應該讓 build 直接失敗，加入 `--require-review-pass`，而不是只在 `review.json` 寫入 `accepted: false`。
 
+不重新 build，也可以直接比較既有 package 與 baseline files：
+
+```powershell
+py -m vizcompress.cli compare reviewed_outputs/model.vizretain --baseline direct_svg=reviewed_outputs/direct.svg
+```
+
 ## 狀態
 
 Phase 0/1 已開始。專案目前支援 synthetic/CSV time-series，透過 RDP/Fourier 輸出 SVG、`demo.py`、metrics 和 package。Phase 2 已有 Fourier channel prototype，可表示 center-line 加 residual-band。

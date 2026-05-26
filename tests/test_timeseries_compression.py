@@ -891,6 +891,50 @@ def test_cli_build_can_require_review_pass(tmp_path):
     assert "review packet did not pass verification" in result.stderr
 
 
+def test_cli_compare_reports_raw_and_gzip_baselines(tmp_path):
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vizcompress.cli",
+            "build",
+            "--synthetic",
+            "5000",
+            "--fourier-terms",
+            "96",
+            "--direct-svg",
+            "--package",
+            "--out",
+            str(tmp_path),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vizcompress.cli",
+            "compare",
+            str(tmp_path / "model.vizretain"),
+            "--baseline",
+            f"direct_svg={tmp_path / 'direct.svg'}",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    summary = json.loads(result.stdout)
+    direct = summary["baseline_evidence"]["direct_svg"]
+    assert direct["present"] is True
+    assert direct["bytes"] > 0
+    assert direct["gzip_bytes"] > 0
+    assert direct["gzip_to_package_ratio"] > 0.0
+
+
 def test_cli_inspect_reports_clean_profile_without_residual_layer(tmp_path):
     subprocess.run(
         [
