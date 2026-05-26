@@ -36,7 +36,7 @@
 - `review.json` packet generation，包含 source fingerprints 與 accepted metrics
 - `--require-review-pass` build gate，可拒絕超出 review budgets 的 package
 - `compare` CLI，可對既有 package 產生 raw/gzip baseline size evidence
-- benchmark rows 會包含 LTTB downsampling baseline metrics
+- benchmark rows 會包含 LTTB downsampling baseline metrics，以及 LTTB SVG raw/gzip size evidence
 - 繁中版文件：README、architecture、conceptual model、roadmap、governance、handoff
 
 目前本地驗證命令：

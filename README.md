@@ -194,8 +194,8 @@ py -m vizcompress.cli bench --synthetic-sizes 1000,10000,100000 --synthetic-kind
 The benchmark reports direct SVG bytes, gzip-compressed direct SVG bytes,
 estimated source CSV bytes, estimated source CSV.gz bytes, `.vizasset` bytes,
 model bytes, preview bytes, Fourier fidelity metrics, LTTB downsampling baseline
-metrics, the direct-SVG-to-package size ratio, and the first observed sample
-count where the model-backed package wins.
+metrics, LTTB SVG raw/gzip bytes, the direct-SVG-to-package size ratio, and the
+first observed sample count where the model-backed package wins.
 Rows also include `x_domain_mode`, so irregular time-axis overhead is visible.
 For irregular time series, package builds can use `--x-domain-policy compressed`
 to store the x-axis as a linear domain plus compressed delta instead of full
