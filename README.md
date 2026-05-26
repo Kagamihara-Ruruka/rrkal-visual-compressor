@@ -169,6 +169,12 @@ The benchmark reports direct SVG bytes, `.vizasset` bytes, model bytes, preview
 bytes, fidelity metrics, the direct-SVG-to-package size ratio, and the first
 observed sample count where the model-backed package wins.
 
+Inspect a package and verify that it can reconstruct renderable arrays:
+
+```powershell
+py -m vizcompress.cli inspect channel_outputs/model.vizasset --samples 1200
+```
+
 ## Status
 
 Phase 0/1 implementation has started. The package currently supports synthetic and CSV time-series compression through RDP and Fourier, with SVG, `demo.py`, and metrics exports. Phase 2 has a first Fourier channel prototype for center-line plus residual-band visual models.

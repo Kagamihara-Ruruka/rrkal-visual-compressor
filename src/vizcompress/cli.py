@@ -10,7 +10,7 @@ from vizcompress.compressors import compress_fourier, compress_fourier_channel, 
 from vizcompress.core import CompressionReport
 from vizcompress.data import make_synthetic_signal, read_csv_timeseries
 from vizcompress.exporters import write_channel_svg, write_demo, write_direct_svg, write_fourier_svg, write_metrics, write_rdp_svg
-from vizcompress.packages import write_vizasset
+from vizcompress.packages import load_vizasset_manifest, reconstruct_channel, reconstruct_fourier, write_vizasset
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -60,6 +60,10 @@ def main(argv: list[str] | None = None) -> int:
     bench.add_argument("--channel-k", type=float, default=3.0, help="Standard-deviation multiplier for channel width.")
     bench.add_argument("--channel-band-epsilon", type=float, default=0.01, help="RDP epsilon for channel band curve.")
 
+    inspect = subparsers.add_parser("inspect", help="Inspect a .vizasset package and verify reconstruction.")
+    inspect.add_argument("package", type=Path, help=".vizasset package directory.")
+    inspect.add_argument("--samples", type=int, default=1200, help="Reconstruction sample count.")
+
     args = parser.parse_args(argv)
     if args.version:
         from vizcompress import __version__
@@ -70,6 +74,8 @@ def main(argv: list[str] | None = None) -> int:
         return _build(args)
     if args.command == "bench":
         return _bench(args)
+    if args.command == "inspect":
+        return _inspect(args)
     parser.print_help()
     return 0
 
@@ -164,6 +170,38 @@ def _bench(args: argparse.Namespace) -> int:
     output = write_benchmark(args.out, data)
     data["output"] = str(output)
     print(json.dumps(data, indent=2))
+    return 0
+
+
+def _inspect(args: argparse.Namespace) -> int:
+    manifest = load_vizasset_manifest(args.package)
+    reconstructed = reconstruct_fourier(args.package, samples=args.samples)
+    has_channel = manifest["model"]["primary_method"] == "fourier_channel"
+    channel_summary = None
+    if has_channel:
+        channel = reconstruct_channel(args.package, samples=args.samples)
+        channel_summary = {
+            "samples": int(channel["x"].shape[0]),
+            "upper_max": float(channel["upper_y"].max()),
+            "lower_min": float(channel["lower_y"].min()),
+        }
+    summary = {
+        "package": str(args.package),
+        "asset_type": manifest["asset_type"],
+        "schema_version": manifest["schema_version"],
+        "source": manifest["source"],
+        "primary_method": manifest["model"]["primary_method"],
+        "reconstructed": {
+            "samples": reconstructed.sample_count,
+            "x_min": float(reconstructed.x.min()),
+            "x_max": float(reconstructed.x.max()),
+            "y_min": float(reconstructed.y.min()),
+            "y_max": float(reconstructed.y.max()),
+        },
+        "channel": channel_summary,
+        "files": manifest["files"],
+    }
+    print(json.dumps(summary, indent=2))
     return 0
 
 

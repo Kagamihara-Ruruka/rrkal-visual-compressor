@@ -234,3 +234,47 @@ def test_cli_bench_synthetic(tmp_path):
     assert "summary" in summary
     assert summary["rows"][0]["samples"] == 1000
     assert summary["rows"][1]["samples"] == 5000
+
+
+def test_cli_inspect_vizasset(tmp_path):
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vizcompress.cli",
+            "build",
+            "--synthetic",
+            "5000",
+            "--fourier-terms",
+            "32",
+            "--svg-samples",
+            "400",
+            "--channel",
+            "--package",
+            "--out",
+            str(tmp_path),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vizcompress.cli",
+            "inspect",
+            str(tmp_path / "model.vizasset"),
+            "--samples",
+            "300",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    summary = json.loads(result.stdout)
+    assert summary["primary_method"] == "fourier_channel"
+    assert summary["reconstructed"]["samples"] == 300
+    assert summary["channel"]["samples"] == 300
