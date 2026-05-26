@@ -2,6 +2,8 @@
 
 本文件是給「主寫 / 主要開發者 / 專案決策者」看的匯報版。語氣刻意保持可辯護：強調已驗證成果，也標出仍需文獻引用或後續實證的部分。
 
+相關引用整理見 [ACADEMIC_REFERENCES.zh-TW.md](ACADEMIC_REFERENCES.zh-TW.md)。
+
 ## 一、核心定位
 
 RRKAL Visual Compressor 的定位不是一般圖表工具，也不是通用壓縮器。它是一個針對「具備視覺結構的大型資料」的函數化視覺資產編譯器。
@@ -138,7 +140,7 @@ D(x) \approx F_\theta(x) + R(x)
 
 ## 五、學術根基對應
 
-以下是合理的學術對應方向，但正式對外簡報前應補上引用：
+以下是合理的學術對應方向；目前引用整理在 `ACADEMIC_REFERENCES.zh-TW.md`：
 
 | 本專案概念 | 學術/技術對應 |
 | --- | --- |
@@ -150,13 +152,6 @@ D(x) \approx F_\theta(x) + R(x)
 | 2D closed contour Fourier | Fourier descriptors |
 | LOD / multiresolution | wavelet / multiresolution analysis |
 | implicit/SDF future path | signed distance fields, implicit surfaces |
-
-建議引用方向：
-
-- Functional Data Analysis: Ramsay and Silverman.
-- Fourier descriptors: Granlund-style shape descriptors.
-- Wavelet/multiresolution: Mallat-style multiresolution analysis.
-- SDF/implicit geometry: level set methods, signed distance fields.
 
 注意：這些是對應方向，不等於本 repo 已經完成相關完整實作。
 

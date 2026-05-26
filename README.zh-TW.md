@@ -85,6 +85,7 @@ RRKAL Visual Editor
 - [docs/DEVELOPMENT_GOVERNANCE.zh-TW.md](docs/DEVELOPMENT_GOVERNANCE.zh-TW.md)：RRKAL-style 開發治理。
 - [docs/AGENT_HANDOFF.zh-TW.md](docs/AGENT_HANDOFF.zh-TW.md)：agent 交接狀態。
 - [docs/PROJECT_EVALUATION.zh-TW.md](docs/PROJECT_EVALUATION.zh-TW.md)：專案可行性、學術根基與商業變現匯報。
+- [docs/ACADEMIC_REFERENCES.zh-TW.md](docs/ACADEMIC_REFERENCES.zh-TW.md)：學術與技術參考來源。
 
 ## 開發
 
