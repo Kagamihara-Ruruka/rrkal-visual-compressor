@@ -512,6 +512,48 @@ def test_cli_bench_synthetic(tmp_path):
     assert summary["rows"][1]["samples"] == 5000
 
 
+def test_cli_recommend_reads_benchmark_json(tmp_path):
+    output = tmp_path / "bench.json"
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vizcompress.cli",
+            "bench",
+            "--synthetic-sizes",
+            "1000,5000",
+            "--synthetic-kind",
+            "spikes",
+            "--fourier-terms",
+            "32",
+            "--svg-samples",
+            "300",
+            "--out",
+            str(output),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vizcompress.cli",
+            "recommend",
+            str(output),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    summary = json.loads(result.stdout)
+    assert summary["benchmark"] == str(output)
+    assert "recommendation_counts" in summary["summary"]
+
+
 def test_cli_inspect_vizasset(tmp_path):
     subprocess.run(
         [

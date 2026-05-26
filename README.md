@@ -204,6 +204,12 @@ Each row also includes a `recommendation` label such as
 Summaries include `recommendation_counts` so the whole sweep can be scanned
 without reading every row.
 
+Summarize an existing benchmark report:
+
+```powershell
+py -m vizcompress.cli recommend benchmark_outputs/all_kinds_matrix.json
+```
+
 Package suffixes are format-family aliases:
 
 - `.vizretain`: keeps residual/noise layers when available.
