@@ -525,6 +525,9 @@ def test_benchmark_reports_size_sweep():
     assert "spikes" in result["summary_by_kind"]
     assert "recommendation_counts" in result["summary"]
     assert "observed_break_even_samples" in result["summary"]
+    assert "package_wins_against_direct_svg_gzip_count" in result["summary"]
+    assert "package_wins_against_source_csv_gzip_count" in result["summary"]
+    assert "best_source_csv_gzip_to_package_ratio" in result["summary"]
     assert len(result["rows"]) == 2
     assert result["rows"][1]["direct_svg_bytes"] > result["rows"][0]["direct_svg_bytes"]
     assert result["rows"][1]["direct_svg_gzip_bytes"] > result["rows"][0]["direct_svg_gzip_bytes"]

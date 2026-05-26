@@ -289,12 +289,24 @@ def _directory_size(path: Path) -> int:
 def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
     winning_rows = [row for row in rows if row["direct_svg_to_package_ratio"] > 1.0]
     best_row = max(rows, key=lambda row: row["direct_svg_to_package_ratio"])
+    gzip_winning_rows = [row for row in rows if row["direct_svg_gzip_to_package_ratio"] > 1.0]
+    csv_gzip_winning_rows = [row for row in rows if row["source_csv_gzip_to_package_ratio"] > 1.0]
+    best_gzip_row = max(rows, key=lambda row: row["direct_svg_gzip_to_package_ratio"])
+    best_csv_gzip_row = max(rows, key=lambda row: row["source_csv_gzip_to_package_ratio"])
     return {
         "observed_break_even_samples": winning_rows[0]["samples"] if winning_rows else None,
         "best_ratio_samples": best_row["samples"],
         "best_direct_svg_to_package_ratio": best_row["direct_svg_to_package_ratio"],
+        "best_direct_svg_gzip_ratio_samples": best_gzip_row["samples"],
+        "best_direct_svg_gzip_to_package_ratio": best_gzip_row["direct_svg_gzip_to_package_ratio"],
+        "best_source_csv_gzip_ratio_samples": best_csv_gzip_row["samples"],
+        "best_source_csv_gzip_to_package_ratio": best_csv_gzip_row["source_csv_gzip_to_package_ratio"],
         "package_wins_count": len(winning_rows),
         "direct_svg_wins_count": len(rows) - len(winning_rows),
+        "package_wins_against_direct_svg_gzip_count": len(gzip_winning_rows),
+        "direct_svg_gzip_wins_count": len(rows) - len(gzip_winning_rows),
+        "package_wins_against_source_csv_gzip_count": len(csv_gzip_winning_rows),
+        "source_csv_gzip_wins_count": len(rows) - len(csv_gzip_winning_rows),
         "recommendation_counts": count_recommendations(rows),
         "gzip_recommendation_counts": count_recommendations(rows, field="gzip_recommendation"),
     }

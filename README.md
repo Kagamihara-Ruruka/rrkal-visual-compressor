@@ -213,7 +213,8 @@ Rows also include `gzip_recommendation`, which uses gzip-compressed direct SVG
 as the baseline and can surface cases such as
 `package_beats_raw_svg_but_not_gzip`.
 Summaries include `recommendation_counts` and `gzip_recommendation_counts` so
-the whole sweep can be scanned without reading every row.
+the whole sweep can be scanned without reading every row. They also include win
+counts against direct SVG.gz and source CSV.gz baselines.
 
 Summarize an existing benchmark report:
 
