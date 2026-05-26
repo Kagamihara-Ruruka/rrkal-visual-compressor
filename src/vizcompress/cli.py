@@ -268,8 +268,11 @@ def _inspect(args: argparse.Namespace) -> int:
         "package": str(args.package),
         "asset_type": manifest["asset_type"],
         "schema_version": manifest["schema_version"],
+        "package_profile": manifest.get("package_profile", "unknown"),
         "source": manifest["source"],
         "primary_method": manifest["model"]["primary_method"],
+        "contains_noise_layer": "noise_layer" in manifest.get("metrics", {}),
+        "contains_sparse_residual_layer": "sparse_residual_layer" in manifest.get("metrics", {}),
         "reconstructed": {
             "samples": reconstructed.sample_count,
             "x_min": float(reconstructed.x.min()),

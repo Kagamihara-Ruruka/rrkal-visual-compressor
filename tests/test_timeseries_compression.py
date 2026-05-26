@@ -394,5 +394,48 @@ def test_cli_inspect_vizasset(tmp_path):
 
     summary = json.loads(result.stdout)
     assert summary["primary_method"] == "fourier_channel"
+    assert summary["package_profile"] == "retain-residual"
     assert summary["reconstructed"]["samples"] == 300
     assert summary["channel"]["samples"] == 300
+
+
+def test_cli_inspect_reports_clean_profile_without_residual_layer(tmp_path):
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vizcompress.cli",
+            "build",
+            "--synthetic",
+            "5000",
+            "--synthetic-kind",
+            "spikes",
+            "--sigma-clip",
+            "2.5",
+            "--auto-noise-layer",
+            "--package",
+            "--package-profile",
+            "clean",
+            "--out",
+            str(tmp_path),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vizcompress.cli",
+            "inspect",
+            str(tmp_path / "model.vizclean"),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    summary = json.loads(result.stdout)
+    assert summary["package_profile"] == "clean"
+    assert summary["contains_sparse_residual_layer"] is False
