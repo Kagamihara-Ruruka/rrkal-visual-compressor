@@ -258,6 +258,7 @@ def test_benchmark_reports_size_sweep():
     assert result["rows"][1]["direct_svg_bytes"] > result["rows"][0]["direct_svg_bytes"]
     assert result["rows"][0]["x_uniform"] is True
     assert result["rows"][0]["x_domain_mode"] == "linspace_from_min_max"
+    assert result["rows"][0]["x_domain_max_abs_error"] == 0.0
     assert result["rows"][0]["residual_strategy"] is not None
     assert result["rows"][1]["direct_svg_to_package_ratio"] > 0.0
 
@@ -297,6 +298,8 @@ def test_benchmark_can_use_compressed_x_domain():
 
     assert result["parameters"]["x_domain_policy"] == "compressed"
     assert result["rows"][0]["x_domain_mode"] == "linear_plus_rdp_delta"
+    assert result["rows"][0]["x_domain_parameter_count"] < 1000
+    assert result["rows"][0]["x_domain_max_abs_error"] < 0.001
 
 
 def test_read_csv_timeseries(tmp_path):

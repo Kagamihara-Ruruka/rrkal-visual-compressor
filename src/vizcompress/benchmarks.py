@@ -10,6 +10,7 @@ from vizcompress.cleaning import residual_time_series, sigma_clip_time_series, s
 from vizcompress.compressors import compress_fourier, compress_fourier_channel, compress_rdp
 from vizcompress.core import CompressionReport, TimeSeries
 from vizcompress.data import SYNTHETIC_KINDS, make_synthetic_dataset
+from vizcompress.domains import encode_x_domain
 from vizcompress.exporters import path_from_xy, write_channel_svg, write_demo, write_fourier_svg, write_metrics, write_rdp_svg
 from vizcompress.packages import write_vizasset
 from vizcompress.residuals import analyze_residual, compress_sparse_residual
@@ -151,10 +152,11 @@ def _benchmark_one(
     profile = analyze_time_series(series).as_dict()
     if cleaning_steps:
         profile["cleaning"] = cleaning_steps
-    x_domain_mode = (
-        "linspace_from_min_max"
-        if profile["x_uniform"]
-        else "linear_plus_rdp_delta" if x_domain_policy == "compressed" else "stored_x"
+    x_domain = encode_x_domain(
+        series,
+        x_uniform=bool(profile["x_uniform"]),
+        policy=x_domain_policy,
+        epsilon=x_domain_epsilon,
     )
     report = CompressionReport(
         series.sample_count,
@@ -199,7 +201,10 @@ def _benchmark_one(
         "synthetic_kind": synthetic_kind,
         "samples": series.sample_count,
         "x_uniform": bool(report.as_dict()["input"]["x_uniform"]),
-        "x_domain_mode": x_domain_mode,
+        "x_domain_mode": x_domain.mode,
+        "x_domain_parameter_count": x_domain.metrics["parameter_count"],
+        "x_domain_max_abs_error": x_domain.metrics["max_abs_error"],
+        "x_domain_rmse": x_domain.metrics["rmse"],
         "cleaning": cleaning_steps or None,
         "direct_svg_bytes": direct_svg_bytes,
         "package_bytes": package_bytes,
