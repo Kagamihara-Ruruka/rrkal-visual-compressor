@@ -1,0 +1,82 @@
+{
+  "benchmark": "defensible_threshold_sweep",
+  "parameters": {
+    "sample_sizes": [
+      10000
+    ],
+    "synthetic_kind": "smooth",
+    "fourier_terms": 16,
+    "rdp_epsilon": 0.6,
+    "svg_samples": 240,
+    "channel": true,
+    "channel_k": 3.0,
+    "channel_window": 16,
+    "channel_band_epsilon": 0.04,
+    "smooth_window": 1,
+    "sigma_clip": null,
+    "noise_layer_terms": 0,
+    "auto_noise_layer": false,
+    "x_domain_policy": "preserve",
+    "x_domain_epsilon": 0.002,
+    "x_domain_max_error": 0.0001,
+    "thresholds": [
+      0.8,
+      0.9,
+      0.95,
+      0.98,
+      0.995
+    ]
+  },
+  "sweep": [
+    {
+      "threshold": 0.8,
+      "high_fidelity_rows_count": 1,
+      "defensible_rows_count": 0,
+      "defensible_rows_ratio": 0.0,
+      "best_ratio": 2.276251759501307,
+      "best_high_fidelity_ratio": 2.276251759501307,
+      "best_defensible_ratio": null,
+      "sample": 10000
+    },
+    {
+      "threshold": 0.9,
+      "high_fidelity_rows_count": 1,
+      "defensible_rows_count": 0,
+      "defensible_rows_ratio": 0.0,
+      "best_ratio": 2.276251759501307,
+      "best_high_fidelity_ratio": 2.276251759501307,
+      "best_defensible_ratio": null,
+      "sample": 10000
+    },
+    {
+      "threshold": 0.95,
+      "high_fidelity_rows_count": 1,
+      "defensible_rows_count": 0,
+      "defensible_rows_ratio": 0.0,
+      "best_ratio": 2.276251759501307,
+      "best_high_fidelity_ratio": 2.276251759501307,
+      "best_defensible_ratio": null,
+      "sample": 10000
+    },
+    {
+      "threshold": 0.98,
+      "high_fidelity_rows_count": 1,
+      "defensible_rows_count": 0,
+      "defensible_rows_ratio": 0.0,
+      "best_ratio": 2.276251759501307,
+      "best_high_fidelity_ratio": 2.276251759501307,
+      "best_defensible_ratio": null,
+      "sample": 10000
+    },
+    {
+      "threshold": 0.995,
+      "high_fidelity_rows_count": 1,
+      "defensible_rows_count": 0,
+      "defensible_rows_ratio": 0.0,
+      "best_ratio": 2.276251759501307,
+      "best_high_fidelity_ratio": 2.276251759501307,
+      "best_defensible_ratio": null,
+      "sample": 10000
+    }
+  ]
+}

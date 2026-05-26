@@ -18,6 +18,9 @@ for validating compression claims.
 - `fourier_sweep_10k_16_32_threshold_0995.json`: same sweep command with
   explicit window and epsilon settings for coverage stress testing.
 - `fourier_sweep_10k_16_32_threshold_0995.md`: human-readable summary of the same run.
+- `defensible_threshold_sweep_10k_16_terms.json`: coverage threshold sensitivity
+  sweep for `16` terms.
+- `defensible_threshold_sweep_10k_16_terms.md`: human-readable summary of the same run.
 
 ## Current Reading
 
@@ -84,3 +87,19 @@ py -m vizcompress.cli bench \
 
 This command writes both `docs/benchmarks/fourier_sweep_16_32_threshold_0995.json`
 and `...md`, where `summary_by_terms` is expected to preserve the same threshold.
+
+For threshold sensitivity, see:
+
+```bash
+py scripts/run_defensible_threshold_sweep.py \
+  --sample-sizes 10000 \
+  --synthetic-kind smooth \
+  --fourier-terms 16 \
+  --thresholds 0.8,0.9,0.95,0.98,0.995 \
+  --channel \
+  --channel-k 3 \
+  --channel-window 16 \
+  --channel-band-epsilon 0.04 \
+  --out-json docs/benchmarks/defensible_threshold_sweep_10k_16_terms.json \
+  --out-md docs/benchmarks/defensible_threshold_sweep_10k_16_terms.md
+```
