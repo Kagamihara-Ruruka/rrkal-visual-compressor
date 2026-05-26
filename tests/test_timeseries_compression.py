@@ -549,6 +549,8 @@ def test_benchmark_reports_size_sweep():
     assert "package_wins_against_direct_svg_gzip_count" in result["summary"]
     assert "package_wins_against_source_csv_gzip_count" in result["summary"]
     assert "best_source_csv_gzip_to_package_ratio" in result["summary"]
+    assert "best_rows" in result["summary"]
+    assert "best_high_fidelity_svg_gzip_candidate" in result["summary"]
     assert len(result["rows"]) == 2
     assert result["rows"][1]["direct_svg_bytes"] > result["rows"][0]["direct_svg_bytes"]
     assert result["rows"][1]["direct_svg_gzip_bytes"] > result["rows"][0]["direct_svg_gzip_bytes"]
@@ -592,6 +594,7 @@ def test_benchmark_markdown_report_includes_baseline_evidence():
     assert "SVG.gz/package" in report
     assert "CSV.gz/package" in report
     assert "LTTB SVG.gz/package" in report
+    assert "Best high-fidelity SVG.gz candidate" in report
     assert "package must also pass source verification" in report
 
 
@@ -614,6 +617,7 @@ def test_benchmark_can_sweep_fourier_terms():
     assert {row["fourier_terms"] for row in result["rows"]} == {16, 32}
     assert set(result["summary_by_terms"]) == {"16", "32"}
     assert result["rows"][1]["fourier_parameter_count"] == 32
+    assert result["summary_by_terms"]["32"]["best_rows"]["direct_svg_gzip"]["fourier_terms"] == 32
     assert "terms" in format_benchmark_markdown(result)
 
 

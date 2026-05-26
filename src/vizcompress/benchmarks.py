@@ -202,6 +202,7 @@ def format_benchmark_markdown(data: dict[str, Any]) -> str:
         f"- Best raw SVG/package ratio: `{_format_float(summary.get('best_direct_svg_to_package_ratio'))}`",
         f"- Best SVG.gz/package ratio: `{_format_float(summary.get('best_direct_svg_gzip_to_package_ratio'))}`",
         f"- Best CSV.gz/package ratio: `{_format_float(summary.get('best_source_csv_gzip_to_package_ratio'))}`",
+        f"- Best high-fidelity SVG.gz candidate: `{summary.get('best_high_fidelity_svg_gzip_candidate')}`",
         f"- Package wins against SVG.gz: `{summary.get('package_wins_against_direct_svg_gzip_count', 0)}`",
         f"- Package wins against CSV.gz: `{summary.get('package_wins_against_source_csv_gzip_count', 0)}`",
         "",
@@ -498,6 +499,9 @@ def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
     csv_gzip_winning_rows = [row for row in rows if row["source_csv_gzip_to_package_ratio"] > 1.0]
     best_gzip_row = max(rows, key=lambda row: row["direct_svg_gzip_to_package_ratio"])
     best_csv_gzip_row = max(rows, key=lambda row: row["source_csv_gzip_to_package_ratio"])
+    high_fidelity_rows = [row for row in rows if row["fourier_r2"] >= 0.99]
+    best_high_fidelity_svg_gzip = _best_row(high_fidelity_rows, "direct_svg_gzip_to_package_ratio")
+    best_high_fidelity_csv_gzip = _best_row(high_fidelity_rows, "source_csv_gzip_to_package_ratio")
     return {
         "observed_break_even_samples": winning_rows[0]["samples"] if winning_rows else None,
         "best_ratio_samples": best_row["samples"],
@@ -512,8 +516,44 @@ def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "direct_svg_gzip_wins_count": len(rows) - len(gzip_winning_rows),
         "package_wins_against_source_csv_gzip_count": len(csv_gzip_winning_rows),
         "source_csv_gzip_wins_count": len(rows) - len(csv_gzip_winning_rows),
+        "best_rows": {
+            "direct_svg": _row_identity(best_row, ratio_field="direct_svg_to_package_ratio"),
+            "direct_svg_gzip": _row_identity(best_gzip_row, ratio_field="direct_svg_gzip_to_package_ratio"),
+            "source_csv_gzip": _row_identity(best_csv_gzip_row, ratio_field="source_csv_gzip_to_package_ratio"),
+        },
+        "high_fidelity_threshold_r2": 0.99,
+        "best_high_fidelity_svg_gzip_candidate": (
+            _row_identity(best_high_fidelity_svg_gzip, ratio_field="direct_svg_gzip_to_package_ratio")
+            if best_high_fidelity_svg_gzip is not None
+            else None
+        ),
+        "best_high_fidelity_csv_gzip_candidate": (
+            _row_identity(best_high_fidelity_csv_gzip, ratio_field="source_csv_gzip_to_package_ratio")
+            if best_high_fidelity_csv_gzip is not None
+            else None
+        ),
         "recommendation_counts": count_recommendations(rows),
         "gzip_recommendation_counts": count_recommendations(rows, field="gzip_recommendation"),
+    }
+
+
+def _best_row(rows: list[dict[str, Any]], ratio_field: str) -> dict[str, Any] | None:
+    if not rows:
+        return None
+    return max(rows, key=lambda row: row[ratio_field])
+
+
+def _row_identity(row: dict[str, Any], *, ratio_field: str) -> dict[str, Any]:
+    return {
+        "synthetic_kind": row["synthetic_kind"],
+        "samples": row["samples"],
+        "fourier_terms": row["fourier_terms"],
+        "package_bytes": row["package_bytes"],
+        "ratio_field": ratio_field,
+        "ratio": row[ratio_field],
+        "fourier_r2": row["fourier_r2"],
+        "lttb_r2": row["lttb_r2"],
+        "gzip_recommendation": row["gzip_recommendation"],
     }
 
 
