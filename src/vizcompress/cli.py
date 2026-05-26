@@ -6,8 +6,10 @@ from pathlib import Path
 
 from vizcompress.analyzers import analyze_time_series
 from vizcompress.benchmarks import (
+    benchmark_synthetic_fourier_terms,
     benchmark_synthetic_sizes,
     evaluate_benchmark_gate,
+    parse_fourier_terms,
     parse_sample_sizes,
     write_benchmark,
     write_benchmark_markdown,
@@ -110,6 +112,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     bench.add_argument("--rdp-epsilon", type=float, default=0.012, help="RDP epsilon on normalized y values.")
     bench.add_argument("--fourier-terms", type=int, default=96, help="Number of Fourier coefficients to keep.")
+    bench.add_argument(
+        "--fourier-terms-sweep",
+        default=None,
+        help="Comma-separated Fourier term counts. Overrides --fourier-terms when set.",
+    )
     bench.add_argument("--svg-samples", type=int, default=1200, help="Number of preview SVG samples.")
     bench.add_argument("--smooth-window", type=int, default=1, help="Apply moving-average data cleaning before compression.")
     bench.add_argument("--sigma-clip", type=float, default=None, help="Clip outliers outside mean +/- K standard deviations.")
@@ -333,24 +340,35 @@ def _default_package_name(package_profile: str) -> str:
 
 
 def _bench(args: argparse.Namespace) -> int:
-    data = benchmark_synthetic_sizes(
-        parse_sample_sizes(args.synthetic_sizes),
-        synthetic_kind=args.synthetic_kind,
-        fourier_terms=args.fourier_terms,
-        rdp_epsilon=args.rdp_epsilon,
-        svg_samples=args.svg_samples,
-        channel=args.channel,
-        channel_k=args.channel_k,
-        channel_window=args.channel_window,
-        channel_band_epsilon=args.channel_band_epsilon,
-        smooth_window=args.smooth_window,
-        sigma_clip=args.sigma_clip,
-        noise_layer_terms=args.noise_layer_terms,
-        auto_noise_layer=args.auto_noise_layer,
-        x_domain_policy=args.x_domain_policy,
-        x_domain_epsilon=args.x_domain_epsilon,
-        x_domain_max_error=args.x_domain_max_error,
-    )
+    sample_sizes = parse_sample_sizes(args.synthetic_sizes)
+    common = {
+        "synthetic_kind": args.synthetic_kind,
+        "rdp_epsilon": args.rdp_epsilon,
+        "svg_samples": args.svg_samples,
+        "channel": args.channel,
+        "channel_k": args.channel_k,
+        "channel_window": args.channel_window,
+        "channel_band_epsilon": args.channel_band_epsilon,
+        "smooth_window": args.smooth_window,
+        "sigma_clip": args.sigma_clip,
+        "noise_layer_terms": args.noise_layer_terms,
+        "auto_noise_layer": args.auto_noise_layer,
+        "x_domain_policy": args.x_domain_policy,
+        "x_domain_epsilon": args.x_domain_epsilon,
+        "x_domain_max_error": args.x_domain_max_error,
+    }
+    if args.fourier_terms_sweep:
+        data = benchmark_synthetic_fourier_terms(
+            sample_sizes,
+            fourier_terms_values=parse_fourier_terms(args.fourier_terms_sweep),
+            **common,
+        )
+    else:
+        data = benchmark_synthetic_sizes(
+            sample_sizes,
+            fourier_terms=args.fourier_terms,
+            **common,
+        )
     gate = evaluate_benchmark_gate(
         data,
         require_svg_gzip_win=args.require_svg_gzip_win,

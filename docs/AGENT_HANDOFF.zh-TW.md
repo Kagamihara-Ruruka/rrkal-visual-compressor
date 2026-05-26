@@ -39,6 +39,7 @@
 - benchmark rows 會包含 LTTB downsampling baseline metrics，以及 LTTB SVG raw/gzip size evidence
 - `bench --report-md` 可額外輸出 Markdown benchmark report
 - benchmark gates：`--require-svg-gzip-win`、`--require-csv-gzip-win`、`--min-fourier-r2`
+- `bench --fourier-terms-sweep` 可掃描 Fourier terms 甜蜜點
 - 繁中版文件：README、architecture、conceptual model、roadmap、governance、handoff
 
 目前本地驗證命令：
@@ -47,7 +48,7 @@
 py -m pytest -q
 ```
 
-最近已知通過數：`39 passed`。
+最近已知通過數：`41 passed`。
 
 ## 原始第一任務
 

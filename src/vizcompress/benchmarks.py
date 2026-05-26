@@ -19,12 +19,14 @@ from vizcompress.selectors import count_recommendations, recommend_benchmark_row
 
 
 def parse_sample_sizes(value: str) -> list[int]:
-    sizes = [int(part.strip()) for part in value.split(",") if part.strip()]
+    sizes = _parse_positive_int_list(value, name="sample sizes", minimum=2)
     if not sizes:
         raise ValueError("at least one sample size is required")
-    if any(size < 2 for size in sizes):
-        raise ValueError("sample sizes must be >= 2")
     return sizes
+
+
+def parse_fourier_terms(value: str) -> list[int]:
+    return _parse_positive_int_list(value, name="fourier terms", minimum=1)
 
 
 def benchmark_synthetic_sizes(
@@ -95,6 +97,75 @@ def benchmark_synthetic_sizes(
     }
 
 
+def benchmark_synthetic_fourier_terms(
+    sample_sizes: list[int],
+    *,
+    fourier_terms_values: list[int],
+    synthetic_kind: str = "smooth",
+    rdp_epsilon: float,
+    svg_samples: int,
+    channel: bool,
+    channel_k: float,
+    channel_window: int,
+    channel_band_epsilon: float,
+    smooth_window: int = 1,
+    sigma_clip: float | None = None,
+    noise_layer_terms: int = 0,
+    auto_noise_layer: bool = False,
+    x_domain_policy: str = "preserve",
+    x_domain_epsilon: float = 0.002,
+    x_domain_max_error: float = 1e-4,
+) -> dict[str, Any]:
+    rows = []
+    for terms in fourier_terms_values:
+        data = benchmark_synthetic_sizes(
+            sample_sizes,
+            synthetic_kind=synthetic_kind,
+            fourier_terms=terms,
+            rdp_epsilon=rdp_epsilon,
+            svg_samples=svg_samples,
+            channel=channel,
+            channel_k=channel_k,
+            channel_window=channel_window,
+            channel_band_epsilon=channel_band_epsilon,
+            smooth_window=smooth_window,
+            sigma_clip=sigma_clip,
+            noise_layer_terms=noise_layer_terms,
+            auto_noise_layer=auto_noise_layer,
+            x_domain_policy=x_domain_policy,
+            x_domain_epsilon=x_domain_epsilon,
+            x_domain_max_error=x_domain_max_error,
+        )
+        for row in data["rows"]:
+            row["fourier_terms"] = terms
+            rows.append(row)
+    return {
+        "benchmark": "synthetic_fourier_terms_sweep",
+        "parameters": {
+            "sample_sizes": sample_sizes,
+            "synthetic_kind": synthetic_kind,
+            "fourier_terms_values": fourier_terms_values,
+            "rdp_epsilon": rdp_epsilon,
+            "svg_samples": svg_samples,
+            "channel": channel,
+            "channel_k": channel_k,
+            "channel_window": channel_window,
+            "channel_band_epsilon": channel_band_epsilon,
+            "smooth_window": smooth_window,
+            "sigma_clip": sigma_clip,
+            "noise_layer_terms": noise_layer_terms,
+            "auto_noise_layer": auto_noise_layer,
+            "x_domain_policy": x_domain_policy,
+            "x_domain_epsilon": x_domain_epsilon,
+            "x_domain_max_error": x_domain_max_error,
+        },
+        "summary": _summarize_rows(rows),
+        "summary_by_kind": _summarize_rows_by_kind(rows),
+        "summary_by_terms": _summarize_rows_by_terms(rows),
+        "rows": rows,
+    }
+
+
 def write_benchmark(path: str | Path, data: dict[str, Any]) -> Path:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -120,7 +191,7 @@ def format_benchmark_markdown(data: dict[str, Any]) -> str:
         "",
         f"- Synthetic kind: `{parameters.get('synthetic_kind', 'unknown')}`",
         f"- Sample sizes: `{parameters.get('sample_sizes', [])}`",
-        f"- Fourier terms: `{parameters.get('fourier_terms', 'unknown')}`",
+        f"- Fourier terms: `{parameters.get('fourier_terms', parameters.get('fourier_terms_values', 'unknown'))}`",
         f"- SVG samples: `{parameters.get('svg_samples', 'unknown')}`",
         f"- Channel model: `{parameters.get('channel', False)}`",
         f"- X-domain policy: `{parameters.get('x_domain_policy', 'unknown')}`",
@@ -136,8 +207,8 @@ def format_benchmark_markdown(data: dict[str, Any]) -> str:
         "",
         "## Rows",
         "",
-        "| kind | samples | package bytes | SVG.gz/package | CSV.gz/package | LTTB SVG.gz/package | Fourier R2 | LTTB R2 | gzip recommendation |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| kind | samples | terms | package bytes | SVG.gz/package | CSV.gz/package | LTTB SVG.gz/package | Fourier R2 | LTTB R2 | gzip recommendation |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     for row in rows:
         lines.append(
@@ -146,6 +217,7 @@ def format_benchmark_markdown(data: dict[str, Any]) -> str:
                 [
                     str(row.get("synthetic_kind", "")),
                     str(row.get("samples", "")),
+                    str(row.get("fourier_terms", "")),
                     str(row.get("package_bytes", "")),
                     _format_float(row.get("direct_svg_gzip_to_package_ratio")),
                     _format_float(row.get("source_csv_gzip_to_package_ratio")),
@@ -323,6 +395,7 @@ def _benchmark_one(
     row = {
         "synthetic_kind": synthetic_kind,
         "samples": series.sample_count,
+        "fourier_terms": fourier_terms,
         "x_uniform": bool(report.as_dict()["input"]["x_uniform"]),
         "x_domain_mode": x_domain.mode,
         "x_domain_parameter_count": x_domain.metrics["parameter_count"],
@@ -409,6 +482,15 @@ def _format_float(value: Any) -> str:
     return str(value)
 
 
+def _parse_positive_int_list(value: str, *, name: str, minimum: int) -> list[int]:
+    values = [int(part.strip()) for part in value.split(",") if part.strip()]
+    if not values:
+        raise ValueError(f"at least one {name} value is required")
+    if any(item < minimum for item in values):
+        raise ValueError(f"{name} values must be >= {minimum}")
+    return values
+
+
 def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
     winning_rows = [row for row in rows if row["direct_svg_to_package_ratio"] > 1.0]
     best_row = max(rows, key=lambda row: row["direct_svg_to_package_ratio"])
@@ -440,4 +522,12 @@ def _summarize_rows_by_kind(rows: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         kind: _summarize_rows([row for row in rows if row["synthetic_kind"] == kind])
         for kind in kinds
+    }
+
+
+def _summarize_rows_by_terms(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    terms = sorted({int(row["fourier_terms"]) for row in rows})
+    return {
+        str(term): _summarize_rows([row for row in rows if int(row["fourier_terms"]) == term])
+        for term in terms
     }

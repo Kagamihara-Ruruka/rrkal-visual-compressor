@@ -40,6 +40,7 @@ Implemented mainline:
 - LTTB downsampling baseline metrics plus LTTB SVG raw/gzip size evidence in benchmark rows
 - optional Markdown benchmark reports via `bench --report-md`
 - benchmark gates via `--require-svg-gzip-win`, `--require-csv-gzip-win`, and `--min-fourier-r2`
+- Fourier term sweet-spot sweeps via `bench --fourier-terms-sweep`
 
 Current local verification command:
 
@@ -47,7 +48,7 @@ Current local verification command:
 py -m pytest -q
 ```
 
-Latest known passing count: `39 passed`.
+Latest known passing count: `41 passed`.
 
 ## Original First Task
 

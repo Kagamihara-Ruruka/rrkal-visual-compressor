@@ -207,6 +207,8 @@ only when the selected encoding stays within the error budget.
 Use `--synthetic-kind all` to run the same sweep across every built-in synthetic
 fixture. The output includes both a global `summary` and `summary_by_kind` for
 per-dataset break-even analysis.
+Use `--fourier-terms-sweep 16,32,64,96` to scan the fidelity/size sweet spot
+for the same sample sizes. The output adds `summary_by_terms`.
 Each row also includes a `recommendation` label such as
 `package_preferred`, `direct_svg_preferred`, or
 `package_smaller_but_low_fidelity`.
