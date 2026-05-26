@@ -18,6 +18,7 @@ from vizcompress.packages import (
     reconstruct_channel,
     reconstruct_fourier,
     reconstruct_noise_layer,
+    reconstruct_retained_signal,
     reconstruct_sparse_residual,
     write_vizasset,
 )
@@ -207,8 +208,10 @@ def test_vizasset_reconstructs_sparse_residual_layer(tmp_path):
     )
 
     reconstructed = reconstruct_sparse_residual(package)
+    retained = reconstruct_retained_signal(package)
     assert reconstructed["indices"].shape[0] == sparse.parameter_count
     assert np.allclose(reconstructed["delta_y"], sparse.delta_y)
+    assert retained.sample_count == cleaned.sample_count
 
 
 def test_vizasset_reconstructs_fourier_noise_layer(tmp_path):
@@ -240,8 +243,11 @@ def test_vizasset_reconstructs_fourier_noise_layer(tmp_path):
     )
 
     reconstructed = reconstruct_noise_layer(package, samples=300)
+    retained = reconstruct_retained_signal(package, samples=300)
     assert reconstructed.sample_count == 300
     assert np.isfinite(reconstructed.y).all()
+    assert retained.sample_count == 300
+    assert np.isfinite(retained.y).all()
 
 
 def test_vizasset_preserves_irregular_x_domain(tmp_path):

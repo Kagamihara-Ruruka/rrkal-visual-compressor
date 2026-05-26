@@ -157,6 +157,31 @@ def reconstruct_noise_layer(path: str | Path, samples: int | None = None) -> Tim
     return TimeSeries(x=x, y=y, source=f"noise:{source}")
 
 
+def reconstruct_retained_signal(path: str | Path, samples: int | None = None) -> TimeSeries:
+    package = Path(path)
+    model_path = package / "model.npz" if package.is_dir() else package
+    with np.load(model_path, allow_pickle=False) as data:
+        full_n = int(data["sample_count"])
+        x_full = reconstruct_x_domain(data, full_n)
+        y_full = _reconstruct_fourier_y(data, full_n)
+        if bool(data["noise_present"]):
+            y_full = y_full + _reconstruct_noise_y(data, full_n)
+        if bool(data["sparse_residual_present"]):
+            indices = data["sparse_residual_indices"].astype(np.int64)
+            y_full[indices] = y_full[indices] + data["sparse_residual_delta_y"]
+        if samples is None or samples == full_n:
+            x = x_full
+            y = y_full
+        else:
+            if samples < 2:
+                raise ValueError("samples must be >= 2")
+            indices = np.linspace(0, full_n - 1, samples).astype(np.int64)
+            x = x_full[indices]
+            y = y_full[indices]
+        source = str(data["source"])
+    return TimeSeries(x=x, y=y, source=f"retained:{source}")
+
+
 def _write_model_npz(
     path: Path,
     series: TimeSeries,
