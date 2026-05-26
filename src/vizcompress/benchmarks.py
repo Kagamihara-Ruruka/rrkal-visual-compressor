@@ -280,6 +280,8 @@ def format_benchmark_markdown(data: dict[str, Any]) -> str:
         f"- Best raw SVG/package ratio: `{_format_float(summary.get('best_direct_svg_to_package_ratio'))}`",
         f"- Best SVG.gz/package ratio: `{_format_float(summary.get('best_direct_svg_gzip_to_package_ratio'))}`",
         f"- Best CSV.gz/package ratio: `{_format_float(summary.get('best_source_csv_gzip_to_package_ratio'))}`",
+        f"- Best defensible high-fidelity SVG.gz candidate (R2≥0.99, coverage≥{summary.get('defensible_channel_coverage_threshold', 'n/a')}): "
+        f"`{_format_candidate(summary.get('best_defensible_high_fidelity_svg_gzip_candidate'))}`",
         f"- Best high-fidelity SVG.gz candidate: `{_format_candidate(summary.get('best_high_fidelity_svg_gzip_candidate'))}`",
         f"- Package wins against SVG.gz: `{summary.get('package_wins_against_direct_svg_gzip_count', 0)}`",
         f"- Package wins against CSV.gz: `{summary.get('package_wins_against_source_csv_gzip_count', 0)}`",
@@ -595,11 +597,13 @@ def _format_float(value: Any) -> str:
 def _format_candidate(value: Any) -> str:
     if not isinstance(value, dict):
         return ""
+    coverage = value.get("channel_coverage_ratio")
     return (
         f"{value.get('synthetic_kind')} / {value.get('samples')} samples / "
         f"{value.get('fourier_terms')} terms / "
         f"{value.get('ratio_field')}={_format_float(value.get('ratio'))} / "
         f"R2={_format_float(value.get('fourier_r2'))} / "
+        f"coverage={_format_float(coverage)} / "
         f"{value.get('gzip_recommendation')}"
     )
 
@@ -621,8 +625,10 @@ def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
     best_gzip_row = max(rows, key=lambda row: row["direct_svg_gzip_to_package_ratio"])
     best_csv_gzip_row = max(rows, key=lambda row: row["source_csv_gzip_to_package_ratio"])
     high_fidelity_rows = [row for row in rows if row["fourier_r2"] >= 0.99]
+    defensible_rows = [row for row in high_fidelity_rows if _meets_channel_coverage(row, 0.9)]
     best_high_fidelity_svg_gzip = _best_row(high_fidelity_rows, "direct_svg_gzip_to_package_ratio")
     best_high_fidelity_csv_gzip = _best_row(high_fidelity_rows, "source_csv_gzip_to_package_ratio")
+    best_defensible_high_fidelity_svg_gzip = _best_row(defensible_rows, "direct_svg_gzip_to_package_ratio")
     return {
         "observed_break_even_samples": winning_rows[0]["samples"] if winning_rows else None,
         "best_ratio_samples": best_row["samples"],
@@ -643,9 +649,15 @@ def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "source_csv_gzip": _row_identity(best_csv_gzip_row, ratio_field="source_csv_gzip_to_package_ratio"),
         },
         "high_fidelity_threshold_r2": 0.99,
+        "defensible_channel_coverage_threshold": 0.9,
         "best_high_fidelity_svg_gzip_candidate": (
             _row_identity(best_high_fidelity_svg_gzip, ratio_field="direct_svg_gzip_to_package_ratio")
             if best_high_fidelity_svg_gzip is not None
+            else None
+        ),
+        "best_defensible_high_fidelity_svg_gzip_candidate": (
+            _row_identity(best_defensible_high_fidelity_svg_gzip, ratio_field="direct_svg_gzip_to_package_ratio")
+            if best_defensible_high_fidelity_svg_gzip is not None
             else None
         ),
         "best_high_fidelity_csv_gzip_candidate": (
@@ -669,13 +681,20 @@ def _row_identity(row: dict[str, Any], *, ratio_field: str) -> dict[str, Any]:
         "synthetic_kind": row["synthetic_kind"],
         "samples": row["samples"],
         "fourier_terms": row["fourier_terms"],
+        "channel_k": row.get("channel_k"),
         "package_bytes": row["package_bytes"],
         "ratio_field": ratio_field,
         "ratio": row[ratio_field],
         "fourier_r2": row["fourier_r2"],
         "lttb_r2": row["lttb_r2"],
+        "channel_coverage_ratio": row.get("channel_coverage_ratio"),
         "gzip_recommendation": row["gzip_recommendation"],
     }
+
+
+def _meets_channel_coverage(row: dict[str, Any], threshold: float) -> bool:
+    channel_coverage = row.get("channel_coverage_ratio")
+    return channel_coverage is None or float(channel_coverage) >= threshold
 
 
 def _summarize_rows_by_kind(rows: list[dict[str, Any]]) -> dict[str, Any]:

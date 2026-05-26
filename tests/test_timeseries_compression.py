@@ -552,6 +552,7 @@ def test_benchmark_reports_size_sweep():
     assert "package_wins_against_source_csv_gzip_count" in result["summary"]
     assert "best_source_csv_gzip_to_package_ratio" in result["summary"]
     assert "best_rows" in result["summary"]
+    assert "best_defensible_high_fidelity_svg_gzip_candidate" in result["summary"]
     assert "best_high_fidelity_svg_gzip_candidate" in result["summary"]
     assert len(result["rows"]) == 2
     assert result["rows"][1]["direct_svg_bytes"] > result["rows"][0]["direct_svg_bytes"]
@@ -596,6 +597,7 @@ def test_benchmark_markdown_report_includes_baseline_evidence():
     assert "SVG.gz/package" in report
     assert "CSV.gz/package" in report
     assert "LTTB SVG.gz/package" in report
+    assert "Best defensible high-fidelity SVG.gz candidate" in report
     assert "Best high-fidelity SVG.gz candidate" in report
     assert "samples /" in report
     assert "package must also pass source verification" in report
@@ -648,6 +650,25 @@ def test_benchmark_can_sweep_channel_k():
     assert set(result["summary_by_channel_k"]) == {"2", "3"}
     assert result["rows"][1]["channel_coverage_ratio"] >= result["rows"][0]["channel_coverage_ratio"]
     assert "channel K" in format_benchmark_markdown(result)
+
+
+def test_benchmark_summary_prefers_defensible_high_fidelity_candidates():
+    result = benchmark_synthetic_channel_k(
+        [1000],
+        channel_k_values=[2.0, 3.0, 4.0],
+        synthetic_kind="smooth",
+        fourier_terms=32,
+        rdp_epsilon=0.012,
+        svg_samples=300,
+        channel_window=201,
+        channel_band_epsilon=0.01,
+    )
+
+    candidate = result["summary"]["best_defensible_high_fidelity_svg_gzip_candidate"]
+    assert candidate is not None
+    assert candidate["fourier_r2"] >= 0.99
+    assert candidate["channel_coverage_ratio"] >= 0.9
+    assert candidate["channel_k"] in {3.0, 4.0}
 
 
 def test_benchmark_gate_checks_size_and_fidelity_policy():
