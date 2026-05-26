@@ -232,9 +232,11 @@ def _build(args: argparse.Namespace) -> int:
         args.svg_samples,
     )
     outputs = []
+    baseline_files = {}
     if args.direct_svg:
         direct_svg = write_direct_svg(out_dir / "direct.svg", series)
         outputs.append(direct_svg.name)
+        baseline_files["direct_svg"] = direct_svg
     outputs.extend([rdp_svg.name, fourier_svg.name])
     if channel is not None:
         channel_svg = write_channel_svg(
@@ -283,6 +285,7 @@ def _build(args: argparse.Namespace) -> int:
                 package / "review.json",
                 package,
                 review_source,
+                baseline_files=baseline_files,
                 max_rmse=args.review_max_rmse,
                 max_mae=args.review_max_mae,
                 max_error=args.review_max_error,

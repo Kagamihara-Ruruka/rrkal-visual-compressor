@@ -260,6 +260,7 @@ def test_review_packet_records_source_fingerprint_and_acceptance(tmp_path):
     fourier = compress_fourier(series, terms=96)
     report = CompressionReport(input_samples=series.sample_count, rdp=rdp, fourier=fourier)
     preview = write_fourier_svg(tmp_path / "preview_source.svg", series, fourier, samples=400)
+    direct = write_direct_svg(tmp_path / "direct.svg", series)
     demo = write_demo(tmp_path / "demo_source.py", series.sample_count, terms=96)
     metrics = write_metrics(tmp_path / "metrics_source.json", report, ["preview_source.svg", "demo_source.py"])
     package = write_vizasset(
@@ -271,8 +272,21 @@ def test_review_packet_records_source_fingerprint_and_acceptance(tmp_path):
         demo_py=demo,
     )
 
-    packet = build_review_packet(package, series, max_rmse=0.003, max_error=0.05)
-    output = write_review_packet(tmp_path / "review.json", package, series, max_rmse=0.003, max_error=0.05)
+    packet = build_review_packet(
+        package,
+        series,
+        baseline_files={"direct_svg": direct},
+        max_rmse=0.003,
+        max_error=0.05,
+    )
+    output = write_review_packet(
+        tmp_path / "review.json",
+        package,
+        series,
+        baseline_files={"direct_svg": direct},
+        max_rmse=0.003,
+        max_error=0.05,
+    )
     written = json.loads(output.read_text(encoding="utf-8"))
 
     assert source_fingerprint(series)["xy_sha256"] == packet["source_fingerprint"]["xy_sha256"]
@@ -281,6 +295,8 @@ def test_review_packet_records_source_fingerprint_and_acceptance(tmp_path):
     assert written["size_evidence"]["package_bytes"] > 0
     assert written["size_evidence"]["source_numeric_bytes"] == series.x.nbytes + series.y.nbytes
     assert package_size_summary(package, series)["file_count"] >= 4
+    assert packet["baseline_evidence"]["direct_svg"]["present"] is True
+    assert written["baseline_evidence"]["direct_svg"]["baseline_to_package_ratio"] > 0.0
     assert written["source_validation"]["details"]["source_verification"]["rmse"] < 0.003
 
 
@@ -823,6 +839,7 @@ def test_cli_build_can_write_review_packet(tmp_path):
             "--fourier-terms",
             "96",
             "--package",
+            "--direct-svg",
             "--review-packet",
             "--review-max-rmse",
             "0.003",
@@ -842,6 +859,7 @@ def test_cli_build_can_write_review_packet(tmp_path):
     assert str(review_path) in summary["outputs"]
     assert review["accepted"] is True
     assert review["source_fingerprint"]["sample_count"] == 5000
+    assert review["baseline_evidence"]["direct_svg"]["present"] is True
 
 
 def test_cli_build_can_require_review_pass(tmp_path):

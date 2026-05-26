@@ -32,22 +32,41 @@ def source_fingerprint(series: TimeSeries) -> dict[str, Any]:
 
 
 def package_size_summary(package: str | Path, source: TimeSeries) -> dict[str, Any]:
-    package_path = Path(package)
-    files = [path for path in package_path.rglob("*") if path.is_file()]
-    total_bytes = sum(path.stat().st_size for path in files)
+    total_bytes, file_count = _package_bytes(package)
     source_numeric_bytes = int(source.x.nbytes + source.y.nbytes)
     return {
         "package_bytes": int(total_bytes),
         "source_numeric_bytes": source_numeric_bytes,
         "source_numeric_to_package_ratio": source_numeric_bytes / float(max(total_bytes, 1)),
-        "file_count": len(files),
+        "file_count": file_count,
     }
+
+
+def baseline_size_summary(package: str | Path, baseline_files: dict[str, str | Path] | None = None) -> dict[str, Any]:
+    if not baseline_files:
+        return {}
+    package_bytes, _file_count = _package_bytes(package)
+    baselines: dict[str, Any] = {}
+    for key, value in baseline_files.items():
+        path = Path(value)
+        if not path.exists() or not path.is_file():
+            baselines[key] = {"path": str(path), "present": False}
+            continue
+        baseline_bytes = path.stat().st_size
+        baselines[key] = {
+            "path": str(path),
+            "present": True,
+            "bytes": int(baseline_bytes),
+            "baseline_to_package_ratio": baseline_bytes / float(max(package_bytes, 1)),
+        }
+    return baselines
 
 
 def build_review_packet(
     package: str | Path,
     source: TimeSeries,
     *,
+    baseline_files: dict[str, str | Path] | None = None,
     signal: str = "retained",
     max_rmse: float | None = None,
     max_mae: float | None = None,
@@ -78,6 +97,7 @@ def build_review_packet(
             "max_x_error": max_x_error,
         },
         "size_evidence": package_size_summary(package, source),
+        "baseline_evidence": baseline_size_summary(package, baseline_files),
         "package_validation": package_validation.as_dict(),
         "source_validation": source_validation.as_dict(),
         "accepted": bool(package_validation.ok and source_validation.ok),
@@ -89,6 +109,7 @@ def write_review_packet(
     package: str | Path,
     source: TimeSeries,
     *,
+    baseline_files: dict[str, str | Path] | None = None,
     signal: str = "retained",
     max_rmse: float | None = None,
     max_mae: float | None = None,
@@ -100,6 +121,7 @@ def write_review_packet(
     packet = build_review_packet(
         package,
         source,
+        baseline_files=baseline_files,
         signal=signal,
         max_rmse=max_rmse,
         max_mae=max_mae,
@@ -108,3 +130,9 @@ def write_review_packet(
     )
     output.write_text(json.dumps(packet, indent=2), encoding="utf-8")
     return output
+
+
+def _package_bytes(package: str | Path) -> tuple[int, int]:
+    package_path = Path(package)
+    files = [path for path in package_path.rglob("*") if path.is_file()]
+    return int(sum(path.stat().st_size for path in files)), len(files)
