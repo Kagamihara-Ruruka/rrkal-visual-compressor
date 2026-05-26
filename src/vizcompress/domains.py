@@ -28,9 +28,10 @@ def encode_x_domain(
     x_uniform: bool,
     policy: str = "preserve",
     epsilon: float = 0.002,
+    max_error: float = 1e-4,
 ) -> XDomainEncoding:
-    if policy not in {"preserve", "compressed"}:
-        raise ValueError("x domain policy must be 'preserve' or 'compressed'")
+    if policy not in {"preserve", "compressed", "auto"}:
+        raise ValueError("x domain policy must be 'preserve', 'compressed', or 'auto'")
     if x_uniform:
         return XDomainEncoding(
             mode="linspace_from_min_max",
@@ -43,7 +44,17 @@ def encode_x_domain(
             data={"x_values": series.x},
             metrics={"parameter_count": float(series.sample_count), "max_abs_error": 0.0, "rmse": 0.0},
         )
-    return _encode_linear_plus_rdp_delta(series, epsilon)
+    compressed = _encode_linear_plus_rdp_delta(series, epsilon)
+    if policy == "auto" and compressed.metrics["max_abs_error"] > max_error:
+        preserved = XDomainEncoding(
+            mode="stored_x",
+            data={"x_values": series.x},
+            metrics={"parameter_count": float(series.sample_count), "max_abs_error": 0.0, "rmse": 0.0},
+        )
+        metrics = dict(preserved.metrics)
+        metrics["auto_rejected_compressed_error"] = compressed.metrics["max_abs_error"]
+        return XDomainEncoding(mode=preserved.mode, data=preserved.data, metrics=metrics)
+    return compressed
 
 
 def reconstruct_x_domain(data: Any, n: int) -> np.ndarray:

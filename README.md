@@ -192,6 +192,8 @@ For irregular time series, package builds can use `--x-domain-policy compressed`
 to store the x-axis as a linear domain plus compressed delta instead of full
 `x_values`. Benchmark rows report x-domain parameter count, RMSE, and max
 absolute x error.
+Use `--x-domain-policy auto --x-domain-max-error 0.0001` to compress the domain
+only when the selected encoding stays within the error budget.
 
 Use `--synthetic-kind all` to run the same sweep across every built-in synthetic
 fixture.

@@ -232,6 +232,45 @@ def test_vizasset_can_compress_irregular_x_domain(tmp_path):
     assert np.max(np.abs(reconstructed.x - series.x)) < 0.001
 
 
+def test_vizasset_auto_x_domain_policy_can_fallback(tmp_path):
+    series = make_synthetic_dataset(3000, kind="irregular")
+    rdp = compress_rdp(series, epsilon=0.012)
+    fourier = compress_fourier(series, terms=32)
+    report = CompressionReport(
+        input_samples=series.sample_count,
+        rdp=rdp,
+        fourier=fourier,
+        input_profile=analyze_time_series(series).as_dict(),
+    )
+    preview = write_fourier_svg(tmp_path / "preview_source.svg", series, fourier, samples=300)
+    demo = write_demo(tmp_path / "demo_source.py", series.sample_count, terms=32)
+    metrics = write_metrics(tmp_path / "metrics_source.json", report, ["preview_source.svg", "demo_source.py"])
+
+    compressed = write_vizasset(
+        tmp_path / "auto_compressed.vizretain",
+        series=series,
+        report=report,
+        preview_svg=preview,
+        metrics_json=metrics,
+        demo_py=demo,
+        x_domain_policy="auto",
+        x_domain_max_error=1e-3,
+    )
+    preserved = write_vizasset(
+        tmp_path / "auto_preserved.vizretain",
+        series=series,
+        report=report,
+        preview_svg=preview,
+        metrics_json=metrics,
+        demo_py=demo,
+        x_domain_policy="auto",
+        x_domain_max_error=1e-12,
+    )
+
+    assert load_vizasset_manifest(compressed)["source"]["x_domain_mode"] == "linear_plus_rdp_delta"
+    assert load_vizasset_manifest(preserved)["source"]["x_domain_mode"] == "stored_x"
+
+
 def test_benchmark_reports_size_sweep():
     result = benchmark_synthetic_sizes(
         [1000, 5000],
@@ -300,6 +339,25 @@ def test_benchmark_can_use_compressed_x_domain():
     assert result["rows"][0]["x_domain_mode"] == "linear_plus_rdp_delta"
     assert result["rows"][0]["x_domain_parameter_count"] < 1000
     assert result["rows"][0]["x_domain_max_abs_error"] < 0.001
+
+
+def test_benchmark_auto_x_domain_policy_reports_selected_mode():
+    result = benchmark_synthetic_sizes(
+        [1000],
+        synthetic_kind="irregular",
+        fourier_terms=32,
+        rdp_epsilon=0.012,
+        svg_samples=300,
+        channel=False,
+        channel_k=3.0,
+        channel_window=201,
+        channel_band_epsilon=0.01,
+        x_domain_policy="auto",
+        x_domain_max_error=1e-12,
+    )
+
+    assert result["parameters"]["x_domain_policy"] == "auto"
+    assert result["rows"][0]["x_domain_mode"] == "stored_x"
 
 
 def test_read_csv_timeseries(tmp_path):

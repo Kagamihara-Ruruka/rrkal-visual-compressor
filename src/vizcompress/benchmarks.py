@@ -42,6 +42,7 @@ def benchmark_synthetic_sizes(
     auto_noise_layer: bool = False,
     x_domain_policy: str = "preserve",
     x_domain_epsilon: float = 0.002,
+    x_domain_max_error: float = 1e-4,
 ) -> dict[str, Any]:
     kinds = list(SYNTHETIC_KINDS) if synthetic_kind == "all" else [synthetic_kind]
     rows = [
@@ -61,6 +62,7 @@ def benchmark_synthetic_sizes(
             auto_noise_layer=auto_noise_layer,
             x_domain_policy=x_domain_policy,
             x_domain_epsilon=x_domain_epsilon,
+            x_domain_max_error=x_domain_max_error,
         )
         for kind in kinds
         for size in sample_sizes
@@ -83,6 +85,7 @@ def benchmark_synthetic_sizes(
             "auto_noise_layer": auto_noise_layer,
             "x_domain_policy": x_domain_policy,
             "x_domain_epsilon": x_domain_epsilon,
+            "x_domain_max_error": x_domain_max_error,
         },
         "summary": _summarize_rows(rows),
         "rows": rows,
@@ -113,6 +116,7 @@ def _benchmark_one(
     auto_noise_layer: bool,
     x_domain_policy: str,
     x_domain_epsilon: float,
+    x_domain_max_error: float,
 ) -> dict[str, Any]:
     raw_series = series
     cleaning_steps = []
@@ -157,6 +161,7 @@ def _benchmark_one(
         x_uniform=bool(profile["x_uniform"]),
         policy=x_domain_policy,
         epsilon=x_domain_epsilon,
+        max_error=x_domain_max_error,
     )
     report = CompressionReport(
         series.sample_count,
@@ -191,6 +196,7 @@ def _benchmark_one(
             package_profile="retain-residual",
             x_domain_policy=x_domain_policy,
             x_domain_epsilon=x_domain_epsilon,
+            x_domain_max_error=x_domain_max_error,
         )
         package_bytes = _directory_size(package)
         model_bytes = (package / "model.npz").stat().st_size

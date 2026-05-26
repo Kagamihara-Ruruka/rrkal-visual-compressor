@@ -59,11 +59,12 @@ def main(argv: list[str] | None = None) -> int:
     build.add_argument("--package-name", default=None, help="Package directory name used with --package.")
     build.add_argument(
         "--x-domain-policy",
-        choices=["preserve", "compressed"],
+        choices=["preserve", "compressed", "auto"],
         default="preserve",
         help="How irregular x domains are stored in packages.",
     )
     build.add_argument("--x-domain-epsilon", type=float, default=0.002, help="RDP epsilon for compressed x-domain delta.")
+    build.add_argument("--x-domain-max-error", type=float, default=1e-4, help="Max x error allowed by --x-domain-policy auto.")
 
     bench = subparsers.add_parser("bench", help="Benchmark direct SVG size against model-backed package size.")
     bench.add_argument(
@@ -87,11 +88,12 @@ def main(argv: list[str] | None = None) -> int:
     bench.add_argument("--auto-noise-layer", action="store_true", help="Benchmark Fourier noise layer only when residual analysis recommends it.")
     bench.add_argument(
         "--x-domain-policy",
-        choices=["preserve", "compressed"],
+        choices=["preserve", "compressed", "auto"],
         default="preserve",
         help="How irregular x domains are stored in packages.",
     )
     bench.add_argument("--x-domain-epsilon", type=float, default=0.002, help="RDP epsilon for compressed x-domain delta.")
+    bench.add_argument("--x-domain-max-error", type=float, default=1e-4, help="Max x error allowed by --x-domain-policy auto.")
     bench.add_argument("--channel", action="store_true", help="Benchmark the Fourier channel package.")
     bench.add_argument("--channel-window", type=int, default=501, help="Rolling window for channel band estimation.")
     bench.add_argument("--channel-k", type=float, default=3.0, help="Standard-deviation multiplier for channel width.")
@@ -228,6 +230,7 @@ def _build(args: argparse.Namespace) -> int:
             package_profile=args.package_profile,
             x_domain_policy=args.x_domain_policy,
             x_domain_epsilon=args.x_domain_epsilon,
+            x_domain_max_error=args.x_domain_max_error,
         )
         outputs.append(str(package))
 
@@ -268,6 +271,7 @@ def _bench(args: argparse.Namespace) -> int:
         auto_noise_layer=args.auto_noise_layer,
         x_domain_policy=args.x_domain_policy,
         x_domain_epsilon=args.x_domain_epsilon,
+        x_domain_max_error=args.x_domain_max_error,
     )
     output = write_benchmark(args.out, data)
     data["output"] = str(output)

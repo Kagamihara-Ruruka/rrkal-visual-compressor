@@ -27,6 +27,7 @@ def write_vizasset(
     package_profile: str = "retain-residual",
     x_domain_policy: str = "preserve",
     x_domain_epsilon: float = 0.002,
+    x_domain_max_error: float = 1e-4,
 ) -> Path:
     output = Path(path)
     output.mkdir(parents=True, exist_ok=True)
@@ -43,6 +44,7 @@ def write_vizasset(
         report,
         x_domain_policy=x_domain_policy,
         x_domain_epsilon=x_domain_epsilon,
+        x_domain_max_error=x_domain_max_error,
     )
     shutil.copyfile(preview_svg, preview_path)
     shutil.copyfile(metrics_json, metrics_path)
@@ -127,6 +129,7 @@ def _write_model_npz(
     *,
     x_domain_policy: str,
     x_domain_epsilon: float,
+    x_domain_max_error: float,
 ) -> dict[str, Any]:
     x_uniform = bool((report.input_profile or analyze_time_series(series).as_dict()).get("x_uniform", False))
     x_domain = encode_x_domain(
@@ -134,6 +137,7 @@ def _write_model_npz(
         x_uniform=x_uniform,
         policy=x_domain_policy,
         epsilon=x_domain_epsilon,
+        max_error=x_domain_max_error,
     )
     data: dict[str, Any] = {
         "schema_version": np.array(ASSET_SCHEMA_VERSION),
