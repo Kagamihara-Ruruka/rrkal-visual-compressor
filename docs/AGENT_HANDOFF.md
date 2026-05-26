@@ -41,6 +41,7 @@ Implemented mainline:
 - optional Markdown benchmark reports via `bench --report-md`
 - benchmark gates via `--require-svg-gzip-win`, `--require-csv-gzip-win`, `--min-fourier-r2`, and `--min-channel-coverage`
 - Fourier term sweet-spot sweeps via `bench --fourier-terms-sweep`
+- channel coverage sweeps via `bench --channel-k-sweep`
 - benchmark evidence snapshots under `docs/benchmarks`
 
 Current local verification command:

@@ -184,6 +184,8 @@ py -m vizcompress.cli bench --synthetic-sizes 1000,10000,100000 --synthetic-kind
 
 若要找 Fourier 參數量的甜蜜點，可以使用 `--fourier-terms-sweep 16,32,64,96`。輸出會加入 `summary_by_terms`，用來比較不同 terms 下的保真度、package 體積與 gzip baseline 勝負。
 
+若要掃描 channel coverage tradeoff，可以使用 `--channel-k-sweep 2,3,4`。這會強制走 channel benchmark，並加入 `summary_by_channel_k`。
+
 ## 狀態
 
 Phase 0/1 已開始。專案目前支援 synthetic/CSV time-series，透過 RDP/Fourier 輸出 SVG、`demo.py`、metrics 和 package。Phase 2 已有 Fourier channel prototype，可表示 center-line 加 residual-band。

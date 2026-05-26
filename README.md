@@ -209,6 +209,8 @@ fixture. The output includes both a global `summary` and `summary_by_kind` for
 per-dataset break-even analysis.
 Use `--fourier-terms-sweep 16,32,64,96` to scan the fidelity/size sweet spot
 for the same sample sizes. The output adds `summary_by_terms`.
+Use `--channel-k-sweep 2,3,4` to scan channel coverage tradeoffs. This forces
+the channel benchmark path and adds `summary_by_channel_k`.
 Each row also includes a `recommendation` label such as
 `package_preferred`, `direct_svg_preferred`, or
 `package_smaller_but_low_fidelity`.

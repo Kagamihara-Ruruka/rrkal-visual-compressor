@@ -29,6 +29,15 @@ def parse_fourier_terms(value: str) -> list[int]:
     return _parse_positive_int_list(value, name="fourier terms", minimum=1)
 
 
+def parse_float_values(value: str, *, name: str, minimum: float | None = None) -> list[float]:
+    values = [float(part.strip()) for part in value.split(",") if part.strip()]
+    if not values:
+        raise ValueError(f"at least one {name} value is required")
+    if minimum is not None and any(item < minimum for item in values):
+        raise ValueError(f"{name} values must be >= {minimum}")
+    return values
+
+
 def benchmark_synthetic_sizes(
     sample_sizes: list[int],
     *,
@@ -166,6 +175,74 @@ def benchmark_synthetic_fourier_terms(
     }
 
 
+def benchmark_synthetic_channel_k(
+    sample_sizes: list[int],
+    *,
+    channel_k_values: list[float],
+    synthetic_kind: str = "smooth",
+    fourier_terms: int,
+    rdp_epsilon: float,
+    svg_samples: int,
+    channel_window: int,
+    channel_band_epsilon: float,
+    smooth_window: int = 1,
+    sigma_clip: float | None = None,
+    noise_layer_terms: int = 0,
+    auto_noise_layer: bool = False,
+    x_domain_policy: str = "preserve",
+    x_domain_epsilon: float = 0.002,
+    x_domain_max_error: float = 1e-4,
+) -> dict[str, Any]:
+    rows = []
+    for k_value in channel_k_values:
+        data = benchmark_synthetic_sizes(
+            sample_sizes,
+            synthetic_kind=synthetic_kind,
+            fourier_terms=fourier_terms,
+            rdp_epsilon=rdp_epsilon,
+            svg_samples=svg_samples,
+            channel=True,
+            channel_k=k_value,
+            channel_window=channel_window,
+            channel_band_epsilon=channel_band_epsilon,
+            smooth_window=smooth_window,
+            sigma_clip=sigma_clip,
+            noise_layer_terms=noise_layer_terms,
+            auto_noise_layer=auto_noise_layer,
+            x_domain_policy=x_domain_policy,
+            x_domain_epsilon=x_domain_epsilon,
+            x_domain_max_error=x_domain_max_error,
+        )
+        for row in data["rows"]:
+            row["channel_k"] = k_value
+            rows.append(row)
+    return {
+        "benchmark": "synthetic_channel_k_sweep",
+        "parameters": {
+            "sample_sizes": sample_sizes,
+            "synthetic_kind": synthetic_kind,
+            "fourier_terms": fourier_terms,
+            "channel_k_values": channel_k_values,
+            "rdp_epsilon": rdp_epsilon,
+            "svg_samples": svg_samples,
+            "channel": True,
+            "channel_window": channel_window,
+            "channel_band_epsilon": channel_band_epsilon,
+            "smooth_window": smooth_window,
+            "sigma_clip": sigma_clip,
+            "noise_layer_terms": noise_layer_terms,
+            "auto_noise_layer": auto_noise_layer,
+            "x_domain_policy": x_domain_policy,
+            "x_domain_epsilon": x_domain_epsilon,
+            "x_domain_max_error": x_domain_max_error,
+        },
+        "summary": _summarize_rows(rows),
+        "summary_by_kind": _summarize_rows_by_kind(rows),
+        "summary_by_channel_k": _summarize_rows_by_channel_k(rows),
+        "rows": rows,
+    }
+
+
 def write_benchmark(path: str | Path, data: dict[str, Any]) -> Path:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -192,6 +269,7 @@ def format_benchmark_markdown(data: dict[str, Any]) -> str:
         f"- Synthetic kind: `{parameters.get('synthetic_kind', 'unknown')}`",
         f"- Sample sizes: `{parameters.get('sample_sizes', [])}`",
         f"- Fourier terms: `{parameters.get('fourier_terms', parameters.get('fourier_terms_values', 'unknown'))}`",
+        f"- Channel K values: `{parameters.get('channel_k_values', parameters.get('channel_k', 'n/a'))}`",
         f"- SVG samples: `{parameters.get('svg_samples', 'unknown')}`",
         f"- Channel model: `{parameters.get('channel', False)}`",
         f"- X-domain policy: `{parameters.get('x_domain_policy', 'unknown')}`",
@@ -208,8 +286,8 @@ def format_benchmark_markdown(data: dict[str, Any]) -> str:
         "",
         "## Rows",
         "",
-        "| kind | samples | terms | package bytes | SVG.gz/package | CSV.gz/package | LTTB SVG.gz/package | Fourier R2 | LTTB R2 | gzip recommendation |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| kind | samples | terms | channel K | package bytes | SVG.gz/package | CSV.gz/package | LTTB SVG.gz/package | Fourier R2 | LTTB R2 | coverage | gzip recommendation |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     for row in rows:
         lines.append(
@@ -219,12 +297,14 @@ def format_benchmark_markdown(data: dict[str, Any]) -> str:
                     str(row.get("synthetic_kind", "")),
                     str(row.get("samples", "")),
                     str(row.get("fourier_terms", "")),
+                    _format_float(row.get("channel_k")),
                     str(row.get("package_bytes", "")),
                     _format_float(row.get("direct_svg_gzip_to_package_ratio")),
                     _format_float(row.get("source_csv_gzip_to_package_ratio")),
                     _format_float(row.get("lttb_svg_gzip_to_package_ratio")),
                     _format_float(row.get("fourier_r2")),
                     _format_float(row.get("lttb_r2")),
+                    _format_float(row.get("channel_coverage_ratio")),
                     str(row.get("gzip_recommendation", "")),
                 ]
             )
@@ -413,6 +493,7 @@ def _benchmark_one(
         "synthetic_kind": synthetic_kind,
         "samples": series.sample_count,
         "fourier_terms": fourier_terms,
+        "channel_k": channel_k if channel_model is not None else None,
         "x_uniform": bool(report.as_dict()["input"]["x_uniform"]),
         "x_domain_mode": x_domain.mode,
         "x_domain_parameter_count": x_domain.metrics["parameter_count"],
@@ -598,4 +679,12 @@ def _summarize_rows_by_terms(rows: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         str(term): _summarize_rows([row for row in rows if int(row["fourier_terms"]) == term])
         for term in terms
+    }
+
+
+def _summarize_rows_by_channel_k(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    values = sorted({float(row["channel_k"]) for row in rows if row.get("channel_k") is not None})
+    return {
+        _format_float(value): _summarize_rows([row for row in rows if row.get("channel_k") == value])
+        for value in values
     }

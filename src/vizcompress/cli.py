@@ -6,9 +6,11 @@ from pathlib import Path
 
 from vizcompress.analyzers import analyze_time_series
 from vizcompress.benchmarks import (
+    benchmark_synthetic_channel_k,
     benchmark_synthetic_fourier_terms,
     benchmark_synthetic_sizes,
     evaluate_benchmark_gate,
+    parse_float_values,
     parse_fourier_terms,
     parse_sample_sizes,
     write_benchmark,
@@ -133,6 +135,7 @@ def main(argv: list[str] | None = None) -> int:
     bench.add_argument("--channel", action="store_true", help="Benchmark the Fourier channel package.")
     bench.add_argument("--channel-window", type=int, default=501, help="Rolling window for channel band estimation.")
     bench.add_argument("--channel-k", type=float, default=3.0, help="Standard-deviation multiplier for channel width.")
+    bench.add_argument("--channel-k-sweep", default=None, help="Comma-separated channel K values. Forces --channel.")
     bench.add_argument("--channel-band-epsilon", type=float, default=0.01, help="RDP epsilon for channel band curve.")
     bench.add_argument("--require-svg-gzip-win", action="store_true", help="Fail when no benchmark row beats SVG.gz size.")
     bench.add_argument("--require-csv-gzip-win", action="store_true", help="Fail when no benchmark row beats source CSV.gz size.")
@@ -358,7 +361,25 @@ def _bench(args: argparse.Namespace) -> int:
         "x_domain_epsilon": args.x_domain_epsilon,
         "x_domain_max_error": args.x_domain_max_error,
     }
-    if args.fourier_terms_sweep:
+    if args.channel_k_sweep:
+        data = benchmark_synthetic_channel_k(
+            sample_sizes,
+            channel_k_values=parse_float_values(args.channel_k_sweep, name="channel K", minimum=0.0),
+            fourier_terms=args.fourier_terms,
+            rdp_epsilon=args.rdp_epsilon,
+            svg_samples=args.svg_samples,
+            channel_window=args.channel_window,
+            channel_band_epsilon=args.channel_band_epsilon,
+            smooth_window=args.smooth_window,
+            sigma_clip=args.sigma_clip,
+            noise_layer_terms=args.noise_layer_terms,
+            auto_noise_layer=args.auto_noise_layer,
+            synthetic_kind=args.synthetic_kind,
+            x_domain_policy=args.x_domain_policy,
+            x_domain_epsilon=args.x_domain_epsilon,
+            x_domain_max_error=args.x_domain_max_error,
+        )
+    elif args.fourier_terms_sweep:
         data = benchmark_synthetic_fourier_terms(
             sample_sizes,
             fourier_terms_values=parse_fourier_terms(args.fourier_terms_sweep),
