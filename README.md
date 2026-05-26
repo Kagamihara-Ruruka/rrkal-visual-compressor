@@ -1,0 +1,106 @@
+# RRKAL Visual Compressor
+
+RRKAL Visual Compressor is a Python-first engine for turning large datasets into compact, reproducible visual models.
+
+It is not a general charting library and it is not the editor UI. Its job is to compile data into an intermediate visual representation that can later be exported as SVG, PNG, `demo.py`, metrics, or an asset package consumed by RRKAL and editor tools.
+
+## Core Idea
+
+```text
+large data
+  -> analysis
+  -> approximation / compression
+  -> visual model IR
+  -> SVG / demo.py / metrics / package
+```
+
+The first target is time series data:
+
+```text
+CSV(time, value)
+  -> RDP / Fourier / spline approximation
+  -> compact visual model
+  -> SVG path
+  -> reproducible demo.py
+  -> metrics.json
+```
+
+## Why This Exists
+
+Directly exporting large data into SVG is usually the wrong model:
+
+```text
+1,000,000 samples -> 1,000,000 SVG path points
+```
+
+This project explores the better model:
+
+```text
+1,000,000 samples -> compact model -> visual reconstruction
+```
+
+The goal is not lossless data archival. The goal is visual compression with measurable fidelity.
+
+## MVP Scope
+
+The first milestone should only support:
+
+- time series input from CSV
+- Ramer-Douglas-Peucker polyline simplification
+- Fourier approximation
+- simple SVG path export
+- `demo.py` export
+- `metrics.json` export
+- benchmark reports comparing size, error, and compression ratio
+
+Everything else is deferred.
+
+## Non-Goals
+
+- No Qt UI.
+- No Photoshop-like editor.
+- No Unreal integration in this repo.
+- No universal file compression claim.
+- No 3D function assets in the first milestone.
+- No promise that every dataset compresses better than SVG.
+
+## Relationship To Other Projects
+
+```text
+RRKAL
+  source of truth for data assets, manifests, lineage, install registry
+
+RRKAL Visual Compressor
+  converts large data into compact visual models
+
+RRKAL Visual Editor
+  opens visual model packages and lets users style, annotate, and export them
+```
+
+## Repository Layout
+
+```text
+src/vizcompress/
+  core.py          Visual model and package primitives
+  metrics.py       Fidelity and compression metrics
+  compressors.py   RDP and Fourier starter compressors
+  exporters.py     SVG, demo.py, metrics exporters
+  cli.py           CLI entrypoint
+
+docs/
+  ARCHITECTURE.md
+  ROADMAP.md
+  AGENT_HANDOFF.md
+```
+
+## Development
+
+```powershell
+py -m pip install -e .
+py -m pytest
+vizcompress --help
+```
+
+## Status
+
+Scaffold only. The first implementation task is to migrate the proof-of-concept from `proof_vectorization.py` into tested modules.
