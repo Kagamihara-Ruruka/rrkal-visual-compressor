@@ -611,6 +611,28 @@ def test_benchmark_markdown_report_includes_baseline_evidence():
     assert "OK:" in gated_report
 
 
+def test_defensible_ratio_is_consistent_with_rows():
+    result = benchmark_synthetic_sizes(
+        [1000],
+        synthetic_kind="smooth",
+        fourier_terms=32,
+        rdp_epsilon=0.6,
+        svg_samples=240,
+        channel=True,
+        channel_k=3.0,
+        channel_window=16,
+        channel_band_epsilon=0.04,
+        defensible_channel_coverage_threshold=0.99,
+    )
+    summary = result["summary"]
+
+    assert summary["high_fidelity_rows_count"] >= 1
+    assert summary["defensible_rows_count"] <= summary["high_fidelity_rows_count"]
+    assert summary["defensible_rows_ratio"] == 0.0
+    assert summary["defensible_rows_count"] == 0
+    assert "Defensible rows (coverage>= 0.99): `0 (0%)`" in format_benchmark_markdown(result)
+
+
 def test_benchmark_can_sweep_fourier_terms():
     result = benchmark_synthetic_fourier_terms(
         [1000],

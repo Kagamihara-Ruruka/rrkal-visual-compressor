@@ -1,18 +1,75 @@
-# Benchmark Evidence
+# Benchmark 證據檔案
 
-這個資料夾存放小型、可審核、可重跑的 benchmark artifacts。這些檔案不是原始大資料集，而是用來驗證壓縮宣稱的 evidence snapshots。
+這個資料夾放的是可複現、可審查的 benchmark 證據檔案，皆可由 CLI 重跑。這些檔案不是原始資料集，而是用來驗證壓縮主張的精簡快照（evidence snapshots）。
 
-## Artifacts
+## 檔案一覽
 
-- `smooth_100k_terms_sweep.json`：100,000 samples smooth synthetic series，在 Fourier terms `32,64,96` 下的機器可讀 benchmark evidence。
-- `smooth_100k_terms_sweep.md`：同一次實驗的人類可讀摘要。
-- `smooth_100k_channel_k_sweep.json`：K 值 `2,2.5,3,3.5,4` 的 channel coverage sweep 機器可讀 evidence。
-- `smooth_100k_channel_k_sweep.md`：同一次實驗的人類可讀摘要。
+- `smooth_100k_terms_sweep.json`：`100,000` 筆 smooth 合成序列在 Fourier terms `32,64,96` 下的機器可讀證據。
+- `smooth_100k_terms_sweep.md`：同一筆實驗的人類可讀摘要。
+- `smooth_100k_channel_k_sweep.json`：channel K 值 `2,2.5,3,3.5,4` 的 coverage sweep 證據。
+- `smooth_100k_channel_k_sweep.md`：同一筆實驗的人類可讀摘要。
+- `fourier_sweep_16_32_threshold_0995.json`：`16,32` Fourier 項目與 `--defensible-channel-coverage=0.995` 的機器可讀證據。
+- `fourier_sweep_16_32_threshold_0995.md`：同一筆實驗的人類可讀摘要。
+- `fourier_sweep_10k_16_32_threshold_0995.json`：`10,000` 筆、同條件（16/32）下的機器可讀證據。
+- `fourier_sweep_10k_16_32_threshold_0995.md`：同一筆實驗的人類可讀摘要。
 
 ## 目前解讀
 
-smooth 100k terms sweep 顯示：在 R2 gate `0.99` 下，所有測試的 Fourier terms 都打贏 SVG.gz 與 source CSV.gz。
+`smooth_100k` 的 terms sweep 顯示：在 `R2=0.99` 門檻下，所有測試皆優於 SVG.gz 與原始 CSV.gz。  
+不過實務上不只看最小 ratio，還要看通道覆蓋是否過關（defensible）：  
+此 run 中 `32` terms 有最小 ratio，但 channel band 覆蓋不足；`96` terms 較大，但可達到 `package_preferred_against_gzip`，在通道模型的實務可行性上更有力。
 
-但實務甜蜜點不是只看 package 最小。這次實驗中，`32` terms 的 size ratio 最好，但 channel band under-covers；`96` terms 稍大，卻達到 `package_preferred_against_gzip`，所以目前更適合作為 channel-backed visual assets 的預設候選。
+channel K sweep 也刻意保留了 `0.9` coverage gate 失敗範例：K < `3` 時會失敗。這是負面證據，表示該資料型別至少要到 K >= `3` 才能進入可採信區間。
 
-channel K sweep 會刻意記錄一個 coverage gate `0.9` 的失敗結果：K 小於 `3` 時覆蓋率不足。這是有用的負面證據，代表目前 smooth 100k fixture 大約需要 K >= `3`，channel model 才比較能防守。
+可防禦門檻由 `vizcompress.cli bench` 的
+`--defensible-channel-coverage` 參數控制；同一組實驗資料可用不同策略快速重放，例如：
+
+- 寬鬆：`0.9`
+- 嚴格：`>= 0.98`
+
+而不必重跑完整模型參數。
+
+## 防禦式證據流程（Defensive Evidence Pattern）
+
+每個 benchmark summary 會輸出兩個門檻值：
+
+- `High-fidelity rows`：`R2 >= 0.99` 的候選列數。  
+- `Defensible rows`：在高保真候選中，進一步滿足 `--defensible-channel-coverage` 的列數。
+
+這讓你可以同時報出：
+
+- 壓縮率最優候選（best ratio）  
+- 在保真門檻下可採信比例（defensible ratio）
+
+## 執行範例
+
+```bash
+py -m vizcompress.cli bench \
+  --synthetic-sizes 10000 \
+  --synthetic-kind smooth \
+  --fourier-terms-sweep 16,32 \
+  --channel \
+  --channel-k 3 \
+  --channel-window 16 \
+  --channel-band-epsilon 0.04 \
+  --defensible-channel-coverage 0.995 \
+  --svg-samples 240 \
+  --rdp-epsilon 0.6 \
+  --out docs/benchmarks/fourier_sweep_10k_16_32_threshold_0995.json \
+  --report-md docs/benchmarks/fourier_sweep_10k_16_32_threshold_0995.md
+```
+
+可搭配以下舊版輸出版本對照：
+
+```bash
+py -m vizcompress.cli bench \
+  --synthetic-sizes 10000 \
+  --synthetic-kind smooth \
+  --fourier-terms-sweep 16,32 \
+  --channel \
+  --channel-k 3 \
+  --defensible-channel-coverage 0.995 \
+  --svg-samples 240 \
+  --out docs/benchmarks/fourier_sweep_16_32_threshold_0995.json \
+  --report-md docs/benchmarks/fourier_sweep_16_32_threshold_0995.md
+```

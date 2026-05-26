@@ -12,6 +12,12 @@ for validating compression claims.
 - `smooth_100k_channel_k_sweep.json`: machine-readable channel coverage sweep
   for K values `2,2.5,3,3.5,4`.
 - `smooth_100k_channel_k_sweep.md`: human-readable summary of the same run.
+- `fourier_sweep_16_32_threshold_0995.json`: 10,000-sample Fourier term sweep
+  with `16,32` and coverage policy `0.995`.
+- `fourier_sweep_16_32_threshold_0995.md`: human-readable summary of the same run.
+- `fourier_sweep_10k_16_32_threshold_0995.json`: same sweep command with
+  explicit window and epsilon settings for coverage stress testing.
+- `fourier_sweep_10k_16_32_threshold_0995.md`: human-readable summary of the same run.
 
 ## Current Reading
 
