@@ -291,7 +291,12 @@ def format_benchmark_markdown(data: dict[str, Any]) -> str:
         f"- Best raw SVG/package ratio: `{_format_float(summary.get('best_direct_svg_to_package_ratio'))}`",
         f"- Best SVG.gz/package ratio: `{_format_float(summary.get('best_direct_svg_gzip_to_package_ratio'))}`",
         f"- Best CSV.gz/package ratio: `{_format_float(summary.get('best_source_csv_gzip_to_package_ratio'))}`",
-        f"- Best defensible high-fidelity SVG.gz candidate (R2≥0.99, coverage≥{summary.get('defensible_channel_coverage_threshold', 'n/a')}): "
+        f"- High-fidelity rows (R2>=0.99): `{summary.get('high_fidelity_rows_count', 0)}`",
+        f"- Defensible rows (coverage>= {summary.get('defensible_channel_coverage_threshold', 'n/a')}): "
+        f"`{summary.get('defensible_rows_count', 0)} "
+        f"({_format_float(summary.get('defensible_rows_ratio', 0) * 100)}%)`",
+        f"- Best defensible high-fidelity SVG.gz candidate (R2>=0.99, coverage>= "
+        f"{summary.get('defensible_channel_coverage_threshold', 'n/a')}): "
         f"`{_format_candidate(summary.get('best_defensible_high_fidelity_svg_gzip_candidate'))}`",
         f"- Best high-fidelity SVG.gz candidate: `{_format_candidate(summary.get('best_high_fidelity_svg_gzip_candidate'))}`",
         f"- Package wins against SVG.gz: `{summary.get('package_wins_against_direct_svg_gzip_count', 0)}`",
@@ -663,6 +668,11 @@ def _summarize_rows(
             "source_csv_gzip": _row_identity(best_csv_gzip_row, ratio_field="source_csv_gzip_to_package_ratio"),
         },
         "high_fidelity_threshold_r2": 0.99,
+        "high_fidelity_rows_count": len(high_fidelity_rows),
+        "defensible_rows_count": len(defensible_rows),
+        "defensible_rows_ratio": (
+            len(defensible_rows) / len(high_fidelity_rows) if high_fidelity_rows else 0.0
+        ),
         "defensible_channel_coverage_threshold": defensible_channel_coverage_threshold,
         "best_high_fidelity_svg_gzip_candidate": (
             _row_identity(best_high_fidelity_svg_gzip, ratio_field="direct_svg_gzip_to_package_ratio")
