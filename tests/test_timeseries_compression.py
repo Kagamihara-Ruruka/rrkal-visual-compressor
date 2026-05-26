@@ -1033,6 +1033,54 @@ def test_cli_bench_accepts_defensible_coverage_threshold(tmp_path):
     )
 
 
+def test_cli_bench_accepts_defensible_coverage_threshold_in_fourier_terms_sweep(tmp_path):
+    output = tmp_path / "fourier_terms_threshold.json"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vizcompress.cli",
+            "bench",
+            "--synthetic-sizes",
+            "10000",
+            "--synthetic-kind",
+            "smooth",
+            "--fourier-terms-sweep",
+            "16,32",
+            "--channel",
+            "--channel-k",
+            "3",
+            "--defensible-channel-coverage",
+            "0.995",
+            "--svg-samples",
+            "240",
+            "--out",
+            str(output),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    summary = json.loads(result.stdout)
+    assert summary["parameters"]["defensible_channel_coverage_threshold"] == 0.995
+    assert summary["summary"]["defensible_channel_coverage_threshold"] == 0.995
+    assert summary["summary_by_terms"]["16"]["defensible_channel_coverage_threshold"] == 0.995
+    assert summary["summary_by_terms"]["32"]["defensible_channel_coverage_threshold"] == 0.995
+    assert (
+        summary["summary_by_terms"]["16"]["best_defensible_high_fidelity_svg_gzip_candidate"][
+            "channel_coverage_ratio"
+        ]
+        >= 0.995
+    )
+    assert (
+        summary["summary_by_terms"]["32"]["best_defensible_high_fidelity_svg_gzip_candidate"][
+            "channel_coverage_ratio"
+        ]
+        >= 0.995
+    )
+
+
 def test_cli_bench_gate_can_fail(tmp_path):
     output = tmp_path / "bench.json"
     result = subprocess.run(

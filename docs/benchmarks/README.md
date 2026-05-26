@@ -31,3 +31,21 @@ The defensible candidate threshold is configurable through
 `--defensible-channel-coverage` in `vizcompress.cli bench`. The same benchmark
 artifact can therefore expose either a looser default sweep (`0.9`) or a stricter
 operational policy (`>=0.98`) without re-running unrelated model settings.
+
+For Fourier sweeps, see:
+
+```bash
+py -m vizcompress.cli bench \
+  --synthetic-sizes 10000 \
+  --synthetic-kind smooth \
+  --fourier-terms-sweep 16,32 \
+  --channel \
+  --channel-k 3 \
+  --defensible-channel-coverage 0.995 \
+  --svg-samples 240 \
+  --out docs/benchmarks/fourier_sweep_16_32_threshold_0995.json \
+  --report-md docs/benchmarks/fourier_sweep_16_32_threshold_0995.md
+```
+
+This command writes both `docs/benchmarks/fourier_sweep_16_32_threshold_0995.json`
+and `...md`, where `summary_by_terms` is expected to preserve the same threshold.
