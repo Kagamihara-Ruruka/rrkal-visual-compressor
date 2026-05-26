@@ -158,7 +158,8 @@ py -m vizcompress.cli bench --synthetic-sizes 1000,10000,100000 --fourier-terms 
 ```
 
 The benchmark reports direct SVG bytes, `.vizasset` bytes, model bytes, preview
-bytes, fidelity metrics, and the direct-SVG-to-package size ratio.
+bytes, fidelity metrics, the direct-SVG-to-package size ratio, and the first
+observed sample count where the model-backed package wins.
 
 ## Status
 

@@ -144,3 +144,5 @@ model-backed .vizasset bytes
 for a synthetic sample-size sweep. This keeps the Big-O discussion measurable:
 direct SVG grows with sampled point count, while the model-backed package should
 mostly grow with model parameters, fixed preview resolution, and metadata.
+The report also includes the first observed sample count where the package is
+smaller than direct SVG.

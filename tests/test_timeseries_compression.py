@@ -150,6 +150,7 @@ def test_benchmark_reports_size_sweep():
 
     assert parse_sample_sizes("1000,5000") == [1000, 5000]
     assert result["benchmark"] == "synthetic_size_sweep"
+    assert "observed_break_even_samples" in result["summary"]
     assert len(result["rows"]) == 2
     assert result["rows"][1]["direct_svg_bytes"] > result["rows"][0]["direct_svg_bytes"]
     assert result["rows"][0]["x_uniform"] is True
@@ -226,5 +227,6 @@ def test_cli_bench_synthetic(tmp_path):
 
     summary = json.loads(result.stdout)
     assert output.exists()
+    assert "summary" in summary
     assert summary["rows"][0]["samples"] == 1000
     assert summary["rows"][1]["samples"] == 5000
