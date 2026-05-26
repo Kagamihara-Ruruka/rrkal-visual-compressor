@@ -202,7 +202,7 @@ def format_benchmark_markdown(data: dict[str, Any]) -> str:
         f"- Best raw SVG/package ratio: `{_format_float(summary.get('best_direct_svg_to_package_ratio'))}`",
         f"- Best SVG.gz/package ratio: `{_format_float(summary.get('best_direct_svg_gzip_to_package_ratio'))}`",
         f"- Best CSV.gz/package ratio: `{_format_float(summary.get('best_source_csv_gzip_to_package_ratio'))}`",
-        f"- Best high-fidelity SVG.gz candidate: `{summary.get('best_high_fidelity_svg_gzip_candidate')}`",
+        f"- Best high-fidelity SVG.gz candidate: `{_format_candidate(summary.get('best_high_fidelity_svg_gzip_candidate'))}`",
         f"- Package wins against SVG.gz: `{summary.get('package_wins_against_direct_svg_gzip_count', 0)}`",
         f"- Package wins against CSV.gz: `{summary.get('package_wins_against_source_csv_gzip_count', 0)}`",
         "",
@@ -481,6 +481,18 @@ def _format_float(value: Any) -> str:
     if isinstance(value, (int, float)):
         return f"{float(value):.6g}"
     return str(value)
+
+
+def _format_candidate(value: Any) -> str:
+    if not isinstance(value, dict):
+        return ""
+    return (
+        f"{value.get('synthetic_kind')} / {value.get('samples')} samples / "
+        f"{value.get('fourier_terms')} terms / "
+        f"{value.get('ratio_field')}={_format_float(value.get('ratio'))} / "
+        f"R2={_format_float(value.get('fourier_r2'))} / "
+        f"{value.get('gzip_recommendation')}"
+    )
 
 
 def _parse_positive_int_list(value: str, *, name: str, minimum: int) -> list[int]:

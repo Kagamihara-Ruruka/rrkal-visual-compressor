@@ -41,6 +41,7 @@ Implemented mainline:
 - optional Markdown benchmark reports via `bench --report-md`
 - benchmark gates via `--require-svg-gzip-win`, `--require-csv-gzip-win`, and `--min-fourier-r2`
 - Fourier term sweet-spot sweeps via `bench --fourier-terms-sweep`
+- benchmark evidence snapshots under `docs/benchmarks`
 
 Current local verification command:
 

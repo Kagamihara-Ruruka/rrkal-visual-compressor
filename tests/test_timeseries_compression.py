@@ -595,6 +595,7 @@ def test_benchmark_markdown_report_includes_baseline_evidence():
     assert "CSV.gz/package" in report
     assert "LTTB SVG.gz/package" in report
     assert "Best high-fidelity SVG.gz candidate" in report
+    assert "samples /" in report
     assert "package must also pass source verification" in report
 
 
