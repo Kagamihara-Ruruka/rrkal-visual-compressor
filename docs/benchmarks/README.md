@@ -26,3 +26,8 @@ better current default for channel-backed visual assets.
 The channel K sweep deliberately records a failed coverage gate at `0.9` for K
 values below `3`. This is useful negative evidence: the current smooth 100k
 fixture needs roughly K >= `3` before the channel model becomes defensible.
+
+The defensible candidate threshold is configurable through
+`--defensible-channel-coverage` in `vizcompress.cli bench`. The same benchmark
+artifact can therefore expose either a looser default sweep (`0.9`) or a stricter
+operational policy (`>=0.98`) without re-running unrelated model settings.

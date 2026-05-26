@@ -181,6 +181,8 @@ py -m vizcompress.cli bench --synthetic-sizes 1000,10000,100000 --synthetic-kind
 ```
 
 若要把 benchmark 變成 CI 或 agent checkpoint，可以加入 `--require-svg-gzip-win`、`--require-csv-gzip-win`、`--min-fourier-r2 0.99`，或 `--min-channel-coverage 0.9`。門檻不通過時，command 會以非零 exit code 失敗。
+`--defensible-channel-coverage` 只會影響「高保真可行方案」在 summary 的挑選（`best_defensible_high_fidelity_svg_gzip_candidate`），
+不會改變 gate 的通過條件；若要改 gate 邏輯，仍請搭配 `--min-channel-coverage`。
 
 若要找 Fourier 參數量的甜蜜點，可以使用 `--fourier-terms-sweep 16,32,64,96`。輸出會加入 `summary_by_terms`，用來比較不同 terms 下的保真度、package 體積與 gzip baseline 勝負。
 

@@ -39,6 +39,7 @@
 - benchmark rows 會包含 LTTB downsampling baseline metrics，以及 LTTB SVG raw/gzip size evidence
 - `bench --report-md` 可額外輸出 Markdown benchmark report
 - benchmark gates：`--require-svg-gzip-win`、`--require-csv-gzip-win`、`--min-fourier-r2`、`--min-channel-coverage`
+- `best_defensible_high_fidelity` 的門檻可用 `--defensible-channel-coverage` 調整（預設 `0.9`），僅影響候選挑選不影響 gate 通過條件
 - `bench --fourier-terms-sweep` 可掃描 Fourier terms 甜蜜點
 - `bench --channel-k-sweep` 可掃描 channel coverage tradeoff
 - `docs/benchmarks` 存放可審核的 benchmark evidence snapshots

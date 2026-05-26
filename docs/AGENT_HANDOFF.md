@@ -40,6 +40,7 @@ Implemented mainline:
 - LTTB downsampling baseline metrics plus LTTB SVG raw/gzip size evidence in benchmark rows
 - optional Markdown benchmark reports via `bench --report-md`
 - benchmark gates via `--require-svg-gzip-win`, `--require-csv-gzip-win`, `--min-fourier-r2`, and `--min-channel-coverage`
+- defensibility tuning via `--defensible-channel-coverage` (summary-only selector threshold; default `0.9`)
 - Fourier term sweet-spot sweeps via `bench --fourier-terms-sweep`
 - channel coverage sweeps via `bench --channel-k-sweep`
 - benchmark evidence snapshots under `docs/benchmarks`

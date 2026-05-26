@@ -103,7 +103,7 @@ def benchmark_synthetic_sizes(
             "defensible_channel_coverage_threshold": defensible_channel_coverage_threshold,
         },
         "summary": _summarize_rows(rows, defensible_channel_coverage_threshold),
-        "summary_by_kind": _summarize_rows_by_kind(rows),
+        "summary_by_kind": _summarize_rows_by_kind(rows, defensible_channel_coverage_threshold),
         "rows": rows,
     }
 
@@ -174,8 +174,8 @@ def benchmark_synthetic_fourier_terms(
             "defensible_channel_coverage_threshold": defensible_channel_coverage_threshold,
         },
         "summary": _summarize_rows(rows, defensible_channel_coverage_threshold),
-        "summary_by_kind": _summarize_rows_by_kind(rows),
-        "summary_by_terms": _summarize_rows_by_terms(rows),
+        "summary_by_kind": _summarize_rows_by_kind(rows, defensible_channel_coverage_threshold),
+        "summary_by_terms": _summarize_rows_by_terms(rows, defensible_channel_coverage_threshold),
         "rows": rows,
     }
 
@@ -245,8 +245,11 @@ def benchmark_synthetic_channel_k(
             "defensible_channel_coverage_threshold": defensible_channel_coverage_threshold,
         },
         "summary": _summarize_rows(rows, defensible_channel_coverage_threshold),
-        "summary_by_kind": _summarize_rows_by_kind(rows),
-        "summary_by_channel_k": _summarize_rows_by_channel_k(rows),
+        "summary_by_kind": _summarize_rows_by_kind(rows, defensible_channel_coverage_threshold),
+        "summary_by_channel_k": _summarize_rows_by_channel_k(
+            rows,
+            defensible_channel_coverage_threshold,
+        ),
         "rows": rows,
     }
 
@@ -708,25 +711,43 @@ def _meets_channel_coverage(row: dict[str, Any], threshold: float) -> bool:
     return channel_coverage is None or float(channel_coverage) >= threshold
 
 
-def _summarize_rows_by_kind(rows: list[dict[str, Any]]) -> dict[str, Any]:
+def _summarize_rows_by_kind(
+    rows: list[dict[str, Any]],
+    defensible_channel_coverage_threshold: float = 0.9,
+) -> dict[str, Any]:
     kinds = sorted({str(row["synthetic_kind"]) for row in rows})
     return {
-        kind: _summarize_rows([row for row in rows if row["synthetic_kind"] == kind])
+        kind: _summarize_rows(
+            [row for row in rows if row["synthetic_kind"] == kind],
+            defensible_channel_coverage_threshold=defensible_channel_coverage_threshold,
+        )
         for kind in kinds
     }
 
 
-def _summarize_rows_by_terms(rows: list[dict[str, Any]]) -> dict[str, Any]:
+def _summarize_rows_by_terms(
+    rows: list[dict[str, Any]],
+    defensible_channel_coverage_threshold: float = 0.9,
+) -> dict[str, Any]:
     terms = sorted({int(row["fourier_terms"]) for row in rows})
     return {
-        str(term): _summarize_rows([row for row in rows if int(row["fourier_terms"]) == term])
+        str(term): _summarize_rows(
+            [row for row in rows if int(row["fourier_terms"]) == term],
+            defensible_channel_coverage_threshold=defensible_channel_coverage_threshold,
+        )
         for term in terms
     }
 
 
-def _summarize_rows_by_channel_k(rows: list[dict[str, Any]]) -> dict[str, Any]:
+def _summarize_rows_by_channel_k(
+    rows: list[dict[str, Any]],
+    defensible_channel_coverage_threshold: float = 0.9,
+) -> dict[str, Any]:
     values = sorted({float(row["channel_k"]) for row in rows if row.get("channel_k") is not None})
     return {
-        _format_float(value): _summarize_rows([row for row in rows if row.get("channel_k") == value])
+        _format_float(value): _summarize_rows(
+            [row for row in rows if row.get("channel_k") == value],
+            defensible_channel_coverage_threshold=defensible_channel_coverage_threshold,
+        )
         for value in values
     }

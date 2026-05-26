@@ -385,6 +385,7 @@ def _bench(args: argparse.Namespace) -> int:
             x_domain_policy=args.x_domain_policy,
             x_domain_epsilon=args.x_domain_epsilon,
             x_domain_max_error=args.x_domain_max_error,
+            defensible_channel_coverage_threshold=args.defensible_channel_coverage,
         )
     elif args.fourier_terms_sweep:
         data = benchmark_synthetic_fourier_terms(

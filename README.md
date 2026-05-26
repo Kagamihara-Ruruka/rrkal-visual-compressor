@@ -226,6 +226,9 @@ For CI or agent checkpoints, add `--require-svg-gzip-win`,
 `--require-csv-gzip-win`, `--min-fourier-r2 0.99`, or
 `--min-channel-coverage 0.9` to make weak benchmark runs fail instead of only
 writing evidence.
+`--defensible-channel-coverage` adjusts only the high-fidelity candidate
+selection used by the summary (`best_defensible_high_fidelity_svg_gzip_candidate`);
+it does not change raw gate behavior unless you also pass `--min-channel-coverage`.
 
 Summarize an existing benchmark report:
 

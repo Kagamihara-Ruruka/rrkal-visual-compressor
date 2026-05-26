@@ -997,13 +997,13 @@ def test_cli_bench_accepts_defensible_coverage_threshold(tmp_path):
             "vizcompress.cli",
             "bench",
             "--synthetic-sizes",
-            "1000",
+            "10000",
             "--synthetic-kind",
             "smooth",
             "--fourier-terms",
             "32",
             "--channel-k-sweep",
-            "3,4",
+            "2,3",
             "--defensible-channel-coverage",
             "0.98",
             "--svg-samples",
@@ -1021,6 +1021,18 @@ def test_cli_bench_accepts_defensible_coverage_threshold(tmp_path):
     assert summary["summary"]["defensible_channel_coverage_threshold"] == 0.98
     candidate = summary["summary"]["best_defensible_high_fidelity_svg_gzip_candidate"]
     assert candidate["channel_coverage_ratio"] >= 0.98
+    assert summary["summary_by_kind"]["smooth"]["defensible_channel_coverage_threshold"] == 0.98
+    assert (
+        summary["summary_by_channel_k"]["3"]["best_defensible_high_fidelity_svg_gzip_candidate"][
+            "channel_coverage_ratio"
+        ]
+        >= 0.98
+    )
+    assert (
+        summary["summary_by_channel_k"]["2"]["best_defensible_high_fidelity_svg_gzip_candidate"] is None
+    )
+
+
 def test_cli_bench_gate_can_fail(tmp_path):
     output = tmp_path / "bench.json"
     result = subprocess.run(
