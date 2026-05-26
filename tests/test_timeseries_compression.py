@@ -11,7 +11,7 @@ from vizcompress.benchmarks import benchmark_synthetic_sizes, parse_sample_sizes
 from vizcompress.compressors import compress_fourier, compress_fourier_channel, compress_rdp
 from vizcompress.core import CompressionReport
 from vizcompress.data import make_synthetic_signal, read_csv_timeseries
-from vizcompress.exporters import write_channel_svg, write_demo, write_fourier_svg, write_metrics, write_rdp_svg
+from vizcompress.exporters import write_channel_svg, write_demo, write_direct_svg, write_fourier_svg, write_metrics, write_rdp_svg
 from vizcompress.packages import load_vizasset_manifest, reconstruct_channel, reconstruct_fourier, write_vizasset
 
 
@@ -59,6 +59,7 @@ def test_exporters_write_expected_files(tmp_path):
     channel = compress_fourier_channel(series, terms=64, window=401, k=3.0, band_epsilon=0.01)
     report = CompressionReport(input_samples=series.sample_count, rdp=rdp, fourier=fourier, channel=channel)
 
+    direct_svg = write_direct_svg(tmp_path / "direct.svg", series)
     rdp_svg = write_rdp_svg(tmp_path / "rdp.svg", series, rdp)
     fourier_svg = write_fourier_svg(tmp_path / "fourier.svg", series, fourier, samples=800)
     channel_svg = write_channel_svg(tmp_path / "channel.svg", series, channel, samples=800)
@@ -66,9 +67,10 @@ def test_exporters_write_expected_files(tmp_path):
     metrics = write_metrics(
         tmp_path / "metrics.json",
         report,
-        [rdp_svg.name, fourier_svg.name, channel_svg.name, demo.name],
+        [direct_svg.name, rdp_svg.name, fourier_svg.name, channel_svg.name, demo.name],
     )
 
+    assert "Direct SVG" in direct_svg.read_text(encoding="utf-8")
     assert rdp_svg.read_text(encoding="utf-8").startswith("<svg")
     assert "Fourier" in fourier_svg.read_text(encoding="utf-8")
     assert "Fourier channel model" in channel_svg.read_text(encoding="utf-8")
@@ -183,6 +185,7 @@ def test_cli_build_synthetic(tmp_path):
             "400",
             "--channel",
             "--package",
+            "--direct-svg",
             "--out",
             str(tmp_path),
         ],
@@ -193,6 +196,7 @@ def test_cli_build_synthetic(tmp_path):
 
     summary = json.loads(result.stdout)
     assert summary["input"]["samples"] == 5000
+    assert (tmp_path / "direct.svg").exists()
     assert (tmp_path / "rdp_vectorized.svg").exists()
     assert (tmp_path / "fourier_vectorized.svg").exists()
     assert (tmp_path / "fourier_channel.svg").exists()

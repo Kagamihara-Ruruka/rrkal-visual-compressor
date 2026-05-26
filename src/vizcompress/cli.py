@@ -9,7 +9,7 @@ from vizcompress.benchmarks import benchmark_synthetic_sizes, parse_sample_sizes
 from vizcompress.compressors import compress_fourier, compress_fourier_channel, compress_rdp
 from vizcompress.core import CompressionReport
 from vizcompress.data import make_synthetic_signal, read_csv_timeseries
-from vizcompress.exporters import write_channel_svg, write_demo, write_fourier_svg, write_metrics, write_rdp_svg
+from vizcompress.exporters import write_channel_svg, write_demo, write_direct_svg, write_fourier_svg, write_metrics, write_rdp_svg
 from vizcompress.packages import write_vizasset
 
 
@@ -31,6 +31,7 @@ def main(argv: list[str] | None = None) -> int:
     build.add_argument("--rdp-epsilon", type=float, default=0.012, help="RDP epsilon on normalized y values.")
     build.add_argument("--fourier-terms", type=int, default=96, help="Number of Fourier coefficients to keep.")
     build.add_argument("--svg-samples", type=int, default=2400, help="Number of samples for Fourier SVG realization.")
+    build.add_argument("--direct-svg", action="store_true", help="Also export a full direct SVG baseline.")
     build.add_argument("--channel", action="store_true", help="Also build a Fourier center plus residual band model.")
     build.add_argument(
         "--channel-band",
@@ -110,7 +111,11 @@ def _build(args: argparse.Namespace) -> int:
         fourier,
         args.svg_samples,
     )
-    outputs = [rdp_svg.name, fourier_svg.name]
+    outputs = []
+    if args.direct_svg:
+        direct_svg = write_direct_svg(out_dir / "direct.svg", series)
+        outputs.append(direct_svg.name)
+    outputs.extend([rdp_svg.name, fourier_svg.name])
     if channel is not None:
         channel_svg = write_channel_svg(
             out_dir / "fourier_channel.svg",

@@ -114,6 +114,22 @@ def write_rdp_svg(path: str | Path, series: TimeSeries, model: RDPModel) -> Path
     )
 
 
+def write_direct_svg(path: str | Path, series: TimeSeries) -> Path:
+    metadata = {
+        "source": series.source,
+        "original_samples": series.sample_count,
+        "method": "direct_svg",
+        "kept_points": series.sample_count,
+    }
+    return write_svg(
+        path,
+        f"Direct SVG path from {series.sample_count:,} samples",
+        path_from_xy(series.x, series.y),
+        "#111827",
+        metadata,
+    )
+
+
 def write_fourier_svg(path: str | Path, series: TimeSeries, model: FourierModel, samples: int) -> Path:
     sample_idx = np.linspace(0, series.sample_count - 1, samples).astype(np.int64)
     metadata = {

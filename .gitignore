@@ -10,5 +10,6 @@ smoke_outputs/
 channel_outputs/
 package_outputs/
 benchmark_outputs/
+direct_outputs/
 vizcompress_outputs/
 *.vizasset/

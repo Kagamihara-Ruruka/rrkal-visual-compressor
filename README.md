@@ -113,6 +113,13 @@ Generate a synthetic time series, compress it with RDP and Fourier, then export 
 py -m vizcompress.cli build --synthetic 100000 --fourier-terms 96 --svg-samples 1200 --out smoke_outputs
 ```
 
+Add `--direct-svg` when you want a traditional full-point SVG baseline in the
+same output directory:
+
+```powershell
+py -m vizcompress.cli build --synthetic 100000 --direct-svg --fourier-terms 96 --out smoke_outputs
+```
+
 Build the first channel model, where Fourier produces the center function and
 the residual band becomes a visual fidelity envelope:
 
@@ -131,6 +138,7 @@ Outputs:
 
 ```text
 smoke_outputs/
+  direct.svg                # only when --direct-svg is enabled
   rdp_vectorized.svg
   fourier_vectorized.svg
   fourier_channel.svg       # only when --channel is enabled
