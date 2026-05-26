@@ -16,6 +16,7 @@ from vizcompress.packages import (
     reconstruct_channel,
     reconstruct_fourier,
     reconstruct_noise_layer,
+    reconstruct_retained_signal,
     reconstruct_sparse_residual,
     write_vizasset,
 )
@@ -317,6 +318,7 @@ def _inspect(args: argparse.Namespace) -> int:
             "samples": noise.sample_count,
             "max_abs": float(abs(noise.y).max()),
         }
+    retained = reconstruct_retained_signal(args.package, samples=args.samples)
     summary = {
         "package": str(args.package),
         "asset_type": manifest["asset_type"],
@@ -332,6 +334,11 @@ def _inspect(args: argparse.Namespace) -> int:
             "x_max": float(reconstructed.x.max()),
             "y_min": float(reconstructed.y.min()),
             "y_max": float(reconstructed.y.max()),
+        },
+        "retained": {
+            "samples": retained.sample_count,
+            "y_min": float(retained.y.min()),
+            "y_max": float(retained.y.max()),
         },
         "channel": channel_summary,
         "sparse_residual": sparse_summary,

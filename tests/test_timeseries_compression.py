@@ -675,6 +675,7 @@ def test_cli_inspect_vizasset(tmp_path):
     assert summary["primary_method"] == "fourier_channel"
     assert summary["package_profile"] == "retain-residual"
     assert summary["reconstructed"]["samples"] == 300
+    assert summary["retained"]["samples"] == 300
     assert summary["channel"]["samples"] == 300
 
 
@@ -758,3 +759,4 @@ def test_cli_inspect_reports_sparse_residual_details(tmp_path):
     summary = json.loads(result.stdout)
     assert summary["contains_sparse_residual_layer"] is True
     assert summary["sparse_residual"]["points"] > 0
+    assert summary["retained"]["samples"] == 1200
