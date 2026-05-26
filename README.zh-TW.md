@@ -159,7 +159,7 @@ py -m vizcompress.cli verify channel_outputs/model.vizretain --samples 1024
 py -m vizcompress.cli verify channel_outputs/model.vizretain --synthetic 100000 --max-rmse 0.01
 ```
 
-Build 也可以在 package 旁邊寫出 review packet。這份 `review.json` 會記錄 source fingerprint、verification policy、package self-check、source-fidelity metrics，也會記錄 package bytes 與 source numeric array bytes，作為第一層壓縮證據。若啟用 `--direct-svg`，review 也會記錄 direct SVG baseline bytes 與 direct-SVG-to-package ratio：
+Build 也可以在 package 旁邊寫出 review packet。這份 `review.json` 會記錄 source fingerprint、verification policy、package self-check、source-fidelity metrics，也會記錄 package bytes 與 source numeric array bytes，作為第一層壓縮證據。若啟用 `--direct-svg`，review 也會記錄 direct SVG raw bytes、gzip bytes，以及 baseline-to-package ratios：
 
 ```powershell
 py -m vizcompress.cli build --synthetic 100000 --fourier-terms 96 --direct-svg --package --review-packet --review-max-rmse 0.01 --out reviewed_outputs

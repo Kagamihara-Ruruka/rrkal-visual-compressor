@@ -297,6 +297,8 @@ def test_review_packet_records_source_fingerprint_and_acceptance(tmp_path):
     assert package_size_summary(package, series)["file_count"] >= 4
     assert packet["baseline_evidence"]["direct_svg"]["present"] is True
     assert written["baseline_evidence"]["direct_svg"]["baseline_to_package_ratio"] > 0.0
+    assert written["baseline_evidence"]["direct_svg"]["gzip_bytes"] > 0
+    assert written["baseline_evidence"]["direct_svg"]["gzip_to_package_ratio"] > 0.0
     assert written["source_validation"]["details"]["source_verification"]["rmse"] < 0.003
 
 

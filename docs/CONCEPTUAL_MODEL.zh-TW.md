@@ -230,4 +230,6 @@ ratio = \frac{|source\ numeric\ arrays|}{|package|}
 
 這還不是對所有 baseline 的最終壓縮證明，但可以避免 review 只看 fidelity、完全忽略 package overhead。
 
+如果 direct SVG baseline 存在，review packet 會同時記錄 raw SVG bytes 與 gzip-compressed SVG bytes。這很重要，因為文字型 baseline 實務上常會用 gzip 傳輸；公平的 package claim 不應只贏 raw text，也應該能被拿來跟 compressed baseline 比較。
+
 使用 `--require-review-pass` 時，build command 會把 `accepted: false` 視為硬失敗。這就是「不要接受超出宣稱 error budget 的 compressed asset」在操作層的形式。

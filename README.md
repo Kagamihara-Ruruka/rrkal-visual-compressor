@@ -247,8 +247,8 @@ Build can also write a review packet next to the package. The review packet
 records the source fingerprint, verification policy, package self-check, and
 source-fidelity metrics. It also records package bytes versus source numeric
 array bytes as first-pass compression evidence. When `--direct-svg` is enabled,
-the review also records direct SVG baseline bytes and the direct-SVG-to-package
-ratio:
+the review also records direct SVG raw bytes, gzip bytes, and baseline-to-package
+ratios:
 
 ```powershell
 py -m vizcompress.cli build --synthetic 100000 --fourier-terms 96 --direct-svg --package --review-packet --review-max-rmse 0.01 --out reviewed_outputs

@@ -258,6 +258,11 @@ ratio = \frac{|source\ numeric\ arrays|}{|package|}
 This is not the final compression proof against every possible baseline, but it
 prevents fidelity-only reviews from ignoring package overhead.
 
+When a direct SVG baseline is available, the review packet records both raw SVG
+bytes and gzip-compressed SVG bytes. This matters because text-based baselines
+are often transported with gzip; a fair package claim should survive comparison
+against compressed baselines, not only raw text.
+
 When `--require-review-pass` is used, the build command treats `accepted: false`
 as a hard failure. This is the operational form of "do not accept a compressed
 asset that exceeds its declared error budget."

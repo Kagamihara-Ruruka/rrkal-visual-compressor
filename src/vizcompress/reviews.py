@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import gzip
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -53,11 +54,14 @@ def baseline_size_summary(package: str | Path, baseline_files: dict[str, str | P
             baselines[key] = {"path": str(path), "present": False}
             continue
         baseline_bytes = path.stat().st_size
+        gzip_bytes = _gzip_size(path)
         baselines[key] = {
             "path": str(path),
             "present": True,
             "bytes": int(baseline_bytes),
             "baseline_to_package_ratio": baseline_bytes / float(max(package_bytes, 1)),
+            "gzip_bytes": gzip_bytes,
+            "gzip_to_package_ratio": gzip_bytes / float(max(package_bytes, 1)),
         }
     return baselines
 
@@ -136,3 +140,8 @@ def _package_bytes(package: str | Path) -> tuple[int, int]:
     package_path = Path(package)
     files = [path for path in package_path.rglob("*") if path.is_file()]
     return int(sum(path.stat().st_size for path in files)), len(files)
+
+
+def _gzip_size(path: Path, *, compresslevel: int = 9) -> int:
+    payload = path.read_bytes()
+    return len(gzip.compress(payload, compresslevel=compresslevel, mtime=0))
