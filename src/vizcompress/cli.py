@@ -50,7 +50,13 @@ def main(argv: list[str] | None = None) -> int:
     build.add_argument("--channel-k", type=float, default=3.0, help="Standard-deviation multiplier for channel width.")
     build.add_argument("--channel-band-epsilon", type=float, default=0.01, help="RDP epsilon for channel band curve.")
     build.add_argument("--package", action="store_true", help="Also write a .vizasset package directory.")
-    build.add_argument("--package-name", default="model.vizasset", help="Package directory name used with --package.")
+    build.add_argument(
+        "--package-profile",
+        choices=["retain-residual", "clean"],
+        default="retain-residual",
+        help="Package profile: retain residual layers or export only cleaned main signal.",
+    )
+    build.add_argument("--package-name", default=None, help="Package directory name used with --package.")
 
     bench = subparsers.add_parser("bench", help="Benchmark direct SVG size against model-backed package size.")
     bench.add_argument(
@@ -181,22 +187,47 @@ def _build(args: argparse.Namespace) -> int:
         [*outputs, "metrics.json"],
     )
     if args.package:
+        package_report = report
+        if args.package_profile == "clean":
+            package_report = CompressionReport(
+                input_samples=report.input_samples,
+                rdp=report.rdp,
+                fourier=report.fourier,
+                channel=report.channel,
+                input_profile=report.input_profile,
+                residual_profile=report.residual_profile,
+            )
         preview = out_dir / ("fourier_channel.svg" if channel is not None else "fourier_vectorized.svg")
+        package_name = args.package_name or _default_package_name(args.package_profile)
         package = write_vizasset(
-            out_dir / args.package_name,
+            out_dir / package_name,
             series=series,
-            report=report,
+            report=package_report,
             preview_svg=preview,
             metrics_json=metrics,
             demo_py=demo,
+            package_profile=args.package_profile,
         )
         outputs.append(str(package))
 
     summary = report.as_dict()
-    rendered_outputs = [str(out_dir / name) if not str(name).endswith(".vizasset") else str(name) for name in outputs]
+    rendered_outputs = [
+        str(name) if _is_package_output(str(name)) else str(out_dir / name)
+        for name in outputs
+    ]
     summary["outputs"] = rendered_outputs + [str(metrics)]
     print(json.dumps(summary, indent=2))
     return 0
+
+
+def _is_package_output(value: str) -> bool:
+    return value.endswith((".vizasset", ".vizretain", ".vizclean"))
+
+
+def _default_package_name(package_profile: str) -> str:
+    if package_profile == "clean":
+        return "model.vizclean"
+    return "model.vizretain"
 
 
 def _bench(args: argparse.Namespace) -> int:

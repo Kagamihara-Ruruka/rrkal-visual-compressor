@@ -163,12 +163,13 @@ def _benchmark_one(
         demo = write_demo(temp_dir / "demo.py", series.sample_count, fourier_terms)
         metrics = write_metrics(temp_dir / "metrics.json", report, [*generated, demo.name, "metrics.json"])
         package = write_vizasset(
-            temp_dir / "model.vizasset",
+            temp_dir / "model.vizretain",
             series=series,
             report=report,
             preview_svg=preview,
             metrics_json=metrics,
             demo_py=demo,
+            package_profile="retain-residual",
         )
         package_bytes = _directory_size(package)
         model_bytes = (package / "model.npz").stat().st_size

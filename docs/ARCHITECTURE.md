@@ -102,7 +102,7 @@ editor. It stores compact reconstruction data and generated previews, not raw
 source data.
 
 ```text
-model.vizasset/
+model.vizretain/
   asset.json
   model.npz
   preview.svg
@@ -115,6 +115,14 @@ file sizes, file checksums, and lineage notes. `model.npz` stores compact model
 parameters such as RDP points, Fourier coefficients, and optional channel band
 points.
 
+The package family has profile suffixes:
+
+- `.vizretain`: residual-retaining package. Keeps sparse residual or Fourier
+  residual layers when the build produces them.
+- `.vizclean`: cleaned-main package. Drops residual layers from the package even
+  if the build report computed them.
+- `.vizasset`: neutral name for compatibility and manual workflows.
+
 The package module can read this back into renderable arrays:
 
 - `reconstruct_fourier(package, samples=...)`
@@ -122,7 +130,9 @@ The package module can read this back into renderable arrays:
 
 The current domain reconstruction uses `linspace_from_min_max`, which is correct
 for uniformly sampled time series and acceptable for the first editor handoff.
-Irregular time axes need a later domain model.
+For irregular time axes, `model.npz` stores the original x-domain values and the
+manifest marks `x_domain_mode = stored_x`. This costs more bytes but preserves
+the sampling geometry needed by editor and RRKAL consumers.
 
 ## Export Modes
 

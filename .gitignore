@@ -13,5 +13,9 @@ benchmark_outputs/
 direct_outputs/
 spike_outputs/
 noisy_outputs/
+clean_profile_outputs/
+retain_profile_outputs/
 vizcompress_outputs/
 *.vizasset/
+*.vizretain/
+*.vizclean/

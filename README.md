@@ -163,7 +163,7 @@ smoke_outputs/
   fourier_channel.svg       # only when --channel is enabled
   demo.py
   metrics.json
-  model.vizasset/           # only when --package is enabled
+  model.vizretain/          # default --package profile
     asset.json
     model.npz
     preview.svg
@@ -188,10 +188,16 @@ The benchmark reports direct SVG bytes, `.vizasset` bytes, model bytes, preview
 bytes, fidelity metrics, the direct-SVG-to-package size ratio, and the first
 observed sample count where the model-backed package wins.
 
+Package suffixes are format-family aliases:
+
+- `.vizretain`: keeps residual/noise layers when available.
+- `.vizclean`: exports only the cleaned main signal and its preview/metrics.
+- `.vizasset`: neutral container name accepted by the loader.
+
 Inspect a package and verify that it can reconstruct renderable arrays:
 
 ```powershell
-py -m vizcompress.cli inspect channel_outputs/model.vizasset --samples 1200
+py -m vizcompress.cli inspect channel_outputs/model.vizretain --samples 1200
 ```
 
 ## Status

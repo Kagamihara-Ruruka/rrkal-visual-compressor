@@ -133,6 +133,7 @@ def test_write_vizasset_package(tmp_path):
 
     manifest = load_vizasset_manifest(package)
     assert manifest["asset_type"] == "rrkal.visual_compressor.timeseries"
+    assert manifest["package_profile"] == "retain-residual"
     assert manifest["model"]["primary_method"] == "fourier_channel"
     assert manifest["source"]["profile"]["x_uniform"] is True
     assert manifest["files"]["model"]["path"] == "model.npz"
@@ -167,6 +168,36 @@ def test_vizasset_reconstructs_fourier_and_channel(tmp_path):
     assert channel_reconstructed["x"].shape == (500,)
     assert np.all(channel_reconstructed["upper_y"] >= channel_reconstructed["center_y"])
     assert np.all(channel_reconstructed["lower_y"] <= channel_reconstructed["center_y"])
+
+
+def test_vizasset_preserves_irregular_x_domain(tmp_path):
+    series = make_synthetic_dataset(3000, kind="irregular")
+    rdp = compress_rdp(series, epsilon=0.012)
+    fourier = compress_fourier(series, terms=32)
+    report = CompressionReport(
+        input_samples=series.sample_count,
+        rdp=rdp,
+        fourier=fourier,
+        input_profile=analyze_time_series(series).as_dict(),
+    )
+    preview = write_fourier_svg(tmp_path / "preview_source.svg", series, fourier, samples=300)
+    demo = write_demo(tmp_path / "demo_source.py", series.sample_count, terms=32)
+    metrics = write_metrics(tmp_path / "metrics_source.json", report, ["preview_source.svg", "demo_source.py"])
+
+    package = write_vizasset(
+        tmp_path / "irregular.vizasset",
+        series=series,
+        report=report,
+        preview_svg=preview,
+        metrics_json=metrics,
+        demo_py=demo,
+    )
+
+    manifest = load_vizasset_manifest(package)
+    reconstructed = reconstruct_fourier(package)
+    assert manifest["source"]["x_domain_mode"] == "stored_x"
+    assert manifest["source"]["profile"]["x_uniform"] is False
+    assert np.allclose(reconstructed.x, series.x)
 
 
 def test_benchmark_reports_size_sweep():
@@ -246,10 +277,43 @@ def test_cli_build_synthetic(tmp_path):
     assert (tmp_path / "fourier_channel.svg").exists()
     assert (tmp_path / "demo.py").exists()
     assert (tmp_path / "metrics.json").exists()
-    assert (tmp_path / "model.vizasset" / "asset.json").exists()
+    assert (tmp_path / "model.vizretain" / "asset.json").exists()
     assert "channel" in summary
     assert "noise_layer" in summary
     assert summary["residual"]["recommended_strategy"] is not None
+
+
+def test_cli_build_clean_package_profile_drops_residual_layers(tmp_path):
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vizcompress.cli",
+            "build",
+            "--synthetic",
+            "5000",
+            "--synthetic-kind",
+            "spikes",
+            "--sigma-clip",
+            "2.5",
+            "--auto-noise-layer",
+            "--package",
+            "--package-profile",
+            "clean",
+            "--out",
+            str(tmp_path),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    summary = json.loads(result.stdout)
+    manifest = load_vizasset_manifest(tmp_path / "model.vizclean")
+    assert summary["residual"]["recommended_strategy"] == "sparse_outlier_layer"
+    assert manifest["package_profile"] == "clean"
+    assert "sparse_residual_layer" in summary
+    assert "sparse_residual_layer" not in manifest["metrics"]
 
 
 def test_cli_bench_synthetic(tmp_path):
@@ -319,7 +383,7 @@ def test_cli_inspect_vizasset(tmp_path):
             "-m",
             "vizcompress.cli",
             "inspect",
-            str(tmp_path / "model.vizasset"),
+            str(tmp_path / "model.vizretain"),
             "--samples",
             "300",
         ],
