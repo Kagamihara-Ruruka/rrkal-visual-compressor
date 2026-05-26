@@ -68,6 +68,59 @@ def compress_rdp(series: TimeSeries, epsilon: float) -> RDPModel:
     )
 
 
+def lttb_indices(x: np.ndarray, y: np.ndarray, threshold: int) -> np.ndarray:
+    if threshold < 2:
+        raise ValueError("threshold must be >= 2")
+    n = len(x)
+    if threshold >= n:
+        return np.arange(n, dtype=np.int64)
+
+    sampled = np.empty(threshold, dtype=np.int64)
+    sampled[0] = 0
+    sampled[-1] = n - 1
+    bucket_size = (n - 2) / float(threshold - 2)
+    anchor = 0
+
+    for bucket_index in range(threshold - 2):
+        range_start = int(math.floor(bucket_index * bucket_size)) + 1
+        range_end = int(math.floor((bucket_index + 1) * bucket_size)) + 1
+        range_end = min(range_end, n - 1)
+
+        next_start = int(math.floor((bucket_index + 1) * bucket_size)) + 1
+        next_end = int(math.floor((bucket_index + 2) * bucket_size)) + 1
+        next_end = min(next_end, n)
+        if next_start >= next_end:
+            avg_x = x[-1]
+            avg_y = y[-1]
+        else:
+            avg_x = float(np.mean(x[next_start:next_end]))
+            avg_y = float(np.mean(y[next_start:next_end]))
+
+        candidates = np.arange(range_start, max(range_start + 1, range_end), dtype=np.int64)
+        ax = x[anchor]
+        ay = y[anchor]
+        area = np.abs((ax - avg_x) * (y[candidates] - ay) - (ax - x[candidates]) * (avg_y - ay))
+        chosen = int(candidates[int(np.argmax(area))])
+        sampled[bucket_index + 1] = chosen
+        anchor = chosen
+
+    return sampled
+
+
+def compress_lttb(series: TimeSeries, threshold: int) -> RDPModel:
+    kept = lttb_indices(series.x, series.y, threshold)
+    reconstructed = np.interp(series.x, series.x[kept], series.y[kept])
+    return RDPModel(
+        method="lttb",
+        epsilon=0.0,
+        kept_indices=kept,
+        x=series.x[kept],
+        y=series.y[kept],
+        reconstructed_y=reconstructed,
+        metrics=regression_metrics(series.y, reconstructed),
+    )
+
+
 def compress_fourier(series: TimeSeries, terms: int) -> FourierModel:
     if terms <= 0:
         raise ValueError("terms must be positive")

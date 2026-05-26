@@ -47,6 +47,7 @@ CSV(time, value)
 
 - CSV 時間序列輸入
 - Ramer-Douglas-Peucker polyline simplification
+- LTTB downsampling baseline
 - Fourier approximation
 - SVG path 輸出
 - `demo.py` 輸出

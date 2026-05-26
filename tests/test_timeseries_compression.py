@@ -9,7 +9,7 @@ import numpy as np
 from vizcompress.analyzers import analyze_time_series
 from vizcompress.benchmarks import benchmark_synthetic_sizes, parse_sample_sizes
 from vizcompress.cleaning import residual_time_series, sigma_clip_time_series, smooth_time_series
-from vizcompress.compressors import compress_fourier, compress_fourier_channel, compress_rdp
+from vizcompress.compressors import compress_fourier, compress_fourier_channel, compress_lttb, compress_rdp, lttb_indices
 from vizcompress.core import CompressionReport
 from vizcompress.data import SYNTHETIC_KINDS, make_synthetic_dataset, make_synthetic_signal, read_csv_timeseries
 from vizcompress.exporters import write_channel_svg, write_demo, write_direct_svg, write_fourier_svg, write_metrics, write_rdp_svg
@@ -39,6 +39,20 @@ def test_rdp_and_fourier_compress_synthetic_series():
     assert fourier.parameter_count == 96
     assert rdp.metrics["r2"] > 0.9
     assert fourier.metrics["r2"] > 0.99
+
+
+def test_lttb_downsampling_baseline_keeps_order_and_endpoints():
+    series = make_synthetic_signal(20_000)
+
+    indices = lttb_indices(series.x, series.y, threshold=800)
+    lttb = compress_lttb(series, threshold=800)
+
+    assert indices.shape == (800,)
+    assert indices[0] == 0
+    assert indices[-1] == series.sample_count - 1
+    assert np.all(np.diff(indices) > 0)
+    assert lttb.parameter_count == 800
+    assert lttb.metrics["r2"] > 0.95
 
 
 def test_analyze_time_series_reports_domain_profile():
@@ -543,6 +557,8 @@ def test_benchmark_reports_size_sweep():
     assert result["rows"][1]["direct_svg_gzip_to_package_ratio"] > 0.0
     assert result["rows"][1]["source_csv_to_package_ratio"] > 0.0
     assert result["rows"][1]["source_csv_gzip_to_package_ratio"] > 0.0
+    assert result["rows"][0]["lttb_parameter_count"] == 300
+    assert result["rows"][0]["lttb_r2"] > 0.0
     assert "gzip_recommendation_counts" in result["summary"]
 
 

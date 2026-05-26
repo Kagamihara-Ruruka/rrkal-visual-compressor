@@ -8,7 +8,7 @@ from typing import Any
 
 from vizcompress.analyzers import analyze_time_series
 from vizcompress.cleaning import residual_time_series, sigma_clip_time_series, smooth_time_series
-from vizcompress.compressors import compress_fourier, compress_fourier_channel, compress_rdp
+from vizcompress.compressors import compress_fourier, compress_fourier_channel, compress_lttb, compress_rdp
 from vizcompress.core import CompressionReport, TimeSeries
 from vizcompress.data import SYNTHETIC_KINDS, make_synthetic_dataset
 from vizcompress.domains import encode_x_domain
@@ -132,6 +132,7 @@ def _benchmark_one(
         cleaning_steps.append(cleaning.metadata())
         series = cleaning.cleaned
     rdp = compress_rdp(series, rdp_epsilon)
+    lttb = compress_lttb(series, min(svg_samples, series.sample_count))
     fourier = compress_fourier(series, fourier_terms)
     noise = None
     sparse_residual = None
@@ -234,10 +235,13 @@ def _benchmark_one(
         "source_csv_gzip_to_package_ratio": csv_gzip_ratio,
         "fourier_parameter_count": fourier.parameter_count,
         "rdp_parameter_count": rdp.parameter_count,
+        "lttb_parameter_count": lttb.parameter_count,
         "channel_parameter_count": channel_model.parameter_count if channel_model is not None else None,
         "noise_parameter_count": noise.parameter_count if noise is not None else None,
         "sparse_residual_parameter_count": sparse_residual.parameter_count if sparse_residual is not None else None,
         "fourier_r2": fourier.metrics["r2"],
+        "lttb_r2": lttb.metrics["r2"],
+        "lttb_rmse": lttb.metrics["rmse"],
         "noise_r2": noise.metrics["r2"] if noise is not None else None,
         "residual_strategy": residual_profile["recommended_strategy"] if residual_profile is not None else None,
         "residual_spectral_concentration": (

@@ -37,6 +37,7 @@ Implemented mainline:
 - `review.json` packet generation with source fingerprints and accepted metrics
 - `--require-review-pass` build gate for rejecting packages that exceed review budgets
 - `compare` CLI for raw/gzip baseline size evidence against existing packages
+- LTTB downsampling baseline metrics in benchmark rows
 
 Current local verification command:
 
@@ -44,7 +45,7 @@ Current local verification command:
 py -m pytest -q
 ```
 
-Latest known passing count: `35 passed`.
+Latest known passing count: `36 passed`.
 
 ## Original First Task
 
