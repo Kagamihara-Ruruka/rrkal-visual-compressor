@@ -10,6 +10,7 @@ from vizcompress.compressors import compress_fourier, compress_fourier_channel, 
 from vizcompress.core import CompressionReport
 from vizcompress.data import make_synthetic_signal, read_csv_timeseries
 from vizcompress.exporters import write_channel_svg, write_demo, write_fourier_svg, write_metrics, write_rdp_svg
+from vizcompress.packages import load_vizasset_manifest, write_vizasset
 
 
 def test_rdp_and_fourier_compress_synthetic_series():
@@ -63,6 +64,35 @@ def test_exporters_write_expected_files(tmp_path):
     assert data["channel"]["coverage_ratio"] > 0.94
 
 
+def test_write_vizasset_package(tmp_path):
+    series = make_synthetic_signal(10_000)
+    rdp = compress_rdp(series, epsilon=0.012)
+    fourier = compress_fourier(series, terms=64)
+    channel = compress_fourier_channel(series, terms=64, window=401, k=3.0, band_epsilon=0.01)
+    report = CompressionReport(input_samples=series.sample_count, rdp=rdp, fourier=fourier, channel=channel)
+    preview = write_channel_svg(tmp_path / "preview_source.svg", series, channel, samples=800)
+    demo = write_demo(tmp_path / "demo_source.py", series.sample_count, terms=64)
+    metrics = write_metrics(tmp_path / "metrics_source.json", report, ["preview_source.svg", "demo_source.py"])
+
+    package = write_vizasset(
+        tmp_path / "model.vizasset",
+        series=series,
+        report=report,
+        preview_svg=preview,
+        metrics_json=metrics,
+        demo_py=demo,
+    )
+
+    manifest = load_vizasset_manifest(package)
+    assert manifest["asset_type"] == "rrkal.visual_compressor.timeseries"
+    assert manifest["model"]["primary_method"] == "fourier_channel"
+    assert manifest["files"]["model"]["path"] == "model.npz"
+    assert len(manifest["files"]["preview"]["sha256"]) == 64
+    assert (package / "asset.json").exists()
+    assert (package / "model.npz").exists()
+    assert (package / "preview.svg").exists()
+
+
 def test_read_csv_timeseries(tmp_path):
     csv_path = tmp_path / "series.csv"
     csv_path.write_text("time,value\n0,1.0\n1,2.5\n2,3.0\n", encoding="utf-8")
@@ -88,6 +118,7 @@ def test_cli_build_synthetic(tmp_path):
             "--svg-samples",
             "400",
             "--channel",
+            "--package",
             "--out",
             str(tmp_path),
         ],
@@ -103,4 +134,5 @@ def test_cli_build_synthetic(tmp_path):
     assert (tmp_path / "fourier_channel.svg").exists()
     assert (tmp_path / "demo.py").exists()
     assert (tmp_path / "metrics.json").exists()
+    assert (tmp_path / "model.vizasset" / "asset.json").exists()
     assert "channel" in summary

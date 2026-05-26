@@ -8,6 +8,7 @@ from vizcompress.compressors import compress_fourier, compress_fourier_channel, 
 from vizcompress.core import CompressionReport
 from vizcompress.data import make_synthetic_signal, read_csv_timeseries
 from vizcompress.exporters import write_channel_svg, write_demo, write_fourier_svg, write_metrics, write_rdp_svg
+from vizcompress.packages import write_vizasset
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -38,6 +39,8 @@ def main(argv: list[str] | None = None) -> int:
     build.add_argument("--channel-window", type=int, default=501, help="Rolling window for channel band estimation.")
     build.add_argument("--channel-k", type=float, default=3.0, help="Standard-deviation multiplier for channel width.")
     build.add_argument("--channel-band-epsilon", type=float, default=0.01, help="RDP epsilon for channel band curve.")
+    build.add_argument("--package", action="store_true", help="Also write a .vizasset package directory.")
+    build.add_argument("--package-name", default="model.vizasset", help="Package directory name used with --package.")
 
     args = parser.parse_args(argv)
     if args.version:
@@ -97,9 +100,21 @@ def _build(args: argparse.Namespace) -> int:
         report,
         [*outputs, "metrics.json"],
     )
+    if args.package:
+        preview = out_dir / ("fourier_channel.svg" if channel is not None else "fourier_vectorized.svg")
+        package = write_vizasset(
+            out_dir / args.package_name,
+            series=series,
+            report=report,
+            preview_svg=preview,
+            metrics_json=metrics,
+            demo_py=demo,
+        )
+        outputs.append(str(package))
 
     summary = report.as_dict()
-    summary["outputs"] = [str(out_dir / name) for name in outputs] + [str(metrics)]
+    rendered_outputs = [str(out_dir / name) if not str(name).endswith(".vizasset") else str(name) for name in outputs]
+    summary["outputs"] = rendered_outputs + [str(metrics)]
     print(json.dumps(summary, indent=2))
     return 0
 

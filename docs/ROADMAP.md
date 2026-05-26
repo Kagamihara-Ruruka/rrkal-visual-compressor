@@ -151,9 +151,17 @@ example.vizasset/
 
 Definition of done:
 
-- Package save/load round trip.
+- Package manifest read/write round trip.
 - CLI can build a `.vizasset`.
+- The package contains compact model parameters, preview, metrics, and demo.
 - The package can be opened by a separate editor without reading raw data.
+
+Current status:
+
+- Minimal package writer exists.
+- `asset.json` includes file hashes and lineage notes.
+- `model.npz` stores RDP, Fourier, and optional channel compact parameters.
+- Full model loader/reconstructor remains pending.
 
 ## Phase 4: 2D Curve And Shape Compression
 

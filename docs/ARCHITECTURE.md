@@ -69,6 +69,26 @@ Exports a `VisualModel` into target artifacts:
 - `metrics.json`
 - package folder
 
+### `.vizasset`
+
+The package folder is the first stable handoff contract for RRKAL and the
+editor. It stores compact reconstruction data and generated previews, not raw
+source data.
+
+```text
+model.vizasset/
+  asset.json
+  model.npz
+  preview.svg
+  metrics.json
+  demo.py
+```
+
+`asset.json` records schema version, source summary, method metadata, metrics,
+file sizes, file checksums, and lineage notes. `model.npz` stores compact model
+parameters such as RDP points, Fourier coefficients, and optional channel band
+points.
+
 ## Export Modes
 
 ### Pure SVG

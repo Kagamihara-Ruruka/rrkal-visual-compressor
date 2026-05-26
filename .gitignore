@@ -8,5 +8,6 @@ build/
 proof_outputs/
 smoke_outputs/
 channel_outputs/
+package_outputs/
 vizcompress_outputs/
 *.vizasset/

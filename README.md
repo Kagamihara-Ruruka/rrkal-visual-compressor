@@ -120,6 +120,13 @@ the residual band becomes a visual fidelity envelope:
 py -m vizcompress.cli build --synthetic 100000 --fourier-terms 96 --svg-samples 1200 --channel --channel-k 3 --channel-window 501 --out channel_outputs
 ```
 
+Add `--package` to write a minimal `.vizasset` directory for editor/RRKAL
+handoff:
+
+```powershell
+py -m vizcompress.cli build --synthetic 100000 --fourier-terms 96 --channel --package --out channel_outputs
+```
+
 Outputs:
 
 ```text
@@ -129,6 +136,12 @@ smoke_outputs/
   fourier_channel.svg       # only when --channel is enabled
   demo.py
   metrics.json
+  model.vizasset/           # only when --package is enabled
+    asset.json
+    model.npz
+    preview.svg
+    metrics.json
+    demo.py
 ```
 
 CSV input is also supported:
