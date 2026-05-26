@@ -228,6 +228,23 @@ def test_benchmark_reports_size_sweep():
     assert result["rows"][1]["direct_svg_to_package_ratio"] > 0.0
 
 
+def test_benchmark_can_run_all_synthetic_kinds():
+    result = benchmark_synthetic_sizes(
+        [1000],
+        synthetic_kind="all",
+        fourier_terms=32,
+        rdp_epsilon=0.012,
+        svg_samples=300,
+        channel=False,
+        channel_k=3.0,
+        channel_window=201,
+        channel_band_epsilon=0.01,
+    )
+
+    assert len(result["rows"]) == len(SYNTHETIC_KINDS)
+    assert {row["synthetic_kind"] for row in result["rows"]} == set(SYNTHETIC_KINDS)
+
+
 def test_read_csv_timeseries(tmp_path):
     csv_path = tmp_path / "series.csv"
     csv_path.write_text("time,value\n0,1.0\n1,2.5\n2,3.0\n", encoding="utf-8")

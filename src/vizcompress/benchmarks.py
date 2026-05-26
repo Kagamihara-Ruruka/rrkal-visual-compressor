@@ -9,7 +9,7 @@ from vizcompress.analyzers import analyze_time_series
 from vizcompress.cleaning import residual_time_series, sigma_clip_time_series, smooth_time_series
 from vizcompress.compressors import compress_fourier, compress_fourier_channel, compress_rdp
 from vizcompress.core import CompressionReport, TimeSeries
-from vizcompress.data import make_synthetic_dataset
+from vizcompress.data import SYNTHETIC_KINDS, make_synthetic_dataset
 from vizcompress.exporters import path_from_xy, write_channel_svg, write_demo, write_fourier_svg, write_metrics, write_rdp_svg
 from vizcompress.packages import write_vizasset
 from vizcompress.residuals import analyze_residual, compress_sparse_residual
@@ -40,9 +40,11 @@ def benchmark_synthetic_sizes(
     noise_layer_terms: int = 0,
     auto_noise_layer: bool = False,
 ) -> dict[str, Any]:
+    kinds = list(SYNTHETIC_KINDS) if synthetic_kind == "all" else [synthetic_kind]
     rows = [
         _benchmark_one(
-            make_synthetic_dataset(size, kind=synthetic_kind),
+            make_synthetic_dataset(size, kind=kind),
+            synthetic_kind=kind,
             fourier_terms=fourier_terms,
             rdp_epsilon=rdp_epsilon,
             svg_samples=svg_samples,
@@ -55,6 +57,7 @@ def benchmark_synthetic_sizes(
             noise_layer_terms=noise_layer_terms,
             auto_noise_layer=auto_noise_layer,
         )
+        for kind in kinds
         for size in sample_sizes
     ]
     return {
@@ -89,6 +92,7 @@ def write_benchmark(path: str | Path, data: dict[str, Any]) -> Path:
 def _benchmark_one(
     series: TimeSeries,
     *,
+    synthetic_kind: str,
     fourier_terms: int,
     rdp_epsilon: float,
     svg_samples: int,
@@ -177,6 +181,7 @@ def _benchmark_one(
 
     ratio = direct_svg_bytes / float(package_bytes) if package_bytes else 0.0
     return {
+        "synthetic_kind": synthetic_kind,
         "samples": series.sample_count,
         "x_uniform": bool(report.as_dict()["input"]["x_uniform"]),
         "cleaning": cleaning_steps or None,

@@ -65,7 +65,12 @@ def main(argv: list[str] | None = None) -> int:
         help="Comma-separated synthetic sample sizes, for example: 1000,10000,100000.",
     )
     bench.add_argument("--out", type=Path, default=Path("benchmark_outputs/size_sweep.json"), help="Benchmark JSON path.")
-    bench.add_argument("--synthetic-kind", choices=SYNTHETIC_KINDS, default="smooth", help="Synthetic dataset shape.")
+    bench.add_argument(
+        "--synthetic-kind",
+        choices=(*SYNTHETIC_KINDS, "all"),
+        default="smooth",
+        help="Synthetic dataset shape, or 'all' for a benchmark matrix.",
+    )
     bench.add_argument("--rdp-epsilon", type=float, default=0.012, help="RDP epsilon on normalized y values.")
     bench.add_argument("--fourier-terms", type=int, default=96, help="Number of Fourier coefficients to keep.")
     bench.add_argument("--svg-samples", type=int, default=1200, help="Number of preview SVG samples.")

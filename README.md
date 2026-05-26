@@ -188,6 +188,9 @@ The benchmark reports direct SVG bytes, `.vizasset` bytes, model bytes, preview
 bytes, fidelity metrics, the direct-SVG-to-package size ratio, and the first
 observed sample count where the model-backed package wins.
 
+Use `--synthetic-kind all` to run the same sweep across every built-in synthetic
+fixture.
+
 Package suffixes are format-family aliases:
 
 - `.vizretain`: keeps residual/noise layers when available.
