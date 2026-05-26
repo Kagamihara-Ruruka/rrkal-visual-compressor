@@ -143,6 +143,7 @@ def _benchmark_one(
     profile = analyze_time_series(series).as_dict()
     if cleaning_steps:
         profile["cleaning"] = cleaning_steps
+    x_domain_mode = "linspace_from_min_max" if profile["x_uniform"] else "stored_x"
     report = CompressionReport(
         series.sample_count,
         rdp,
@@ -184,6 +185,7 @@ def _benchmark_one(
         "synthetic_kind": synthetic_kind,
         "samples": series.sample_count,
         "x_uniform": bool(report.as_dict()["input"]["x_uniform"]),
+        "x_domain_mode": x_domain_mode,
         "cleaning": cleaning_steps or None,
         "direct_svg_bytes": direct_svg_bytes,
         "package_bytes": package_bytes,

@@ -224,6 +224,7 @@ def test_benchmark_reports_size_sweep():
     assert len(result["rows"]) == 2
     assert result["rows"][1]["direct_svg_bytes"] > result["rows"][0]["direct_svg_bytes"]
     assert result["rows"][0]["x_uniform"] is True
+    assert result["rows"][0]["x_domain_mode"] == "linspace_from_min_max"
     assert result["rows"][0]["residual_strategy"] is not None
     assert result["rows"][1]["direct_svg_to_package_ratio"] > 0.0
 
@@ -243,6 +244,8 @@ def test_benchmark_can_run_all_synthetic_kinds():
 
     assert len(result["rows"]) == len(SYNTHETIC_KINDS)
     assert {row["synthetic_kind"] for row in result["rows"]} == set(SYNTHETIC_KINDS)
+    irregular = [row for row in result["rows"] if row["synthetic_kind"] == "irregular"][0]
+    assert irregular["x_domain_mode"] == "stored_x"
 
 
 def test_read_csv_timeseries(tmp_path):

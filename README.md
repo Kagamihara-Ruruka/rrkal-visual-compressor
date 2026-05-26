@@ -187,6 +187,7 @@ py -m vizcompress.cli bench --synthetic-sizes 1000,10000,100000 --synthetic-kind
 The benchmark reports direct SVG bytes, `.vizasset` bytes, model bytes, preview
 bytes, fidelity metrics, the direct-SVG-to-package size ratio, and the first
 observed sample count where the model-backed package wins.
+Rows also include `x_domain_mode`, so irregular time-axis overhead is visible.
 
 Use `--synthetic-kind all` to run the same sweep across every built-in synthetic
 fixture.
