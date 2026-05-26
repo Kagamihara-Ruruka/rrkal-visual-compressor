@@ -1,16 +1,33 @@
 from __future__ import annotations
 
+import os
 import json
 import subprocess
 import sys
+from pathlib import Path
 
 import numpy as np
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+PROJECT_SRC = str(ROOT_DIR / "src")
+if PROJECT_SRC not in sys.path:
+    sys.path.insert(0, PROJECT_SRC)
+
+
+def _cli_test_env() -> dict[str, str]:
+    env = os.environ.copy()
+    current_pythonpath = env.get("PYTHONPATH", "")
+    if PROJECT_SRC not in current_pythonpath.split(os.pathsep):
+        env["PYTHONPATH"] = os.pathsep.join([PROJECT_SRC, current_pythonpath]).strip(os.pathsep)
+    return env
+
 
 from vizcompress.analyzers import analyze_time_series
 from vizcompress.benchmarks import (
     benchmark_synthetic_channel_k,
     benchmark_synthetic_fourier_terms,
     benchmark_synthetic_sizes,
+    benchmark_synthetic_terms_channel_k_sweep,
     evaluate_benchmark_gate,
     format_benchmark_markdown,
     parse_float_values,
@@ -697,6 +714,29 @@ def test_benchmark_summary_prefers_defensible_high_fidelity_candidates():
     assert candidate["channel_k"] in {3.0, 4.0}
 
 
+def test_benchmark_can_sweep_fourier_terms_and_channel_k_grid():
+    result = benchmark_synthetic_terms_channel_k_sweep(
+        [1000],
+        fourier_terms_values=[16, 32],
+        channel_k_values=[2.0, 3.0],
+        synthetic_kind="smooth",
+        rdp_epsilon=0.012,
+        svg_samples=300,
+        channel_window=201,
+        channel_band_epsilon=0.01,
+    )
+
+    assert result["benchmark"] == "synthetic_terms_channel_k_sweep"
+    assert len(result["rows"]) == 4
+    assert set(result["summary_by_terms"]) == {"16", "32"}
+    assert set(result["summary_by_channel_k"]) == {"2", "3"}
+    assert "16|2" in result["summary_by_terms_k"]
+    assert "16|3" in result["summary_by_terms_k"]
+    assert "32|2" in result["summary_by_terms_k"]
+    assert "32|3" in result["summary_by_terms_k"]
+    assert "defensible_rows_count" in result["summary_by_terms_k"]["16|2"]
+
+
 def test_benchmark_gate_checks_size_and_fidelity_policy():
     result = benchmark_synthetic_sizes(
         [1000],
@@ -851,6 +891,7 @@ def test_cli_build_synthetic(tmp_path):
         check=True,
         capture_output=True,
         text=True,
+        env=_cli_test_env(),
     )
 
     summary = json.loads(result.stdout)
@@ -890,6 +931,7 @@ def test_cli_build_clean_package_profile_drops_residual_layers(tmp_path):
         check=True,
         capture_output=True,
         text=True,
+        env=_cli_test_env(),
     )
 
     summary = json.loads(result.stdout)
@@ -933,6 +975,7 @@ def test_cli_bench_synthetic(tmp_path):
         check=True,
         capture_output=True,
         text=True,
+        env=_cli_test_env(),
     )
 
     summary = json.loads(result.stdout)
@@ -972,6 +1015,7 @@ def test_cli_bench_can_sweep_fourier_terms(tmp_path):
         check=True,
         capture_output=True,
         text=True,
+        env=_cli_test_env(),
     )
 
     summary = json.loads(result.stdout)
@@ -1004,6 +1048,7 @@ def test_cli_bench_can_sweep_channel_k(tmp_path):
         check=True,
         capture_output=True,
         text=True,
+        env=_cli_test_env(),
     )
 
     summary = json.loads(result.stdout)
@@ -1011,6 +1056,42 @@ def test_cli_bench_can_sweep_channel_k(tmp_path):
     assert summary["parameters"]["channel_k_values"] == [2.0, 3.0]
     assert summary["parameters"]["defensible_channel_coverage_threshold"] == 0.9
     assert set(summary["summary_by_channel_k"]) == {"2", "3"}
+
+
+def test_cli_bench_can_sweep_fourier_terms_and_channel_k(tmp_path):
+    output = tmp_path / "terms_k.json"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vizcompress.cli",
+            "bench",
+            "--synthetic-sizes",
+            "1000",
+            "--synthetic-kind",
+            "smooth",
+            "--fourier-terms-sweep",
+            "16,32",
+            "--channel-k-sweep",
+            "2,3",
+            "--channel",
+            "--svg-samples",
+            "300",
+            "--out",
+            str(output),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+        env=_cli_test_env(),
+    )
+
+    summary = json.loads(result.stdout)
+    assert summary["benchmark"] == "synthetic_terms_channel_k_sweep"
+    assert summary["parameters"]["fourier_terms_values"] == [16, 32]
+    assert summary["parameters"]["channel_k_values"] == [2.0, 3.0]
+    assert summary["parameters"]["channel"] is True
+    assert set(summary["summary_by_terms_k"].keys()) == {"16|2", "16|3", "32|2", "32|3"}
 
 
 def test_cli_bench_accepts_defensible_coverage_threshold(tmp_path):

@@ -21,6 +21,8 @@ for validating compression claims.
 - `defensible_threshold_sweep_10k_16_terms.json`: coverage threshold sensitivity
   sweep for `16` terms.
 - `defensible_threshold_sweep_10k_16_terms.md`: human-readable summary of the same run.
+- `terms_channel_k_grid.json`: joint sweep artifact for Fourier term and channel-K grid.
+- `terms_channel_k_grid.md`: human-readable report for term-K sweep frontiers.
 
 ## Current Reading
 
@@ -102,4 +104,20 @@ py scripts/run_defensible_threshold_sweep.py \
   --channel-band-epsilon 0.04 \
   --out-json docs/benchmarks/defensible_threshold_sweep_10k_16_terms.json \
   --out-md docs/benchmarks/defensible_threshold_sweep_10k_16_terms.md
+```
+
+For two-dimensional frontiers (terms × channel K):
+
+```bash
+py scripts/run_terms_channel_grid_sweep.py \
+  --sample-sizes 10000 \
+  --synthetic-kind smooth \
+  --fourier-terms 16,32,64 \
+  --channel-k 2,3,4 \
+  --channel-window 16 \
+  --channel-band-epsilon 0.04 \
+  --rdp-epsilon 0.6 \
+  --svg-samples 240 \
+  --out-json docs/benchmarks/terms_channel_k_grid.json \
+  --out-md docs/benchmarks/terms_channel_k_grid.md
 ```

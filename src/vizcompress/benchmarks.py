@@ -254,6 +254,85 @@ def benchmark_synthetic_channel_k(
     }
 
 
+def benchmark_synthetic_terms_channel_k_sweep(
+    sample_sizes: list[int],
+    *,
+    fourier_terms_values: list[int],
+    channel_k_values: list[float],
+    synthetic_kind: str = "smooth",
+    rdp_epsilon: float,
+    svg_samples: int,
+    channel_window: int,
+    channel_band_epsilon: float,
+    smooth_window: int = 1,
+    sigma_clip: float | None = None,
+    noise_layer_terms: int = 0,
+    auto_noise_layer: bool = False,
+    x_domain_policy: str = "preserve",
+    x_domain_epsilon: float = 0.002,
+    x_domain_max_error: float = 1e-4,
+    defensible_channel_coverage_threshold: float = 0.9,
+) -> dict[str, Any]:
+    rows = []
+    for terms in fourier_terms_values:
+        for k_value in channel_k_values:
+            data = benchmark_synthetic_sizes(
+                sample_sizes,
+                synthetic_kind=synthetic_kind,
+                fourier_terms=terms,
+                rdp_epsilon=rdp_epsilon,
+                svg_samples=svg_samples,
+                channel=True,
+                channel_k=k_value,
+                channel_window=channel_window,
+                channel_band_epsilon=channel_band_epsilon,
+                smooth_window=smooth_window,
+                sigma_clip=sigma_clip,
+                noise_layer_terms=noise_layer_terms,
+                auto_noise_layer=auto_noise_layer,
+                x_domain_policy=x_domain_policy,
+                x_domain_epsilon=x_domain_epsilon,
+                x_domain_max_error=x_domain_max_error,
+                defensible_channel_coverage_threshold=defensible_channel_coverage_threshold,
+            )
+            for row in data["rows"]:
+                row["fourier_terms"] = terms
+                row["channel_k"] = k_value
+                rows.append(row)
+
+    return {
+        "benchmark": "synthetic_terms_channel_k_sweep",
+        "parameters": {
+            "sample_sizes": sample_sizes,
+            "synthetic_kind": synthetic_kind,
+            "fourier_terms_values": fourier_terms_values,
+            "channel_k_values": channel_k_values,
+            "rdp_epsilon": rdp_epsilon,
+            "svg_samples": svg_samples,
+            "channel": True,
+            "channel_window": channel_window,
+            "channel_band_epsilon": channel_band_epsilon,
+            "smooth_window": smooth_window,
+            "sigma_clip": sigma_clip,
+            "noise_layer_terms": noise_layer_terms,
+            "auto_noise_layer": auto_noise_layer,
+            "x_domain_policy": x_domain_policy,
+            "x_domain_epsilon": x_domain_epsilon,
+            "x_domain_max_error": x_domain_max_error,
+            "defensible_channel_coverage_threshold": defensible_channel_coverage_threshold,
+        },
+        "summary": _summarize_rows(rows, defensible_channel_coverage_threshold),
+        "summary_by_kind": _summarize_rows_by_kind(rows, defensible_channel_coverage_threshold),
+        "summary_by_terms": _summarize_rows_by_terms(rows, defensible_channel_coverage_threshold),
+        "summary_by_channel_k": _summarize_rows_by_channel_k(rows, defensible_channel_coverage_threshold),
+        "summary_by_terms_k": _summarize_rows_by_terms_k(
+            rows,
+            defensible_channel_coverage_threshold,
+        ),
+        "rows": rows,
+    }
+
+
 def write_benchmark(path: str | Path, data: dict[str, Any]) -> Path:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -761,3 +840,21 @@ def _summarize_rows_by_channel_k(
         )
         for value in values
     }
+
+
+def _summarize_rows_by_terms_k(
+    rows: list[dict[str, Any]],
+    defensible_channel_coverage_threshold: float = 0.9,
+) -> dict[str, Any]:
+    terms = sorted({int(row["fourier_terms"]) for row in rows if row.get("fourier_terms") is not None})
+    out: dict[str, Any] = {}
+    for term in terms:
+        for k_value in sorted(
+            {float(row["channel_k"]) for row in rows if int(row["fourier_terms"]) == term and row.get("channel_k") is not None}
+        ):
+            key = f"{term}|{_format_float(k_value)}"
+            out[key] = _summarize_rows(
+                [row for row in rows if int(row["fourier_terms"]) == term and row.get("channel_k") == k_value],
+                defensible_channel_coverage_threshold=defensible_channel_coverage_threshold,
+            )
+    return out
