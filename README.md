@@ -209,8 +209,11 @@ per-dataset break-even analysis.
 Each row also includes a `recommendation` label such as
 `package_preferred`, `direct_svg_preferred`, or
 `package_smaller_but_low_fidelity`.
-Summaries include `recommendation_counts` so the whole sweep can be scanned
-without reading every row.
+Rows also include `gzip_recommendation`, which uses gzip-compressed direct SVG
+as the baseline and can surface cases such as
+`package_beats_raw_svg_but_not_gzip`.
+Summaries include `recommendation_counts` and `gzip_recommendation_counts` so
+the whole sweep can be scanned without reading every row.
 
 Summarize an existing benchmark report:
 

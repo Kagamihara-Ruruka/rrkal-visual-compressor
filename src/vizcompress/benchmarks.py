@@ -15,7 +15,7 @@ from vizcompress.domains import encode_x_domain
 from vizcompress.exporters import path_from_xy, write_channel_svg, write_demo, write_fourier_svg, write_metrics, write_rdp_svg
 from vizcompress.packages import write_vizasset
 from vizcompress.residuals import analyze_residual, compress_sparse_residual
-from vizcompress.selectors import count_recommendations, recommend_benchmark_row
+from vizcompress.selectors import count_recommendations, recommend_benchmark_row, recommend_benchmark_row_gzip
 
 
 def parse_sample_sizes(value: str) -> list[int]:
@@ -238,6 +238,7 @@ def _benchmark_one(
         "channel_coverage_ratio": channel_model.coverage_ratio if channel_model is not None else None,
     }
     row["recommendation"] = recommend_benchmark_row(row)
+    row["gzip_recommendation"] = recommend_benchmark_row_gzip(row)
     return row
 
 
@@ -273,6 +274,7 @@ def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "package_wins_count": len(winning_rows),
         "direct_svg_wins_count": len(rows) - len(winning_rows),
         "recommendation_counts": count_recommendations(rows),
+        "gzip_recommendation_counts": count_recommendations(rows, field="gzip_recommendation"),
     }
 
 

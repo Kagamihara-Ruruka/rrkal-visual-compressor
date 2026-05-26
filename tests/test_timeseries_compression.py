@@ -26,7 +26,7 @@ from vizcompress.packages import (
 )
 from vizcompress.residuals import analyze_residual, compress_sparse_residual
 from vizcompress.reviews import build_review_packet, package_size_summary, source_fingerprint, write_review_packet
-from vizcompress.selectors import count_recommendations, recommend_benchmark_row
+from vizcompress.selectors import count_recommendations, recommend_benchmark_row, recommend_benchmark_row_gzip
 
 
 def test_rdp_and_fourier_compress_synthetic_series():
@@ -532,9 +532,11 @@ def test_benchmark_reports_size_sweep():
     assert result["rows"][0]["x_domain_mode"] == "linspace_from_min_max"
     assert result["rows"][0]["x_domain_max_abs_error"] == 0.0
     assert "recommendation" in result["rows"][0]
+    assert "gzip_recommendation" in result["rows"][0]
     assert result["rows"][0]["residual_strategy"] is not None
     assert result["rows"][1]["direct_svg_to_package_ratio"] > 0.0
     assert result["rows"][1]["direct_svg_gzip_to_package_ratio"] > 0.0
+    assert "gzip_recommendation_counts" in result["summary"]
 
 
 def test_selector_recommends_from_benchmark_row_shape():
@@ -548,9 +550,15 @@ def test_selector_recommends_from_benchmark_row_shape():
     }
 
     assert recommend_benchmark_row(row) == "package_smaller_but_low_fidelity"
+    row["direct_svg_gzip_to_package_ratio"] = 0.5
+    assert recommend_benchmark_row_gzip(row) == "package_beats_raw_svg_but_not_gzip"
     assert count_recommendations([{"recommendation": "package_preferred"}, {"recommendation": "package_preferred"}]) == {
         "package_preferred": 2
     }
+    assert count_recommendations(
+        [{"gzip_recommendation": "direct_svg_gzip_preferred"}],
+        field="gzip_recommendation",
+    ) == {"direct_svg_gzip_preferred": 1}
 
 
 def test_benchmark_can_run_all_synthetic_kinds():
@@ -570,6 +578,7 @@ def test_benchmark_can_run_all_synthetic_kinds():
     assert {row["synthetic_kind"] for row in result["rows"]} == set(SYNTHETIC_KINDS)
     assert set(result["summary_by_kind"]) == set(SYNTHETIC_KINDS)
     assert all("recommendation_counts" in value for value in result["summary_by_kind"].values())
+    assert all("gzip_recommendation_counts" in value for value in result["summary_by_kind"].values())
     irregular = [row for row in result["rows"] if row["synthetic_kind"] == "irregular"][0]
     assert irregular["x_domain_mode"] == "stored_x"
 
