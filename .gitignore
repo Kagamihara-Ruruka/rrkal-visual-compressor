@@ -6,4 +6,5 @@ dist/
 build/
 *.egg-info/
 proof_outputs/
+smoke_outputs/
 *.vizasset/

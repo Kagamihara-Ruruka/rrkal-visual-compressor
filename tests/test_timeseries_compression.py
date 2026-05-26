@@ -1,0 +1,83 @@
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+
+import numpy as np
+
+from vizcompress.compressors import compress_fourier, compress_rdp
+from vizcompress.core import CompressionReport
+from vizcompress.data import make_synthetic_signal, read_csv_timeseries
+from vizcompress.exporters import write_demo, write_fourier_svg, write_metrics, write_rdp_svg
+
+
+def test_rdp_and_fourier_compress_synthetic_series():
+    series = make_synthetic_signal(20_000)
+
+    rdp = compress_rdp(series, epsilon=0.012)
+    fourier = compress_fourier(series, terms=96)
+
+    assert 2 < rdp.parameter_count < series.sample_count
+    assert fourier.parameter_count == 96
+    assert rdp.metrics["r2"] > 0.9
+    assert fourier.metrics["r2"] > 0.99
+
+
+def test_exporters_write_expected_files(tmp_path):
+    series = make_synthetic_signal(10_000)
+    rdp = compress_rdp(series, epsilon=0.012)
+    fourier = compress_fourier(series, terms=64)
+    report = CompressionReport(input_samples=series.sample_count, rdp=rdp, fourier=fourier)
+
+    rdp_svg = write_rdp_svg(tmp_path / "rdp.svg", series, rdp)
+    fourier_svg = write_fourier_svg(tmp_path / "fourier.svg", series, fourier, samples=800)
+    demo = write_demo(tmp_path / "demo.py", series.sample_count, terms=64)
+    metrics = write_metrics(tmp_path / "metrics.json", report, [rdp_svg.name, fourier_svg.name, demo.name])
+
+    assert rdp_svg.read_text(encoding="utf-8").startswith("<svg")
+    assert "Fourier" in fourier_svg.read_text(encoding="utf-8")
+    assert "FOURIER_TERMS = 64" in demo.read_text(encoding="utf-8")
+    data = json.loads(metrics.read_text(encoding="utf-8"))
+    assert data["input"]["samples"] == 10_000
+    assert data["fourier"]["kept_coefficients"] == 64
+
+
+def test_read_csv_timeseries(tmp_path):
+    csv_path = tmp_path / "series.csv"
+    csv_path.write_text("time,value\n0,1.0\n1,2.5\n2,3.0\n", encoding="utf-8")
+
+    series = read_csv_timeseries(csv_path, "time", "value")
+
+    assert series.sample_count == 3
+    assert np.allclose(series.x, [0.0, 1.0, 2.0])
+    assert np.allclose(series.y, [1.0, 2.5, 3.0])
+
+
+def test_cli_build_synthetic(tmp_path):
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vizcompress.cli",
+            "build",
+            "--synthetic",
+            "5000",
+            "--fourier-terms",
+            "32",
+            "--svg-samples",
+            "400",
+            "--out",
+            str(tmp_path),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    summary = json.loads(result.stdout)
+    assert summary["input"]["samples"] == 5000
+    assert (tmp_path / "rdp_vectorized.svg").exists()
+    assert (tmp_path / "fourier_vectorized.svg").exists()
+    assert (tmp_path / "demo.py").exists()
+    assert (tmp_path / "metrics.json").exists()

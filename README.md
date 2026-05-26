@@ -101,6 +101,30 @@ py -m pytest
 vizcompress --help
 ```
 
+## First Working Command
+
+Generate a synthetic time series, compress it with RDP and Fourier, then export SVG, `demo.py`, and `metrics.json`:
+
+```powershell
+py -m vizcompress.cli build --synthetic 100000 --fourier-terms 96 --svg-samples 1200 --out smoke_outputs
+```
+
+Outputs:
+
+```text
+smoke_outputs/
+  rdp_vectorized.svg
+  fourier_vectorized.svg
+  demo.py
+  metrics.json
+```
+
+CSV input is also supported:
+
+```powershell
+py -m vizcompress.cli build --csv data.csv --x-column time --y-column value --out outputs
+```
+
 ## Status
 
-Scaffold only. The first implementation task is to migrate the proof-of-concept from `proof_vectorization.py` into tested modules.
+Phase 0/1 implementation has started. The package currently supports synthetic and CSV time-series compression through RDP and Fourier, with SVG, `demo.py`, and metrics exports.
