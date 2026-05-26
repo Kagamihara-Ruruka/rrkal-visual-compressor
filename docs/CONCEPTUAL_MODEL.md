@@ -229,6 +229,7 @@ not the raw data. It is a signed-style summary of what was checked:
 ```text
 review.json
   source fingerprint
+  size evidence
   verification policy
   package self-consistency result
   source-fidelity result
@@ -247,6 +248,15 @@ h_y = SHA256(bytes(y))
 
 This lets a later agent detect whether the source used for review is the same
 source that produced the accepted metrics.
+
+The packet also records a basic size comparison:
+
+```math
+ratio = \frac{|source\ numeric\ arrays|}{|package|}
+```
+
+This is not the final compression proof against every possible baseline, but it
+prevents fidelity-only reviews from ignoring package overhead.
 
 When `--require-review-pass` is used, the build command treats `accepted: false`
 as a hard failure. This is the operational form of "do not accept a compressed

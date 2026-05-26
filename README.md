@@ -245,7 +245,8 @@ py -m vizcompress.cli verify channel_outputs/model.vizretain --synthetic 100000 
 
 Build can also write a review packet next to the package. The review packet
 records the source fingerprint, verification policy, package self-check, and
-source-fidelity metrics:
+source-fidelity metrics. It also records package bytes versus source numeric
+array bytes as first-pass compression evidence:
 
 ```powershell
 py -m vizcompress.cli build --synthetic 100000 --fourier-terms 96 --package --review-packet --review-max-rmse 0.01 --out reviewed_outputs

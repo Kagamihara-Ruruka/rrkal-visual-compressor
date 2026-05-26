@@ -203,6 +203,7 @@ Review packet 是 package 被接受的持久證據。它不是 raw data，而是
 ```text
 review.json
   source fingerprint
+  size evidence
   verification policy
   package self-consistency result
   source-fidelity result
@@ -220,5 +221,13 @@ h_y = SHA256(bytes(y))
 ```
 
 這讓後續 agent 可以檢查：現在拿到的 source 是否就是當時產生 accepted metrics 的 source。
+
+Packet 也會記錄基本大小比較：
+
+```math
+ratio = \frac{|source\ numeric\ arrays|}{|package|}
+```
+
+這還不是對所有 baseline 的最終壓縮證明，但可以避免 review 只看 fidelity、完全忽略 package overhead。
 
 使用 `--require-review-pass` 時，build command 會把 `accepted: false` 視為硬失敗。這就是「不要接受超出宣稱 error budget 的 compressed asset」在操作層的形式。

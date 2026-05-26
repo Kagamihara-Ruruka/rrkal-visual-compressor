@@ -25,7 +25,7 @@ from vizcompress.packages import (
     write_vizasset,
 )
 from vizcompress.residuals import analyze_residual, compress_sparse_residual
-from vizcompress.reviews import build_review_packet, source_fingerprint, write_review_packet
+from vizcompress.reviews import build_review_packet, package_size_summary, source_fingerprint, write_review_packet
 from vizcompress.selectors import count_recommendations, recommend_benchmark_row
 
 
@@ -278,6 +278,9 @@ def test_review_packet_records_source_fingerprint_and_acceptance(tmp_path):
     assert source_fingerprint(series)["xy_sha256"] == packet["source_fingerprint"]["xy_sha256"]
     assert packet["accepted"] is True
     assert written["accepted"] is True
+    assert written["size_evidence"]["package_bytes"] > 0
+    assert written["size_evidence"]["source_numeric_bytes"] == series.x.nbytes + series.y.nbytes
+    assert package_size_summary(package, series)["file_count"] >= 4
     assert written["source_validation"]["details"]["source_verification"]["rmse"] < 0.003
 
 

@@ -20,6 +20,7 @@ def source_fingerprint(series: TimeSeries) -> dict[str, Any]:
     return {
         "source": series.source,
         "sample_count": series.sample_count,
+        "numeric_bytes": int(series.x.nbytes + series.y.nbytes),
         "x_sha256": hashlib.sha256(series.x.astype("<f8", copy=False).tobytes()).hexdigest(),
         "y_sha256": hashlib.sha256(series.y.astype("<f8", copy=False).tobytes()).hexdigest(),
         "xy_sha256": digest.hexdigest(),
@@ -27,6 +28,19 @@ def source_fingerprint(series: TimeSeries) -> dict[str, Any]:
         "x_max": float(series.x.max()),
         "y_min": float(series.y.min()),
         "y_max": float(series.y.max()),
+    }
+
+
+def package_size_summary(package: str | Path, source: TimeSeries) -> dict[str, Any]:
+    package_path = Path(package)
+    files = [path for path in package_path.rglob("*") if path.is_file()]
+    total_bytes = sum(path.stat().st_size for path in files)
+    source_numeric_bytes = int(source.x.nbytes + source.y.nbytes)
+    return {
+        "package_bytes": int(total_bytes),
+        "source_numeric_bytes": source_numeric_bytes,
+        "source_numeric_to_package_ratio": source_numeric_bytes / float(max(total_bytes, 1)),
+        "file_count": len(files),
     }
 
 
@@ -63,6 +77,7 @@ def build_review_packet(
             "max_error": max_error,
             "max_x_error": max_x_error,
         },
+        "size_evidence": package_size_summary(package, source),
         "package_validation": package_validation.as_dict(),
         "source_validation": source_validation.as_dict(),
         "accepted": bool(package_validation.ok and source_validation.ok),
