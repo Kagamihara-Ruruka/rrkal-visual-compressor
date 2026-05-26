@@ -201,6 +201,8 @@ per-dataset break-even analysis.
 Each row also includes a `recommendation` label such as
 `package_preferred`, `direct_svg_preferred`, or
 `package_smaller_but_low_fidelity`.
+Summaries include `recommendation_counts` so the whole sweep can be scanned
+without reading every row.
 
 Package suffixes are format-family aliases:
 

@@ -259,6 +259,7 @@ def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "best_direct_svg_to_package_ratio": best_row["direct_svg_to_package_ratio"],
         "package_wins_count": len(winning_rows),
         "direct_svg_wins_count": len(rows) - len(winning_rows),
+        "recommendation_counts": _count_recommendations(rows),
     }
 
 
@@ -281,3 +282,11 @@ def _recommend_row(row: dict[str, Any]) -> str:
     if coverage is not None and coverage < 0.9:
         return "package_smaller_but_channel_under_covers"
     return "package_preferred"
+
+
+def _count_recommendations(rows: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in rows:
+        recommendation = str(row.get("recommendation", "unknown"))
+        counts[recommendation] = counts.get(recommendation, 0) + 1
+    return counts
