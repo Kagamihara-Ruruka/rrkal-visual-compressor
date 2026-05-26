@@ -51,7 +51,7 @@ CSV(time, value)
 - SVG path 輸出
 - `demo.py` 輸出
 - `metrics.json` 輸出
-- benchmark report，比較大小、誤差、壓縮率，並記錄 direct SVG gzip baseline
+- benchmark report，比較大小、誤差、壓縮率，並記錄 direct SVG gzip、source CSV、source CSV.gz baselines
 
 其他想法都先延後。
 

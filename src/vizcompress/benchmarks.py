@@ -178,6 +178,8 @@ def _benchmark_one(
     )
     direct_svg_bytes = _estimate_direct_svg_bytes(series)
     direct_svg_gzip_bytes = _estimate_direct_svg_gzip_bytes(series)
+    source_csv_bytes = _estimate_source_csv_bytes(series)
+    source_csv_gzip_bytes = _estimate_source_csv_gzip_bytes(series)
     with tempfile.TemporaryDirectory(prefix="vizcompress-bench-") as temp:
         temp_dir = Path(temp)
         rdp_svg = write_rdp_svg(temp_dir / "rdp_vectorized.svg", series, rdp)
@@ -208,6 +210,8 @@ def _benchmark_one(
 
     ratio = direct_svg_bytes / float(package_bytes) if package_bytes else 0.0
     gzip_ratio = direct_svg_gzip_bytes / float(package_bytes) if package_bytes else 0.0
+    csv_ratio = source_csv_bytes / float(package_bytes) if package_bytes else 0.0
+    csv_gzip_ratio = source_csv_gzip_bytes / float(package_bytes) if package_bytes else 0.0
     row = {
         "synthetic_kind": synthetic_kind,
         "samples": series.sample_count,
@@ -219,11 +223,15 @@ def _benchmark_one(
         "cleaning": cleaning_steps or None,
         "direct_svg_bytes": direct_svg_bytes,
         "direct_svg_gzip_bytes": direct_svg_gzip_bytes,
+        "source_csv_bytes": source_csv_bytes,
+        "source_csv_gzip_bytes": source_csv_gzip_bytes,
         "package_bytes": package_bytes,
         "model_npz_bytes": model_bytes,
         "preview_svg_bytes": preview_bytes,
         "direct_svg_to_package_ratio": ratio,
         "direct_svg_gzip_to_package_ratio": gzip_ratio,
+        "source_csv_to_package_ratio": csv_ratio,
+        "source_csv_gzip_to_package_ratio": csv_gzip_ratio,
         "fourier_parameter_count": fourier.parameter_count,
         "rdp_parameter_count": rdp.parameter_count,
         "channel_parameter_count": channel_model.parameter_count if channel_model is not None else None,
@@ -250,6 +258,14 @@ def _estimate_direct_svg_gzip_bytes(series: TimeSeries) -> int:
     return len(gzip.compress(_direct_svg_document(series).encode("utf-8"), compresslevel=9, mtime=0))
 
 
+def _estimate_source_csv_bytes(series: TimeSeries) -> int:
+    return len(_source_csv_document(series).encode("utf-8"))
+
+
+def _estimate_source_csv_gzip_bytes(series: TimeSeries) -> int:
+    return len(gzip.compress(_source_csv_document(series).encode("utf-8"), compresslevel=9, mtime=0))
+
+
 def _direct_svg_document(series: TimeSeries) -> str:
     path = path_from_xy(series.x, series.y)
     return (
@@ -258,6 +274,12 @@ def _direct_svg_document(series: TimeSeries) -> str:
         f'<path d="{path}" fill="none" stroke="#111" stroke-width="2"/>'
         "</svg>"
     )
+
+
+def _source_csv_document(series: TimeSeries) -> str:
+    lines = ["time,value"]
+    lines.extend(f"{float(x):.17g},{float(y):.17g}" for x, y in zip(series.x, series.y))
+    return "\n".join(lines) + "\n"
 
 
 def _directory_size(path: Path) -> int:

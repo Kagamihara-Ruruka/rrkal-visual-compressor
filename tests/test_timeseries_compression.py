@@ -528,6 +528,8 @@ def test_benchmark_reports_size_sweep():
     assert len(result["rows"]) == 2
     assert result["rows"][1]["direct_svg_bytes"] > result["rows"][0]["direct_svg_bytes"]
     assert result["rows"][1]["direct_svg_gzip_bytes"] > result["rows"][0]["direct_svg_gzip_bytes"]
+    assert result["rows"][1]["source_csv_bytes"] > result["rows"][0]["source_csv_bytes"]
+    assert result["rows"][1]["source_csv_gzip_bytes"] > result["rows"][0]["source_csv_gzip_bytes"]
     assert result["rows"][0]["x_uniform"] is True
     assert result["rows"][0]["x_domain_mode"] == "linspace_from_min_max"
     assert result["rows"][0]["x_domain_max_abs_error"] == 0.0
@@ -536,6 +538,8 @@ def test_benchmark_reports_size_sweep():
     assert result["rows"][0]["residual_strategy"] is not None
     assert result["rows"][1]["direct_svg_to_package_ratio"] > 0.0
     assert result["rows"][1]["direct_svg_gzip_to_package_ratio"] > 0.0
+    assert result["rows"][1]["source_csv_to_package_ratio"] > 0.0
+    assert result["rows"][1]["source_csv_gzip_to_package_ratio"] > 0.0
     assert "gzip_recommendation_counts" in result["summary"]
 
 
