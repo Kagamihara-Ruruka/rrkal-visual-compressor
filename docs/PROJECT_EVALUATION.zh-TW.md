@@ -94,6 +94,10 @@ py -m vizcompress.cli build --synthetic 100000 --fourier-terms 96 --svg-samples 
 | whole package, including preview/review | 74,656 bytes |
 | direct SVG baseline | 1,599,758 bytes |
 | direct-SVG-to-package ratio | 21.43x |
+| direct SVG.gz-to-package ratio | 6.47x |
+| source CSV.gz-to-package ratio | 18.36x |
+| LTTB baseline points | 1,200 |
+| LTTB R2 | 0.9999954 |
 | source numeric arrays / package ratio | 21.43x |
 
 這個結果不能推廣到所有資料集，但足以證明：
@@ -101,6 +105,14 @@ py -m vizcompress.cli build --synthetic 100000 --fourier-terms 96 --svg-samples 
 ```text
 在 smooth structured time-series 上，函數化視覺資產有明確壓縮優勢。
 ```
+
+同時也要誠實標註：在這個 smooth fixture 上，LTTB 以 1,200 點重建得到的 R2 高於 96-term Fourier。這代表本專案目前的優勢不應表述為「一定比所有 downsampling 更準」，而應表述為：
+
+```text
+把函數模型、通道、殘差、manifest、verification、review packet 整合成可交接的視覺資產格式。
+```
+
+精度比較要交給 benchmark，而不是靠口號。
 
 ## 四、數學正確性邊界
 
