@@ -144,6 +144,15 @@ does not prove that the package is globally optimal or universally compressive;
 it proves that the package is internally sound enough for a downstream editor or
 renderer to trust the handoff.
 
+When a source dataset is available, `vizcompress verify` can also perform
+source-backed fidelity verification by decoding the package and comparing it to
+the original source under explicit RMSE/MAE/max-error budgets. This is the
+runtime form of the project equation:
+
+```math
+\epsilon(D, decode(P)) \leq \tau
+```
+
 ## Export Modes
 
 ### Pure SVG

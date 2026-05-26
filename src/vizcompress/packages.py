@@ -12,6 +12,7 @@ import numpy as np
 from vizcompress.analyzers import analyze_time_series
 from vizcompress.core import CompressionReport, TimeSeries
 from vizcompress.domains import encode_x_domain, reconstruct_x_domain
+from vizcompress.metrics import regression_metrics
 
 
 ASSET_SCHEMA_VERSION = "0.1"
@@ -110,6 +111,62 @@ def validate_vizasset(path: str | Path, *, reconstruction_samples: int = 1024) -
     model_details = _validate_model_npz(package, manifest, errors, warnings)
     details.update(model_details)
     _validate_reconstruction(package, reconstruction_samples, errors, warnings, details)
+    return PackageValidationResult(str(package), not errors, tuple(errors), tuple(warnings), details)
+
+
+def validate_vizasset_source(
+    path: str | Path,
+    source: TimeSeries,
+    *,
+    signal: str = "retained",
+    max_rmse: float | None = None,
+    max_mae: float | None = None,
+    max_error: float | None = None,
+    max_x_error: float | None = 1e-9,
+) -> PackageValidationResult:
+    package = Path(path)
+    base = validate_vizasset(package, reconstruction_samples=min(1024, source.sample_count))
+    errors = list(base.errors)
+    warnings = list(base.warnings)
+    details = dict(base.details)
+
+    if errors:
+        return PackageValidationResult(str(package), False, tuple(errors), tuple(warnings), details)
+
+    if signal == "retained":
+        reconstructed = reconstruct_retained_signal(package)
+    elif signal == "center":
+        reconstructed = reconstruct_fourier(package)
+    else:
+        return PackageValidationResult(
+            str(package),
+            False,
+            (f"unsupported source verification signal: {signal!r}",),
+            tuple(warnings),
+            details,
+        )
+
+    if reconstructed.sample_count != source.sample_count:
+        errors.append(
+            f"source sample_count mismatch: source={source.sample_count} reconstructed={reconstructed.sample_count}"
+        )
+        return PackageValidationResult(str(package), False, tuple(errors), tuple(warnings), details)
+
+    x_error = float(np.max(np.abs(source.x - reconstructed.x)))
+    details["source_verification"] = {
+        "signal": signal,
+        "source": source.source,
+        "sample_count": source.sample_count,
+        "x_max_abs_error": x_error,
+    }
+    if max_x_error is not None and x_error > max_x_error:
+        errors.append(f"x-domain error {x_error:g} exceeds max_x_error {max_x_error:g}")
+
+    metrics = regression_metrics(source.y, reconstructed.y)
+    details["source_verification"].update(metrics)
+    _check_metric_budget("rmse", metrics["rmse"], max_rmse, errors)
+    _check_metric_budget("mae", metrics["mae"], max_mae, errors)
+    _check_metric_budget("max_abs", metrics["max_abs"], max_error, errors)
     return PackageValidationResult(str(package), not errors, tuple(errors), tuple(warnings), details)
 
 
@@ -577,6 +634,11 @@ def _validate_reconstruction(
     details["validated_reconstruction_samples"] = int(reconstructed.sample_count)
     details["reconstructed_y_min"] = float(np.min(reconstructed.y))
     details["reconstructed_y_max"] = float(np.max(reconstructed.y))
+
+
+def _check_metric_budget(name: str, value: float, limit: float | None, errors: list[str]) -> None:
+    if limit is not None and value > limit:
+        errors.append(f"{name} {value:g} exceeds limit {limit:g}")
 
 
 def _reconstruct_fourier_y(data: Any, n: int) -> np.ndarray:

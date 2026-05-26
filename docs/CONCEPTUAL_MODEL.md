@@ -162,7 +162,12 @@ conservative formats.
 
 ## Current Package Verification
 
-`vizcompress verify` currently checks package self-consistency:
+`vizcompress verify` has two levels.
+
+### Package Self-Consistency
+
+Without a source dataset, `vizcompress verify package.vizretain` checks package
+self-consistency:
 
 - manifest schema and required fields
 - required files
@@ -173,8 +178,44 @@ conservative formats.
 - residual layer array consistency
 - finite Fourier and retained-signal reconstruction
 
-This is not yet a full proof against the raw source dataset because the package
-does not embed raw input. Full source-fidelity verification will require either:
+This proves that the package handoff is internally sound. It does not prove that
+the decoded signal is close to the original raw source, because the package does
+not embed raw input.
+
+### Source-Backed Fidelity
+
+When the original source is available, the verifier can decode the package and
+compare it directly against that source:
+
+```powershell
+py -m vizcompress.cli verify outputs/model.vizretain --synthetic 100000 --max-rmse 0.01
+```
+
+or:
+
+```powershell
+py -m vizcompress.cli verify outputs/model.vizretain --csv data.csv --x-column time --y-column value --max-rmse 0.01
+```
+
+The mathematical check is:
+
+```math
+\epsilon(D, decode(P)) \leq \tau
+```
+
+Where:
+
+- `D` is the source dataset.
+- `P` is the package.
+- `decode(P)` is the selected decoded signal, usually the retained signal.
+- `\tau` is the requested error budget.
+
+This is the first executable form of the project's soundness claim. It still
+does not prove that the package is the smallest possible representation. It only
+proves that this package decodes close enough to this source under the selected
+metric budget.
+
+Full production verification will later need:
 
 - access to the original input data, or
 - a review packet that records source fingerprints and accepted error metrics at

@@ -32,6 +32,7 @@
 - irregular x-domain handling，支援 preserve、compressed、auto policies
 - benchmark matrix，含 per-kind summaries 與 recommendation labels
 - `build`、`bench`、`recommend`、`inspect`、`verify` CLI commands
+- source-backed package fidelity verification，支援 optional RMSE/MAE/max-error budgets
 - 繁中版文件：README、architecture、conceptual model、roadmap、governance、handoff
 
 目前本地驗證命令：
@@ -40,7 +41,7 @@
 py -m pytest -q
 ```
 
-最近已知通過數：`29 passed`。
+最近已知通過數：`31 passed`。
 
 ## 原始第一任務
 

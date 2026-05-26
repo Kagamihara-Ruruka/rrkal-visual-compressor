@@ -21,6 +21,7 @@ from vizcompress.packages import (
     reconstruct_retained_signal,
     reconstruct_sparse_residual,
     validate_vizasset,
+    validate_vizasset_source,
     write_vizasset,
 )
 from vizcompress.residuals import analyze_residual, compress_sparse_residual
@@ -200,6 +201,56 @@ def test_validate_vizasset_rejects_drifted_artifact(tmp_path):
 
     assert result.ok is False
     assert any("files.preview" in error for error in result.errors)
+
+
+def test_validate_vizasset_source_reports_fidelity_metrics(tmp_path):
+    series = make_synthetic_signal(5000)
+    rdp = compress_rdp(series, epsilon=0.012)
+    fourier = compress_fourier(series, terms=96)
+    report = CompressionReport(input_samples=series.sample_count, rdp=rdp, fourier=fourier)
+    preview = write_fourier_svg(tmp_path / "preview_source.svg", series, fourier, samples=400)
+    demo = write_demo(tmp_path / "demo_source.py", series.sample_count, terms=96)
+    metrics = write_metrics(tmp_path / "metrics_source.json", report, ["preview_source.svg", "demo_source.py"])
+    package = write_vizasset(
+        tmp_path / "source_verified.vizasset",
+        series=series,
+        report=report,
+        preview_svg=preview,
+        metrics_json=metrics,
+        demo_py=demo,
+    )
+
+    result = validate_vizasset_source(package, series, max_rmse=0.003, max_mae=0.001, max_error=0.05)
+
+    assert result.ok is True
+    source_details = result.details["source_verification"]
+    assert source_details["sample_count"] == series.sample_count
+    assert source_details["rmse"] < 0.003
+    assert source_details["x_max_abs_error"] == 0.0
+
+
+def test_validate_vizasset_source_fails_strict_budget_for_wrong_source(tmp_path):
+    series = make_synthetic_dataset(5000, kind="smooth")
+    wrong_source = make_synthetic_dataset(5000, kind="steps")
+    rdp = compress_rdp(series, epsilon=0.012)
+    fourier = compress_fourier(series, terms=96)
+    report = CompressionReport(input_samples=series.sample_count, rdp=rdp, fourier=fourier)
+    preview = write_fourier_svg(tmp_path / "preview_source.svg", series, fourier, samples=400)
+    demo = write_demo(tmp_path / "demo_source.py", series.sample_count, terms=96)
+    metrics = write_metrics(tmp_path / "metrics_source.json", report, ["preview_source.svg", "demo_source.py"])
+    package = write_vizasset(
+        tmp_path / "wrong_source.vizasset",
+        series=series,
+        report=report,
+        preview_svg=preview,
+        metrics_json=metrics,
+        demo_py=demo,
+    )
+
+    result = validate_vizasset_source(package, wrong_source, max_rmse=0.01)
+
+    assert result.ok is False
+    assert any("rmse" in error for error in result.errors)
 
 
 def test_vizasset_reconstructs_fourier_and_channel(tmp_path):

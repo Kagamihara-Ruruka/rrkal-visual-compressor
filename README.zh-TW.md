@@ -151,6 +151,12 @@ py -m vizcompress.cli inspect channel_outputs/model.vizretain --samples 1200
 py -m vizcompress.cli verify channel_outputs/model.vizretain --samples 1024
 ```
 
+如果原始 source 還在，可以在明確 error budget 下，直接驗證 decoded package 是否逼近 source：
+
+```powershell
+py -m vizcompress.cli verify channel_outputs/model.vizretain --synthetic 100000 --max-rmse 0.01
+```
+
 ## 狀態
 
 Phase 0/1 已開始。專案目前支援 synthetic/CSV time-series，透過 RDP/Fourier 輸出 SVG、`demo.py`、metrics 和 package。Phase 2 已有 Fourier channel prototype，可表示 center-line 加 residual-band。

@@ -124,6 +124,12 @@ Package module 可以讀回 renderable arrays：
 
 Package verification 遵守 RRKAL-style 原則：generated assets 必須能被機器檢查。`vizcompress verify` 會檢查 manifest shape、必要檔案、byte sizes、SHA-256 hashes、`model.npz` arrays、x-domain consistency、residual layer array consistency，以及 finite reconstruction。這不證明 package 是全球最佳壓縮；它證明 package 的 handoff 足夠自洽，editor 或 renderer 可以信任。
 
+如果 source dataset 還在，`vizcompress verify` 也可以做 source-backed fidelity verification：decode package 後，在明確 RMSE/MAE/max-error budget 下跟原始 source 比較。這是專案核心公式的 runtime 版本：
+
+```math
+\epsilon(D, decode(P)) \leq \tau
+```
+
 ## Export Modes
 
 ### Pure SVG

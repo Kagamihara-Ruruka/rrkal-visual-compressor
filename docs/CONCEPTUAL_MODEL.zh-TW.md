@@ -145,7 +145,11 @@ compressor 不承諾每個資料集都能被壓成更小的 function asset。
 
 ## 目前的 Package Verification
 
-`vizcompress verify` 目前檢查 package 的自洽性：
+`vizcompress verify` 分成兩個層級。
+
+### Package 自洽性
+
+沒有 source dataset 時，`vizcompress verify package.vizretain` 檢查 package 的自洽性：
 
 - manifest schema 與必要欄位
 - 必要檔案
@@ -156,7 +160,38 @@ compressor 不承諾每個資料集都能被壓成更小的 function asset。
 - residual layer array consistency
 - Fourier 與 retained-signal reconstruction 是否為 finite values
 
-這還不是對 raw source dataset 的完整證明，因為 package 目前不嵌入 raw input。完整 source-fidelity verification 需要：
+這證明 package handoff 內部是 sound 的。但它還不證明 decoded signal 逼近原始 raw source，因為 package 目前不嵌入 raw input。
+
+### Source-Backed Fidelity
+
+如果原始 source 還在，verifier 可以 decode package，直接跟 source 比較：
+
+```powershell
+py -m vizcompress.cli verify outputs/model.vizretain --synthetic 100000 --max-rmse 0.01
+```
+
+或：
+
+```powershell
+py -m vizcompress.cli verify outputs/model.vizretain --csv data.csv --x-column time --y-column value --max-rmse 0.01
+```
+
+數學上檢查的是：
+
+```math
+\epsilon(D, decode(P)) \leq \tau
+```
+
+其中：
+
+- `D` 是 source dataset。
+- `P` 是 package。
+- `decode(P)` 是選定的 decoded signal，通常是 retained signal。
+- `\tau` 是要求的 error budget。
+
+這是本專案 soundness claim 的第一個可執行形式。它仍然不證明 package 是最小可能表示；它只證明這個 package 在指定 metric budget 下，decode 後足夠接近這個 source。
+
+完整 production verification 之後還需要：
 
 - 能讀到原始輸入資料，或
 - build time 產生 review packet，記錄 source fingerprint 與已接受的 error metrics。

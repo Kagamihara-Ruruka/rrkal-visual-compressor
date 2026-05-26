@@ -33,6 +33,7 @@ Implemented mainline:
 - irregular x-domain handling with preserve, compressed, and auto policies
 - benchmark matrix with per-kind summaries and recommendation labels
 - `build`, `bench`, `recommend`, `inspect`, and `verify` CLI commands
+- source-backed package fidelity verification with optional RMSE/MAE/max-error budgets
 
 Current local verification command:
 
@@ -40,7 +41,7 @@ Current local verification command:
 py -m pytest -q
 ```
 
-Latest known passing count: `29 passed`.
+Latest known passing count: `31 passed`.
 
 ## Original First Task
 
