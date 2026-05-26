@@ -108,12 +108,36 @@ class ChannelModel:
 
 
 @dataclass(frozen=True)
+class SparseResidualModel:
+    method: str
+    indices: np.ndarray
+    x: np.ndarray
+    delta_y: np.ndarray
+    threshold_abs: float
+    metrics: dict[str, float] = field(default_factory=dict)
+
+    @property
+    def parameter_count(self) -> int:
+        return int(len(self.indices))
+
+    def metadata(self) -> dict[str, Any]:
+        return {
+            "method": self.method,
+            "points": self.parameter_count,
+            "threshold_abs": self.threshold_abs,
+        }
+
+
+@dataclass(frozen=True)
 class CompressionReport:
     input_samples: int
     rdp: RDPModel
     fourier: FourierModel
     channel: ChannelModel | None = None
     input_profile: dict[str, Any] | None = None
+    noise: FourierModel | None = None
+    sparse_residual: SparseResidualModel | None = None
+    residual_profile: dict[str, Any] | None = None
 
     def as_dict(self) -> dict[str, Any]:
         data = {
@@ -135,4 +159,18 @@ class CompressionReport:
                 "compression_ratio_by_count": self.input_samples / float(self.channel.parameter_count),
                 **self.channel.metrics,
             }
+        if self.noise is not None:
+            data["noise_layer"] = {
+                **self.noise.metadata(),
+                "compression_ratio_by_count": self.input_samples / float(self.noise.parameter_count),
+                **self.noise.metrics,
+            }
+        if self.sparse_residual is not None:
+            data["sparse_residual_layer"] = {
+                **self.sparse_residual.metadata(),
+                "compression_ratio_by_count": self.input_samples / float(max(self.sparse_residual.parameter_count, 1)),
+                **self.sparse_residual.metrics,
+            }
+        if self.residual_profile is not None:
+            data["residual"] = self.residual_profile
         return data

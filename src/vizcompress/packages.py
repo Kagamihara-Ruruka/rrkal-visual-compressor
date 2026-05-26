@@ -144,6 +144,31 @@ def _write_model_npz(path: Path, series: TimeSeries, report: CompressionReport) 
         )
     else:
         data["channel_present"] = np.array(False)
+    if report.noise is not None:
+        data.update(
+            {
+                "noise_present": np.array(True),
+                "noise_terms": np.array(report.noise.terms, dtype=np.int64),
+                "noise_mean": np.array(report.noise.mean, dtype=np.float64),
+                "noise_frequencies": report.noise.selected_frequencies,
+                "noise_coefficients": report.noise.coefficients,
+            }
+        )
+    else:
+        data["noise_present"] = np.array(False)
+    if report.sparse_residual is not None:
+        sparse = report.sparse_residual
+        data.update(
+            {
+                "sparse_residual_present": np.array(True),
+                "sparse_residual_indices": sparse.indices,
+                "sparse_residual_x": sparse.x,
+                "sparse_residual_delta_y": sparse.delta_y,
+                "sparse_residual_threshold_abs": np.array(sparse.threshold_abs, dtype=np.float64),
+            }
+        )
+    else:
+        data["sparse_residual_present"] = np.array(False)
     np.savez_compressed(path, **data)
 
 
@@ -196,6 +221,14 @@ def _method_summary(report: CompressionReport) -> list[dict[str, Any]]:
     ]
     if report.channel is not None:
         methods.append(report.channel.metadata())
+    if report.noise is not None:
+        noise = report.noise.metadata()
+        noise["role"] = "residual_noise_layer"
+        methods.append(noise)
+    if report.sparse_residual is not None:
+        sparse = report.sparse_residual.metadata()
+        sparse["role"] = "residual_sparse_layer"
+        methods.append(sparse)
     return methods
 
 

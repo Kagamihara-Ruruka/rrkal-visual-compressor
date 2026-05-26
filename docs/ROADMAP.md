@@ -268,6 +268,8 @@ Pre-work now available:
 
 - `bench` can produce size/fidelity rows for direct SVG vs model-backed package.
 - These rows are the data source for future automatic method selection.
+- Residual analysis can mark cleaned residuals as sparse, Fourier-friendly, or
+  statistical noise, which is an early strategy-selection primitive.
 
 ## Phase 7: Path Complexity Optimizer
 

@@ -11,5 +11,7 @@ channel_outputs/
 package_outputs/
 benchmark_outputs/
 direct_outputs/
+spike_outputs/
+noisy_outputs/
 vizcompress_outputs/
 *.vizasset/

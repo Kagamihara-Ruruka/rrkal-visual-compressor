@@ -120,6 +120,25 @@ same output directory:
 py -m vizcompress.cli build --synthetic 100000 --direct-svg --fourier-terms 96 --out smoke_outputs
 ```
 
+Synthetic fixtures include `smooth`, `spikes`, `steps`, `chirp`, `multiscale`,
+`noisy`, and `irregular`:
+
+```powershell
+py -m vizcompress.cli build --synthetic 100000 --synthetic-kind spikes --channel --package --out spike_outputs
+```
+
+Cleaning is treated as layered modeling, not deletion. You can clip extreme
+outliers, smooth the main signal, and optionally store the raw-minus-cleaned
+residual as a separate noise layer:
+
+```powershell
+py -m vizcompress.cli build --synthetic 100000 --synthetic-kind noisy --sigma-clip 2.5 --smooth-window 51 --noise-layer-terms 32 --channel --package --out noisy_outputs
+```
+
+Use `--auto-noise-layer` to add a Fourier residual layer only when residual
+analysis recommends it. If the residual looks like sparse outliers instead, the
+tool stores a sparse residual layer rather than forcing Fourier.
+
 Build the first channel model, where Fourier produces the center function and
 the residual band becomes a visual fidelity envelope:
 
@@ -162,7 +181,7 @@ Run a size sweep to compare direct SVG growth against model-backed package
 growth:
 
 ```powershell
-py -m vizcompress.cli bench --synthetic-sizes 1000,10000,100000 --fourier-terms 96 --svg-samples 1200 --channel --out benchmark_outputs/size_sweep.json
+py -m vizcompress.cli bench --synthetic-sizes 1000,10000,100000 --synthetic-kind spikes --fourier-terms 96 --svg-samples 1200 --channel --out benchmark_outputs/spike_sweep.json
 ```
 
 The benchmark reports direct SVG bytes, `.vizasset` bytes, model bytes, preview

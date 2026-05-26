@@ -8,11 +8,13 @@ import numpy as np
 
 from vizcompress.analyzers import analyze_time_series
 from vizcompress.benchmarks import benchmark_synthetic_sizes, parse_sample_sizes
+from vizcompress.cleaning import residual_time_series, sigma_clip_time_series, smooth_time_series
 from vizcompress.compressors import compress_fourier, compress_fourier_channel, compress_rdp
 from vizcompress.core import CompressionReport
-from vizcompress.data import make_synthetic_signal, read_csv_timeseries
+from vizcompress.data import SYNTHETIC_KINDS, make_synthetic_dataset, make_synthetic_signal, read_csv_timeseries
 from vizcompress.exporters import write_channel_svg, write_demo, write_direct_svg, write_fourier_svg, write_metrics, write_rdp_svg
 from vizcompress.packages import load_vizasset_manifest, reconstruct_channel, reconstruct_fourier, write_vizasset
+from vizcompress.residuals import analyze_residual, compress_sparse_residual
 
 
 def test_rdp_and_fourier_compress_synthetic_series():
@@ -38,6 +40,35 @@ def test_analyze_time_series_reports_domain_profile():
     assert profile.x_min == 0.0
     assert profile.x_max == 1.0
     assert profile.y_min < profile.y_max
+
+
+def test_synthetic_dataset_kinds_cover_easy_and_hard_shapes():
+    for kind in SYNTHETIC_KINDS:
+        series = make_synthetic_dataset(2000, kind=kind)
+        profile = analyze_time_series(series)
+        assert series.sample_count == 2000
+        assert np.isfinite(series.y).all()
+        assert profile.x_uniform is (kind != "irregular")
+
+
+def test_cleaning_and_residual_analysis_preserve_noise_as_layer_candidate():
+    series = make_synthetic_dataset(5000, kind="noisy")
+    clipped = sigma_clip_time_series(series, sigma=2.0)
+    smoothed = smooth_time_series(clipped.cleaned, window=51)
+    residual = residual_time_series(series, smoothed.cleaned)
+    profile = analyze_residual(series, residual)
+    sparse = compress_sparse_residual(clipped.residual)
+
+    assert clipped.cleaned.sample_count == series.sample_count
+    assert clipped.metrics["clipped_count"] > 0.0
+    assert sparse.parameter_count == int(clipped.metrics["clipped_count"])
+    assert smoothed.cleaned.sample_count == series.sample_count
+    assert profile.energy_ratio > 0.0
+    assert profile.recommended_strategy in {
+        "fourier_residual_layer",
+        "sparse_outlier_layer",
+        "statistical_noise_summary",
+    }
 
 
 def test_fourier_channel_models_center_and_residual_band():
@@ -141,6 +172,7 @@ def test_vizasset_reconstructs_fourier_and_channel(tmp_path):
 def test_benchmark_reports_size_sweep():
     result = benchmark_synthetic_sizes(
         [1000, 5000],
+        synthetic_kind="spikes",
         fourier_terms=32,
         rdp_epsilon=0.012,
         svg_samples=300,
@@ -148,14 +180,20 @@ def test_benchmark_reports_size_sweep():
         channel_k=3.0,
         channel_window=201,
         channel_band_epsilon=0.01,
+        smooth_window=11,
+        sigma_clip=2.5,
+        noise_layer_terms=16,
     )
 
     assert parse_sample_sizes("1000,5000") == [1000, 5000]
     assert result["benchmark"] == "synthetic_size_sweep"
+    assert result["parameters"]["synthetic_kind"] == "spikes"
+    assert result["parameters"]["sigma_clip"] == 2.5
     assert "observed_break_even_samples" in result["summary"]
     assert len(result["rows"]) == 2
     assert result["rows"][1]["direct_svg_bytes"] > result["rows"][0]["direct_svg_bytes"]
     assert result["rows"][0]["x_uniform"] is True
+    assert result["rows"][0]["residual_strategy"] is not None
     assert result["rows"][1]["direct_svg_to_package_ratio"] > 0.0
 
 
@@ -186,6 +224,12 @@ def test_cli_build_synthetic(tmp_path):
             "--channel",
             "--package",
             "--direct-svg",
+            "--sigma-clip",
+            "2.5",
+            "--smooth-window",
+            "11",
+            "--noise-layer-terms",
+            "16",
             "--out",
             str(tmp_path),
         ],
@@ -204,6 +248,8 @@ def test_cli_build_synthetic(tmp_path):
     assert (tmp_path / "metrics.json").exists()
     assert (tmp_path / "model.vizasset" / "asset.json").exists()
     assert "channel" in summary
+    assert "noise_layer" in summary
+    assert summary["residual"]["recommended_strategy"] is not None
 
 
 def test_cli_bench_synthetic(tmp_path):
@@ -216,11 +262,16 @@ def test_cli_bench_synthetic(tmp_path):
             "bench",
             "--synthetic-sizes",
             "1000,5000",
+            "--synthetic-kind",
+            "spikes",
             "--fourier-terms",
             "32",
             "--svg-samples",
             "300",
             "--channel",
+            "--sigma-clip",
+            "2.5",
+            "--auto-noise-layer",
             "--out",
             str(output),
         ],
@@ -232,7 +283,10 @@ def test_cli_bench_synthetic(tmp_path):
     summary = json.loads(result.stdout)
     assert output.exists()
     assert "summary" in summary
+    assert summary["parameters"]["auto_noise_layer"] is True
     assert summary["rows"][0]["samples"] == 1000
+    assert summary["rows"][0]["residual_strategy"] == "sparse_outlier_layer"
+    assert summary["rows"][0]["sparse_residual_parameter_count"] is not None
     assert summary["rows"][1]["samples"] == 5000
 
 

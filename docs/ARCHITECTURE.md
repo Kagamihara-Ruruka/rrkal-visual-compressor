@@ -31,6 +31,27 @@ step statistics, uniform-sampling detection, and non-finite counts. This profile
 is attached to CLI metrics and `.vizasset` manifests so later agents can make
 strategy decisions without re-reading raw data.
 
+### Cleaning And Residuals
+
+Cleaning is modeled as a reversible lineage step:
+
+```text
+raw series -> cleaned main series
+raw series - cleaned main series -> residual layer candidate
+```
+
+The first cleaning operators are moving-average smoothing and global sigma
+clipping. They do not mutate the raw series. A residual analyzer classifies the
+remaining layer as sparse outliers, Fourier-friendly residual, statistical
+noise, or no meaningful residual. This keeps "noise removal" from becoming data
+loss by default.
+
+Residual storage follows that classification:
+
+- sparse outliers are stored as sparse `(index, x, delta_y)` points.
+- Fourier-friendly residuals are stored as a secondary Fourier layer.
+- statistical noise is summarized unless the caller explicitly asks to store it.
+
 ### Compressor
 
 Transforms data into a compact model.

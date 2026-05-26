@@ -6,11 +6,13 @@ from pathlib import Path
 from typing import Any
 
 from vizcompress.analyzers import analyze_time_series
+from vizcompress.cleaning import residual_time_series, sigma_clip_time_series, smooth_time_series
 from vizcompress.compressors import compress_fourier, compress_fourier_channel, compress_rdp
 from vizcompress.core import CompressionReport, TimeSeries
-from vizcompress.data import make_synthetic_signal
+from vizcompress.data import make_synthetic_dataset
 from vizcompress.exporters import path_from_xy, write_channel_svg, write_demo, write_fourier_svg, write_metrics, write_rdp_svg
 from vizcompress.packages import write_vizasset
+from vizcompress.residuals import analyze_residual, compress_sparse_residual
 
 
 def parse_sample_sizes(value: str) -> list[int]:
@@ -25,6 +27,7 @@ def parse_sample_sizes(value: str) -> list[int]:
 def benchmark_synthetic_sizes(
     sample_sizes: list[int],
     *,
+    synthetic_kind: str = "smooth",
     fourier_terms: int,
     rdp_epsilon: float,
     svg_samples: int,
@@ -32,10 +35,14 @@ def benchmark_synthetic_sizes(
     channel_k: float,
     channel_window: int,
     channel_band_epsilon: float,
+    smooth_window: int = 1,
+    sigma_clip: float | None = None,
+    noise_layer_terms: int = 0,
+    auto_noise_layer: bool = False,
 ) -> dict[str, Any]:
     rows = [
         _benchmark_one(
-            make_synthetic_signal(size),
+            make_synthetic_dataset(size, kind=synthetic_kind),
             fourier_terms=fourier_terms,
             rdp_epsilon=rdp_epsilon,
             svg_samples=svg_samples,
@@ -43,6 +50,10 @@ def benchmark_synthetic_sizes(
             channel_k=channel_k,
             channel_window=channel_window,
             channel_band_epsilon=channel_band_epsilon,
+            smooth_window=smooth_window,
+            sigma_clip=sigma_clip,
+            noise_layer_terms=noise_layer_terms,
+            auto_noise_layer=auto_noise_layer,
         )
         for size in sample_sizes
     ]
@@ -50,6 +61,7 @@ def benchmark_synthetic_sizes(
         "benchmark": "synthetic_size_sweep",
         "parameters": {
             "sample_sizes": sample_sizes,
+            "synthetic_kind": synthetic_kind,
             "fourier_terms": fourier_terms,
             "rdp_epsilon": rdp_epsilon,
             "svg_samples": svg_samples,
@@ -57,6 +69,10 @@ def benchmark_synthetic_sizes(
             "channel_k": channel_k,
             "channel_window": channel_window,
             "channel_band_epsilon": channel_band_epsilon,
+            "smooth_window": smooth_window,
+            "sigma_clip": sigma_clip,
+            "noise_layer_terms": noise_layer_terms,
+            "auto_noise_layer": auto_noise_layer,
         },
         "summary": _summarize_rows(rows),
         "rows": rows,
@@ -80,9 +96,37 @@ def _benchmark_one(
     channel_k: float,
     channel_window: int,
     channel_band_epsilon: float,
+    smooth_window: int,
+    sigma_clip: float | None,
+    noise_layer_terms: int,
+    auto_noise_layer: bool,
 ) -> dict[str, Any]:
+    raw_series = series
+    cleaning_steps = []
+    if sigma_clip is not None:
+        cleaning = sigma_clip_time_series(series, sigma_clip)
+        cleaning_steps.append(cleaning.metadata())
+        series = cleaning.cleaned
+    if smooth_window > 1:
+        cleaning = smooth_time_series(series, smooth_window)
+        cleaning_steps.append(cleaning.metadata())
+        series = cleaning.cleaned
     rdp = compress_rdp(series, rdp_epsilon)
     fourier = compress_fourier(series, fourier_terms)
+    noise = None
+    sparse_residual = None
+    residual_profile = None
+    if noise_layer_terms > 0 and cleaning_steps:
+        residual = residual_time_series(raw_series, series)
+        residual_profile = analyze_residual(raw_series, residual).as_dict()
+        noise = compress_fourier(residual, noise_layer_terms)
+    elif auto_noise_layer and cleaning_steps:
+        residual = residual_time_series(raw_series, series)
+        residual_profile = analyze_residual(raw_series, residual).as_dict()
+        if residual_profile["recommended_strategy"] == "fourier_residual_layer":
+            noise = compress_fourier(residual, max(16, fourier_terms // 2))
+        elif residual_profile["recommended_strategy"] == "sparse_outlier_layer":
+            sparse_residual = compress_sparse_residual(residual)
     channel_model = None
     if channel:
         channel_model = compress_fourier_channel(
@@ -92,7 +136,19 @@ def _benchmark_one(
             k=channel_k,
             band_epsilon=channel_band_epsilon,
         )
-    report = CompressionReport(series.sample_count, rdp, fourier, channel_model, analyze_time_series(series).as_dict())
+    profile = analyze_time_series(series).as_dict()
+    if cleaning_steps:
+        profile["cleaning"] = cleaning_steps
+    report = CompressionReport(
+        series.sample_count,
+        rdp,
+        fourier,
+        channel_model,
+        profile,
+        noise,
+        sparse_residual,
+        residual_profile,
+    )
     direct_svg_bytes = _estimate_direct_svg_bytes(series)
     with tempfile.TemporaryDirectory(prefix="vizcompress-bench-") as temp:
         temp_dir = Path(temp)
@@ -122,6 +178,7 @@ def _benchmark_one(
     return {
         "samples": series.sample_count,
         "x_uniform": bool(report.as_dict()["input"]["x_uniform"]),
+        "cleaning": cleaning_steps or None,
         "direct_svg_bytes": direct_svg_bytes,
         "package_bytes": package_bytes,
         "model_npz_bytes": model_bytes,
@@ -130,7 +187,14 @@ def _benchmark_one(
         "fourier_parameter_count": fourier.parameter_count,
         "rdp_parameter_count": rdp.parameter_count,
         "channel_parameter_count": channel_model.parameter_count if channel_model is not None else None,
+        "noise_parameter_count": noise.parameter_count if noise is not None else None,
+        "sparse_residual_parameter_count": sparse_residual.parameter_count if sparse_residual is not None else None,
         "fourier_r2": fourier.metrics["r2"],
+        "noise_r2": noise.metrics["r2"] if noise is not None else None,
+        "residual_strategy": residual_profile["recommended_strategy"] if residual_profile is not None else None,
+        "residual_spectral_concentration": (
+            residual_profile["spectral_concentration"] if residual_profile is not None else None
+        ),
         "channel_coverage_ratio": channel_model.coverage_ratio if channel_model is not None else None,
     }
 

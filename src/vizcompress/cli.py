@@ -6,11 +6,13 @@ from pathlib import Path
 
 from vizcompress.analyzers import analyze_time_series
 from vizcompress.benchmarks import benchmark_synthetic_sizes, parse_sample_sizes, write_benchmark
+from vizcompress.cleaning import residual_time_series, sigma_clip_time_series, smooth_time_series
 from vizcompress.compressors import compress_fourier, compress_fourier_channel, compress_rdp
 from vizcompress.core import CompressionReport
-from vizcompress.data import make_synthetic_signal, read_csv_timeseries
+from vizcompress.data import SYNTHETIC_KINDS, make_synthetic_dataset, read_csv_timeseries
 from vizcompress.exporters import write_channel_svg, write_demo, write_direct_svg, write_fourier_svg, write_metrics, write_rdp_svg
 from vizcompress.packages import load_vizasset_manifest, reconstruct_channel, reconstruct_fourier, write_vizasset
+from vizcompress.residuals import analyze_residual, compress_sparse_residual
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -25,12 +27,17 @@ def main(argv: list[str] | None = None) -> int:
     input_group = build.add_mutually_exclusive_group(required=True)
     input_group.add_argument("--synthetic", type=int, metavar="N", help="Generate a synthetic time series.")
     input_group.add_argument("--csv", type=Path, help="Read a CSV time series.")
+    build.add_argument("--synthetic-kind", choices=SYNTHETIC_KINDS, default="smooth", help="Synthetic dataset shape.")
     build.add_argument("--x-column", default="time", help="CSV x/time column name.")
     build.add_argument("--y-column", default="value", help="CSV y/value column name.")
     build.add_argument("--out", type=Path, default=Path("vizcompress_outputs"), help="Output directory.")
     build.add_argument("--rdp-epsilon", type=float, default=0.012, help="RDP epsilon on normalized y values.")
     build.add_argument("--fourier-terms", type=int, default=96, help="Number of Fourier coefficients to keep.")
     build.add_argument("--svg-samples", type=int, default=2400, help="Number of samples for Fourier SVG realization.")
+    build.add_argument("--smooth-window", type=int, default=1, help="Apply moving-average data cleaning before compression.")
+    build.add_argument("--sigma-clip", type=float, default=None, help="Clip outliers outside mean +/- K standard deviations.")
+    build.add_argument("--noise-layer-terms", type=int, default=0, help="Store raw-minus-cleaned residual as an independent Fourier layer.")
+    build.add_argument("--auto-noise-layer", action="store_true", help="Store a Fourier noise layer only when residual analysis recommends it.")
     build.add_argument("--direct-svg", action="store_true", help="Also export a full direct SVG baseline.")
     build.add_argument("--channel", action="store_true", help="Also build a Fourier center plus residual band model.")
     build.add_argument(
@@ -52,9 +59,14 @@ def main(argv: list[str] | None = None) -> int:
         help="Comma-separated synthetic sample sizes, for example: 1000,10000,100000.",
     )
     bench.add_argument("--out", type=Path, default=Path("benchmark_outputs/size_sweep.json"), help="Benchmark JSON path.")
+    bench.add_argument("--synthetic-kind", choices=SYNTHETIC_KINDS, default="smooth", help="Synthetic dataset shape.")
     bench.add_argument("--rdp-epsilon", type=float, default=0.012, help="RDP epsilon on normalized y values.")
     bench.add_argument("--fourier-terms", type=int, default=96, help="Number of Fourier coefficients to keep.")
     bench.add_argument("--svg-samples", type=int, default=1200, help="Number of preview SVG samples.")
+    bench.add_argument("--smooth-window", type=int, default=1, help="Apply moving-average data cleaning before compression.")
+    bench.add_argument("--sigma-clip", type=float, default=None, help="Clip outliers outside mean +/- K standard deviations.")
+    bench.add_argument("--noise-layer-terms", type=int, default=0, help="Benchmark a Fourier residual noise layer.")
+    bench.add_argument("--auto-noise-layer", action="store_true", help="Benchmark Fourier noise layer only when residual analysis recommends it.")
     bench.add_argument("--channel", action="store_true", help="Benchmark the Fourier channel package.")
     bench.add_argument("--channel-window", type=int, default=501, help="Rolling window for channel band estimation.")
     bench.add_argument("--channel-k", type=float, default=3.0, help="Standard-deviation multiplier for channel width.")
@@ -82,16 +94,44 @@ def main(argv: list[str] | None = None) -> int:
 
 def _build(args: argparse.Namespace) -> int:
     if args.synthetic is not None:
-        series = make_synthetic_signal(args.synthetic)
+        series = make_synthetic_dataset(args.synthetic, kind=args.synthetic_kind)
     else:
         series = read_csv_timeseries(args.csv, args.x_column, args.y_column)
+    raw_series = series
+    cleaning_steps = []
+    if args.sigma_clip is not None:
+        cleaning = sigma_clip_time_series(series, args.sigma_clip)
+        cleaning_steps.append(cleaning.metadata())
+        series = cleaning.cleaned
+    if args.smooth_window > 1:
+        cleaning = smooth_time_series(series, args.smooth_window)
+        cleaning_steps.append(cleaning.metadata())
+        series = cleaning.cleaned
 
     out_dir: Path = args.out
     out_dir.mkdir(parents=True, exist_ok=True)
 
     rdp = compress_rdp(series, args.rdp_epsilon)
     fourier = compress_fourier(series, args.fourier_terms)
+    noise = None
+    sparse_residual = None
+    residual_profile = None
+    if args.noise_layer_terms > 0:
+        if not cleaning_steps:
+            raise ValueError("--noise-layer-terms requires --sigma-clip or --smooth-window")
+        residual = residual_time_series(raw_series, series)
+        residual_profile = analyze_residual(raw_series, residual).as_dict()
+        noise = compress_fourier(residual, args.noise_layer_terms)
+    elif args.auto_noise_layer and cleaning_steps:
+        residual = residual_time_series(raw_series, series)
+        residual_profile = analyze_residual(raw_series, residual).as_dict()
+        if residual_profile["recommended_strategy"] == "fourier_residual_layer":
+            noise = compress_fourier(residual, max(16, args.fourier_terms // 2))
+        elif residual_profile["recommended_strategy"] == "sparse_outlier_layer":
+            sparse_residual = compress_sparse_residual(residual)
     profile = analyze_time_series(series).as_dict()
+    if cleaning_steps:
+        profile["cleaning"] = cleaning_steps
     channel = None
     if args.channel:
         channel = compress_fourier_channel(
@@ -108,6 +148,9 @@ def _build(args: argparse.Namespace) -> int:
         fourier=fourier,
         channel=channel,
         input_profile=profile,
+        noise=noise,
+        sparse_residual=sparse_residual,
+        residual_profile=residual_profile,
     )
 
     rdp_svg = write_rdp_svg(out_dir / "rdp_vectorized.svg", series, rdp)
@@ -159,6 +202,7 @@ def _build(args: argparse.Namespace) -> int:
 def _bench(args: argparse.Namespace) -> int:
     data = benchmark_synthetic_sizes(
         parse_sample_sizes(args.synthetic_sizes),
+        synthetic_kind=args.synthetic_kind,
         fourier_terms=args.fourier_terms,
         rdp_epsilon=args.rdp_epsilon,
         svg_samples=args.svg_samples,
@@ -166,6 +210,10 @@ def _bench(args: argparse.Namespace) -> int:
         channel_k=args.channel_k,
         channel_window=args.channel_window,
         channel_band_epsilon=args.channel_band_epsilon,
+        smooth_window=args.smooth_window,
+        sigma_clip=args.sigma_clip,
+        noise_layer_terms=args.noise_layer_terms,
+        auto_noise_layer=args.auto_noise_layer,
     )
     output = write_benchmark(args.out, data)
     data["output"] = str(output)
