@@ -15,6 +15,7 @@ from vizcompress.data import SYNTHETIC_KINDS, make_synthetic_dataset, make_synth
 from vizcompress.exporters import write_channel_svg, write_demo, write_direct_svg, write_fourier_svg, write_metrics, write_rdp_svg
 from vizcompress.packages import load_vizasset_manifest, reconstruct_channel, reconstruct_fourier, write_vizasset
 from vizcompress.residuals import analyze_residual, compress_sparse_residual
+from vizcompress.selectors import count_recommendations, recommend_benchmark_row
 
 
 def test_rdp_and_fourier_compress_synthetic_series():
@@ -303,6 +304,22 @@ def test_benchmark_reports_size_sweep():
     assert "recommendation" in result["rows"][0]
     assert result["rows"][0]["residual_strategy"] is not None
     assert result["rows"][1]["direct_svg_to_package_ratio"] > 0.0
+
+
+def test_selector_recommends_from_benchmark_row_shape():
+    row = {
+        "direct_svg_to_package_ratio": 4.0,
+        "fourier_r2": 0.9,
+        "x_domain_mode": "linspace_from_min_max",
+        "x_domain_parameter_count": 2.0,
+        "fourier_parameter_count": 32,
+        "channel_coverage_ratio": None,
+    }
+
+    assert recommend_benchmark_row(row) == "package_smaller_but_low_fidelity"
+    assert count_recommendations([{"recommendation": "package_preferred"}, {"recommendation": "package_preferred"}]) == {
+        "package_preferred": 2
+    }
 
 
 def test_benchmark_can_run_all_synthetic_kinds():

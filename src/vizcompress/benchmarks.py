@@ -14,6 +14,7 @@ from vizcompress.domains import encode_x_domain
 from vizcompress.exporters import path_from_xy, write_channel_svg, write_demo, write_fourier_svg, write_metrics, write_rdp_svg
 from vizcompress.packages import write_vizasset
 from vizcompress.residuals import analyze_residual, compress_sparse_residual
+from vizcompress.selectors import count_recommendations, recommend_benchmark_row
 
 
 def parse_sample_sizes(value: str) -> list[int]:
@@ -231,7 +232,7 @@ def _benchmark_one(
         ),
         "channel_coverage_ratio": channel_model.coverage_ratio if channel_model is not None else None,
     }
-    row["recommendation"] = _recommend_row(row)
+    row["recommendation"] = recommend_benchmark_row(row)
     return row
 
 
@@ -259,7 +260,7 @@ def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "best_direct_svg_to_package_ratio": best_row["direct_svg_to_package_ratio"],
         "package_wins_count": len(winning_rows),
         "direct_svg_wins_count": len(rows) - len(winning_rows),
-        "recommendation_counts": _count_recommendations(rows),
+        "recommendation_counts": count_recommendations(rows),
     }
 
 
@@ -269,24 +270,3 @@ def _summarize_rows_by_kind(rows: list[dict[str, Any]]) -> dict[str, Any]:
         kind: _summarize_rows([row for row in rows if row["synthetic_kind"] == kind])
         for kind in kinds
     }
-
-
-def _recommend_row(row: dict[str, Any]) -> str:
-    if row["direct_svg_to_package_ratio"] <= 1.0:
-        return "direct_svg_preferred"
-    if row["fourier_r2"] < 0.95:
-        return "package_smaller_but_low_fidelity"
-    if row["x_domain_mode"] == "stored_x" and row["x_domain_parameter_count"] > row["fourier_parameter_count"] * 10:
-        return "package_wins_but_domain_heavy"
-    coverage = row.get("channel_coverage_ratio")
-    if coverage is not None and coverage < 0.9:
-        return "package_smaller_but_channel_under_covers"
-    return "package_preferred"
-
-
-def _count_recommendations(rows: list[dict[str, Any]]) -> dict[str, int]:
-    counts: dict[str, int] = {}
-    for row in rows:
-        recommendation = str(row.get("recommendation", "unknown"))
-        counts[recommendation] = counts.get(recommendation, 0) + 1
-    return counts

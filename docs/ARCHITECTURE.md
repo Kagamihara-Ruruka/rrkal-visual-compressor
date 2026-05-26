@@ -177,3 +177,6 @@ direct SVG grows with sampled point count, while the model-backed package should
 mostly grow with model parameters, fixed preview resolution, and metadata.
 The report also includes the first observed sample count where the package is
 smaller than direct SVG.
+
+Benchmark recommendations are produced by `vizcompress.selectors` so the same
+decision rules can later be reused by build-time automatic method selection.
