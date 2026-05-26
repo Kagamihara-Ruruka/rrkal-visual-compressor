@@ -310,6 +310,18 @@ def format_benchmark_markdown(data: dict[str, Any]) -> str:
             )
             + " |"
         )
+    gate = data.get("benchmark_gate")
+    if isinstance(gate, dict):
+        lines.extend(
+            [
+                "",
+                "## Benchmark Gate",
+                "",
+                f"- OK: `{gate.get('ok')}`",
+                f"- Policy: `{gate.get('policy', {})}`",
+                f"- Errors: `{gate.get('errors', [])}`",
+            ]
+        )
     lines.extend(
         [
             "",

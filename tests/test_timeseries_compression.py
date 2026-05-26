@@ -600,6 +600,11 @@ def test_benchmark_markdown_report_includes_baseline_evidence():
     assert "samples /" in report
     assert "package must also pass source verification" in report
 
+    result["benchmark_gate"] = evaluate_benchmark_gate(result, min_fourier_r2=0.99)
+    gated_report = format_benchmark_markdown(result)
+    assert "## Benchmark Gate" in gated_report
+    assert "OK:" in gated_report
+
 
 def test_benchmark_can_sweep_fourier_terms():
     result = benchmark_synthetic_fourier_terms(
