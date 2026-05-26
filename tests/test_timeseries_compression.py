@@ -299,6 +299,7 @@ def test_benchmark_reports_size_sweep():
     assert result["rows"][0]["x_uniform"] is True
     assert result["rows"][0]["x_domain_mode"] == "linspace_from_min_max"
     assert result["rows"][0]["x_domain_max_abs_error"] == 0.0
+    assert "recommendation" in result["rows"][0]
     assert result["rows"][0]["residual_strategy"] is not None
     assert result["rows"][1]["direct_svg_to_package_ratio"] > 0.0
 
@@ -360,6 +361,10 @@ def test_benchmark_auto_x_domain_policy_reports_selected_mode():
 
     assert result["parameters"]["x_domain_policy"] == "auto"
     assert result["rows"][0]["x_domain_mode"] == "stored_x"
+    assert result["rows"][0]["recommendation"] in {
+        "direct_svg_preferred",
+        "package_wins_but_domain_heavy",
+    }
 
 
 def test_read_csv_timeseries(tmp_path):

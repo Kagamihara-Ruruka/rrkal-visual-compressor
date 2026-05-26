@@ -198,6 +198,9 @@ only when the selected encoding stays within the error budget.
 Use `--synthetic-kind all` to run the same sweep across every built-in synthetic
 fixture. The output includes both a global `summary` and `summary_by_kind` for
 per-dataset break-even analysis.
+Each row also includes a `recommendation` label such as
+`package_preferred`, `direct_svg_preferred`, or
+`package_smaller_but_low_fidelity`.
 
 Package suffixes are format-family aliases:
 

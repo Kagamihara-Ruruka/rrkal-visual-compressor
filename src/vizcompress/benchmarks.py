@@ -204,7 +204,7 @@ def _benchmark_one(
         preview_bytes = (package / "preview.svg").stat().st_size
 
     ratio = direct_svg_bytes / float(package_bytes) if package_bytes else 0.0
-    return {
+    row = {
         "synthetic_kind": synthetic_kind,
         "samples": series.sample_count,
         "x_uniform": bool(report.as_dict()["input"]["x_uniform"]),
@@ -231,6 +231,8 @@ def _benchmark_one(
         ),
         "channel_coverage_ratio": channel_model.coverage_ratio if channel_model is not None else None,
     }
+    row["recommendation"] = _recommend_row(row)
+    return row
 
 
 def _estimate_direct_svg_bytes(series: TimeSeries) -> int:
@@ -266,3 +268,16 @@ def _summarize_rows_by_kind(rows: list[dict[str, Any]]) -> dict[str, Any]:
         kind: _summarize_rows([row for row in rows if row["synthetic_kind"] == kind])
         for kind in kinds
     }
+
+
+def _recommend_row(row: dict[str, Any]) -> str:
+    if row["direct_svg_to_package_ratio"] <= 1.0:
+        return "direct_svg_preferred"
+    if row["fourier_r2"] < 0.95:
+        return "package_smaller_but_low_fidelity"
+    if row["x_domain_mode"] == "stored_x" and row["x_domain_parameter_count"] > row["fourier_parameter_count"] * 10:
+        return "package_wins_but_domain_heavy"
+    coverage = row.get("channel_coverage_ratio")
+    if coverage is not None and coverage < 0.9:
+        return "package_smaller_but_channel_under_covers"
+    return "package_preferred"
