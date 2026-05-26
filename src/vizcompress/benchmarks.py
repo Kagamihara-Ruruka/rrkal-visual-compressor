@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import tempfile
+import gzip
 from pathlib import Path
 from typing import Any
 
@@ -176,6 +177,7 @@ def _benchmark_one(
         residual_profile,
     )
     direct_svg_bytes = _estimate_direct_svg_bytes(series)
+    direct_svg_gzip_bytes = _estimate_direct_svg_gzip_bytes(series)
     with tempfile.TemporaryDirectory(prefix="vizcompress-bench-") as temp:
         temp_dir = Path(temp)
         rdp_svg = write_rdp_svg(temp_dir / "rdp_vectorized.svg", series, rdp)
@@ -205,6 +207,7 @@ def _benchmark_one(
         preview_bytes = (package / "preview.svg").stat().st_size
 
     ratio = direct_svg_bytes / float(package_bytes) if package_bytes else 0.0
+    gzip_ratio = direct_svg_gzip_bytes / float(package_bytes) if package_bytes else 0.0
     row = {
         "synthetic_kind": synthetic_kind,
         "samples": series.sample_count,
@@ -215,10 +218,12 @@ def _benchmark_one(
         "x_domain_rmse": x_domain.metrics["rmse"],
         "cleaning": cleaning_steps or None,
         "direct_svg_bytes": direct_svg_bytes,
+        "direct_svg_gzip_bytes": direct_svg_gzip_bytes,
         "package_bytes": package_bytes,
         "model_npz_bytes": model_bytes,
         "preview_svg_bytes": preview_bytes,
         "direct_svg_to_package_ratio": ratio,
+        "direct_svg_gzip_to_package_ratio": gzip_ratio,
         "fourier_parameter_count": fourier.parameter_count,
         "rdp_parameter_count": rdp.parameter_count,
         "channel_parameter_count": channel_model.parameter_count if channel_model is not None else None,
@@ -237,14 +242,21 @@ def _benchmark_one(
 
 
 def _estimate_direct_svg_bytes(series: TimeSeries) -> int:
+    return len(_direct_svg_document(series).encode("utf-8"))
+
+
+def _estimate_direct_svg_gzip_bytes(series: TimeSeries) -> int:
+    return len(gzip.compress(_direct_svg_document(series).encode("utf-8"), compresslevel=9, mtime=0))
+
+
+def _direct_svg_document(series: TimeSeries) -> str:
     path = path_from_xy(series.x, series.y)
-    document = (
+    return (
         '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420">'
         '<rect width="100%" height="100%" fill="#fbfbf8"/>'
         f'<path d="{path}" fill="none" stroke="#111" stroke-width="2"/>'
         "</svg>"
     )
-    return len(document.encode("utf-8"))
 
 
 def _directory_size(path: Path) -> int:
