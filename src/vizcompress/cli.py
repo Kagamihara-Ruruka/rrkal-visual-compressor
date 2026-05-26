@@ -137,6 +137,7 @@ def main(argv: list[str] | None = None) -> int:
     bench.add_argument("--require-svg-gzip-win", action="store_true", help="Fail when no benchmark row beats SVG.gz size.")
     bench.add_argument("--require-csv-gzip-win", action="store_true", help="Fail when no benchmark row beats source CSV.gz size.")
     bench.add_argument("--min-fourier-r2", type=float, default=None, help="Fail when any benchmark row has lower Fourier R2.")
+    bench.add_argument("--min-channel-coverage", type=float, default=None, help="Fail when any benchmark row has lower channel coverage.")
 
     inspect = subparsers.add_parser("inspect", help="Inspect a .vizasset package and verify reconstruction.")
     inspect.add_argument("package", type=Path, help=".vizasset package directory.")
@@ -374,8 +375,16 @@ def _bench(args: argparse.Namespace) -> int:
         require_svg_gzip_win=args.require_svg_gzip_win,
         require_csv_gzip_win=args.require_csv_gzip_win,
         min_fourier_r2=args.min_fourier_r2,
+        min_channel_coverage=args.min_channel_coverage,
     )
-    if any((args.require_svg_gzip_win, args.require_csv_gzip_win, args.min_fourier_r2 is not None)):
+    if any(
+        (
+            args.require_svg_gzip_win,
+            args.require_csv_gzip_win,
+            args.min_fourier_r2 is not None,
+            args.min_channel_coverage is not None,
+        )
+    ):
         data["benchmark_gate"] = gate
     output = write_benchmark(args.out, data)
     data["output"] = str(output)

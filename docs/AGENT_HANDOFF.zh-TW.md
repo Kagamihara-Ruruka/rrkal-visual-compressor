@@ -38,7 +38,7 @@
 - `compare` CLI，可對既有 package 產生 raw/gzip baseline size evidence
 - benchmark rows 會包含 LTTB downsampling baseline metrics，以及 LTTB SVG raw/gzip size evidence
 - `bench --report-md` 可額外輸出 Markdown benchmark report
-- benchmark gates：`--require-svg-gzip-win`、`--require-csv-gzip-win`、`--min-fourier-r2`
+- benchmark gates：`--require-svg-gzip-win`、`--require-csv-gzip-win`、`--min-fourier-r2`、`--min-channel-coverage`
 - `bench --fourier-terms-sweep` 可掃描 Fourier terms 甜蜜點
 - `docs/benchmarks` 存放可審核的 benchmark evidence snapshots
 - 繁中版文件：README、architecture、conceptual model、roadmap、governance、handoff

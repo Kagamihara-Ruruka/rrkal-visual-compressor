@@ -250,6 +250,7 @@ def evaluate_benchmark_gate(
     require_svg_gzip_win: bool = False,
     require_csv_gzip_win: bool = False,
     min_fourier_r2: float | None = None,
+    min_channel_coverage: float | None = None,
 ) -> dict[str, Any]:
     rows = data.get("rows", [])
     summary = data.get("summary", {})
@@ -266,6 +267,20 @@ def evaluate_benchmark_gate(
         ]
         if weak_rows:
             errors.append(f"{len(weak_rows)} row(s) below min Fourier R2 {min_fourier_r2}")
+    if min_channel_coverage is not None:
+        weak_channel_rows = [
+            {
+                "synthetic_kind": row.get("synthetic_kind"),
+                "samples": row.get("samples"),
+                "fourier_terms": row.get("fourier_terms"),
+                "channel_coverage_ratio": row.get("channel_coverage_ratio"),
+            }
+            for row in rows
+            if row.get("channel_coverage_ratio") is None
+            or float(row.get("channel_coverage_ratio", 0.0)) < min_channel_coverage
+        ]
+        if weak_channel_rows:
+            errors.append(f"{len(weak_channel_rows)} row(s) below min channel coverage {min_channel_coverage}")
     return {
         "ok": not errors,
         "errors": errors,
@@ -273,6 +288,7 @@ def evaluate_benchmark_gate(
             "require_svg_gzip_win": require_svg_gzip_win,
             "require_csv_gzip_win": require_csv_gzip_win,
             "min_fourier_r2": min_fourier_r2,
+            "min_channel_coverage": min_channel_coverage,
         },
     }
 

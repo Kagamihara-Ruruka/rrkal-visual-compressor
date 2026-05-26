@@ -39,7 +39,7 @@ Implemented mainline:
 - `compare` CLI for raw/gzip baseline size evidence against existing packages
 - LTTB downsampling baseline metrics plus LTTB SVG raw/gzip size evidence in benchmark rows
 - optional Markdown benchmark reports via `bench --report-md`
-- benchmark gates via `--require-svg-gzip-win`, `--require-csv-gzip-win`, and `--min-fourier-r2`
+- benchmark gates via `--require-svg-gzip-win`, `--require-csv-gzip-win`, `--min-fourier-r2`, and `--min-channel-coverage`
 - Fourier term sweet-spot sweeps via `bench --fourier-terms-sweep`
 - benchmark evidence snapshots under `docs/benchmarks`
 

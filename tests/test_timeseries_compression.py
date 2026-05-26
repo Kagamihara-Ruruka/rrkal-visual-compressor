@@ -636,11 +636,17 @@ def test_benchmark_gate_checks_size_and_fidelity_policy():
     )
 
     passing = evaluate_benchmark_gate(result, min_fourier_r2=0.8)
-    failing = evaluate_benchmark_gate(result, require_svg_gzip_win=True, min_fourier_r2=1.01)
+    failing = evaluate_benchmark_gate(
+        result,
+        require_svg_gzip_win=True,
+        min_fourier_r2=1.01,
+        min_channel_coverage=0.99,
+    )
 
     assert passing["ok"] is True
     assert failing["ok"] is False
     assert failing["policy"]["require_svg_gzip_win"] is True
+    assert failing["policy"]["min_channel_coverage"] == 0.99
     assert failing["errors"]
 
 
@@ -846,6 +852,8 @@ def test_cli_bench_synthetic(tmp_path):
             str(report),
             "--min-fourier-r2",
             "0.8",
+            "--min-channel-coverage",
+            "0.1",
         ],
         check=True,
         capture_output=True,
@@ -858,6 +866,7 @@ def test_cli_bench_synthetic(tmp_path):
     assert "summary" in summary
     assert summary["markdown_report"] == str(report)
     assert summary["benchmark_gate"]["ok"] is True
+    assert summary["benchmark_gate"]["policy"]["min_channel_coverage"] == 0.1
     assert summary["parameters"]["auto_noise_layer"] is True
     assert summary["rows"][0]["samples"] == 1000
     assert summary["rows"][0]["residual_strategy"] == "sparse_outlier_layer"
@@ -916,6 +925,8 @@ def test_cli_bench_gate_can_fail(tmp_path):
             str(output),
             "--min-fourier-r2",
             "1.01",
+            "--min-channel-coverage",
+            "0.99",
         ],
         check=False,
         capture_output=True,
@@ -926,6 +937,7 @@ def test_cli_bench_gate_can_fail(tmp_path):
     assert result.returncode == 1
     assert output.exists()
     assert summary["benchmark_gate"]["ok"] is False
+    assert summary["benchmark_gate"]["policy"]["min_channel_coverage"] == 0.99
 
 
 def test_cli_recommend_reads_benchmark_json(tmp_path):
