@@ -34,6 +34,7 @@ Implemented mainline:
 - benchmark matrix with per-kind summaries and recommendation labels
 - `build`, `bench`, `recommend`, `inspect`, and `verify` CLI commands
 - source-backed package fidelity verification with optional RMSE/MAE/max-error budgets
+- `review.json` packet generation with source fingerprints and accepted metrics
 
 Current local verification command:
 
@@ -41,7 +42,7 @@ Current local verification command:
 py -m pytest -q
 ```
 
-Latest known passing count: `31 passed`.
+Latest known passing count: `33 passed`.
 
 ## Original First Task
 

@@ -195,3 +195,28 @@ py -m vizcompress.cli verify outputs/model.vizretain --csv data.csv --x-column t
 
 - 能讀到原始輸入資料，或
 - build time 產生 review packet，記錄 source fingerprint 與已接受的 error metrics。
+
+## Review Packets
+
+Review packet 是 package 被接受的持久證據。它不是 raw data，而是這次檢查的摘要：
+
+```text
+review.json
+  source fingerprint
+  verification policy
+  package self-consistency result
+  source-fidelity result
+  accepted = true | false
+```
+
+Source fingerprint 會儲存 numeric x/y arrays 的 hash：
+
+```math
+h_x = SHA256(bytes(x))
+```
+
+```math
+h_y = SHA256(bytes(y))
+```
+
+這讓後續 agent 可以檢查：現在拿到的 source 是否就是當時產生 accepted metrics 的 source。

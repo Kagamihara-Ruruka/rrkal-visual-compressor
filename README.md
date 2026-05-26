@@ -243,6 +243,14 @@ source under an explicit error budget:
 py -m vizcompress.cli verify channel_outputs/model.vizretain --synthetic 100000 --max-rmse 0.01
 ```
 
+Build can also write a review packet next to the package. The review packet
+records the source fingerprint, verification policy, package self-check, and
+source-fidelity metrics:
+
+```powershell
+py -m vizcompress.cli build --synthetic 100000 --fourier-terms 96 --package --review-packet --review-max-rmse 0.01 --out reviewed_outputs
+```
+
 ## Status
 
 Phase 0/1 implementation has started. The package currently supports synthetic and CSV time-series compression through RDP and Fourier, with SVG, `demo.py`, and metrics exports. Phase 2 has a first Fourier channel prototype for center-line plus residual-band visual models.

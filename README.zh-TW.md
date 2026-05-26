@@ -157,6 +157,12 @@ py -m vizcompress.cli verify channel_outputs/model.vizretain --samples 1024
 py -m vizcompress.cli verify channel_outputs/model.vizretain --synthetic 100000 --max-rmse 0.01
 ```
 
+Build 也可以在 package 旁邊寫出 review packet。這份 `review.json` 會記錄 source fingerprint、verification policy、package self-check、source-fidelity metrics：
+
+```powershell
+py -m vizcompress.cli build --synthetic 100000 --fourier-terms 96 --package --review-packet --review-max-rmse 0.01 --out reviewed_outputs
+```
+
 ## 狀態
 
 Phase 0/1 已開始。專案目前支援 synthetic/CSV time-series，透過 RDP/Fourier 輸出 SVG、`demo.py`、metrics 和 package。Phase 2 已有 Fourier channel prototype，可表示 center-line 加 residual-band。

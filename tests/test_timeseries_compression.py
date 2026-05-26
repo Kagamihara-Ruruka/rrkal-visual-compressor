@@ -25,6 +25,7 @@ from vizcompress.packages import (
     write_vizasset,
 )
 from vizcompress.residuals import analyze_residual, compress_sparse_residual
+from vizcompress.reviews import build_review_packet, source_fingerprint, write_review_packet
 from vizcompress.selectors import count_recommendations, recommend_benchmark_row
 
 
@@ -251,6 +252,33 @@ def test_validate_vizasset_source_fails_strict_budget_for_wrong_source(tmp_path)
 
     assert result.ok is False
     assert any("rmse" in error for error in result.errors)
+
+
+def test_review_packet_records_source_fingerprint_and_acceptance(tmp_path):
+    series = make_synthetic_signal(5000)
+    rdp = compress_rdp(series, epsilon=0.012)
+    fourier = compress_fourier(series, terms=96)
+    report = CompressionReport(input_samples=series.sample_count, rdp=rdp, fourier=fourier)
+    preview = write_fourier_svg(tmp_path / "preview_source.svg", series, fourier, samples=400)
+    demo = write_demo(tmp_path / "demo_source.py", series.sample_count, terms=96)
+    metrics = write_metrics(tmp_path / "metrics_source.json", report, ["preview_source.svg", "demo_source.py"])
+    package = write_vizasset(
+        tmp_path / "reviewed.vizasset",
+        series=series,
+        report=report,
+        preview_svg=preview,
+        metrics_json=metrics,
+        demo_py=demo,
+    )
+
+    packet = build_review_packet(package, series, max_rmse=0.003, max_error=0.05)
+    output = write_review_packet(tmp_path / "review.json", package, series, max_rmse=0.003, max_error=0.05)
+    written = json.loads(output.read_text(encoding="utf-8"))
+
+    assert source_fingerprint(series)["xy_sha256"] == packet["source_fingerprint"]["xy_sha256"]
+    assert packet["accepted"] is True
+    assert written["accepted"] is True
+    assert written["source_validation"]["details"]["source_verification"]["rmse"] < 0.003
 
 
 def test_vizasset_reconstructs_fourier_and_channel(tmp_path):
@@ -778,6 +806,39 @@ def test_cli_inspect_vizasset(tmp_path):
     assert summary["reconstructed"]["samples"] == 300
     assert summary["retained"]["samples"] == 300
     assert summary["channel"]["samples"] == 300
+
+
+def test_cli_build_can_write_review_packet(tmp_path):
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vizcompress.cli",
+            "build",
+            "--synthetic",
+            "5000",
+            "--fourier-terms",
+            "96",
+            "--package",
+            "--review-packet",
+            "--review-max-rmse",
+            "0.003",
+            "--review-max-error",
+            "0.05",
+            "--out",
+            str(tmp_path),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    summary = json.loads(result.stdout)
+    review_path = tmp_path / "model.vizretain" / "review.json"
+    review = json.loads(review_path.read_text(encoding="utf-8"))
+    assert str(review_path) in summary["outputs"]
+    assert review["accepted"] is True
+    assert review["source_fingerprint"]["sample_count"] == 5000
 
 
 def test_cli_inspect_reports_clean_profile_without_residual_layer(tmp_path):

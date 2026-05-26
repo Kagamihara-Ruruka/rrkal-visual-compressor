@@ -130,6 +130,8 @@ Package verification 遵守 RRKAL-style 原則：generated assets 必須能被�
 \epsilon(D, decode(P)) \leq \tau
 ```
 
+`review.json` 是 `--review-packet` 產生的 optional sidecar。它記錄 source fingerprints、verification policy、package self-check、source-fidelity metrics，以及最後的 accepted flag。它用於 RRKAL/editor handoff 與後續 audit，不用來重建 visual model。
+
 ## Export Modes
 
 ### Pure SVG

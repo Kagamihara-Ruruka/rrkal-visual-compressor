@@ -23,6 +23,7 @@ from vizcompress.packages import (
     write_vizasset,
 )
 from vizcompress.residuals import analyze_residual, compress_sparse_residual
+from vizcompress.reviews import write_review_packet
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -75,6 +76,16 @@ def main(argv: list[str] | None = None) -> int:
     )
     build.add_argument("--x-domain-epsilon", type=float, default=0.002, help="RDP epsilon for compressed x-domain delta.")
     build.add_argument("--x-domain-max-error", type=float, default=1e-4, help="Max x error allowed by --x-domain-policy auto.")
+    build.add_argument("--review-packet", action="store_true", help="Write a review.json packet for the generated package.")
+    build.add_argument(
+        "--review-source",
+        choices=["model-input", "raw-input"],
+        default="model-input",
+        help="Source series used for package review packet fidelity checks.",
+    )
+    build.add_argument("--review-max-rmse", type=float, default=None, help="Review packet RMSE acceptance budget.")
+    build.add_argument("--review-max-mae", type=float, default=None, help="Review packet MAE acceptance budget.")
+    build.add_argument("--review-max-error", type=float, default=None, help="Review packet max absolute error budget.")
 
     bench = subparsers.add_parser("bench", help="Benchmark direct SVG size against model-backed package size.")
     bench.add_argument(
@@ -265,6 +276,17 @@ def _build(args: argparse.Namespace) -> int:
             x_domain_max_error=args.x_domain_max_error,
         )
         outputs.append(str(package))
+        if args.review_packet:
+            review_source = raw_series if args.review_source == "raw-input" else series
+            review = write_review_packet(
+                package / "review.json",
+                package,
+                review_source,
+                max_rmse=args.review_max_rmse,
+                max_mae=args.review_max_mae,
+                max_error=args.review_max_error,
+            )
+            outputs.append(str(Path(package.name) / review.name))
 
     summary = report.as_dict()
     rendered_outputs = [

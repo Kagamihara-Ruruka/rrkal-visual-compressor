@@ -220,3 +220,30 @@ Full production verification will later need:
 - access to the original input data, or
 - a review packet that records source fingerprints and accepted error metrics at
   build time.
+
+## Review Packets
+
+A review packet is the durable evidence for why a package was accepted. It is
+not the raw data. It is a signed-style summary of what was checked:
+
+```text
+review.json
+  source fingerprint
+  verification policy
+  package self-consistency result
+  source-fidelity result
+  accepted = true | false
+```
+
+The source fingerprint stores hashes of the numeric x/y arrays:
+
+```math
+h_x = SHA256(bytes(x))
+```
+
+```math
+h_y = SHA256(bytes(y))
+```
+
+This lets a later agent detect whether the source used for review is the same
+source that produced the accepted metrics.
