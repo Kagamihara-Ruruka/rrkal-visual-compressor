@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
+from vizcompress.analyzers import analyze_time_series
 from vizcompress.benchmarks import benchmark_synthetic_sizes, parse_sample_sizes, write_benchmark
 from vizcompress.compressors import compress_fourier, compress_fourier_channel, compress_rdp
 from vizcompress.core import CompressionReport
@@ -83,6 +84,7 @@ def _build(args: argparse.Namespace) -> int:
 
     rdp = compress_rdp(series, args.rdp_epsilon)
     fourier = compress_fourier(series, args.fourier_terms)
+    profile = analyze_time_series(series).as_dict()
     channel = None
     if args.channel:
         channel = compress_fourier_channel(
@@ -93,7 +95,13 @@ def _build(args: argparse.Namespace) -> int:
             k=args.channel_k,
             band_epsilon=args.channel_band_epsilon,
         )
-    report = CompressionReport(input_samples=series.sample_count, rdp=rdp, fourier=fourier, channel=channel)
+    report = CompressionReport(
+        input_samples=series.sample_count,
+        rdp=rdp,
+        fourier=fourier,
+        channel=channel,
+        input_profile=profile,
+    )
 
     rdp_svg = write_rdp_svg(out_dir / "rdp_vectorized.svg", series, rdp)
     fourier_svg = write_fourier_svg(

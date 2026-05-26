@@ -113,10 +113,11 @@ class CompressionReport:
     rdp: RDPModel
     fourier: FourierModel
     channel: ChannelModel | None = None
+    input_profile: dict[str, Any] | None = None
 
     def as_dict(self) -> dict[str, Any]:
         data = {
-            "input": {"samples": self.input_samples},
+            "input": self.input_profile or {"samples": self.input_samples},
             "rdp": {
                 **self.rdp.metadata(),
                 "compression_ratio_by_count": self.input_samples / float(self.rdp.parameter_count),

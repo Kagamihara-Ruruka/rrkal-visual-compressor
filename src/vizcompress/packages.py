@@ -8,6 +8,7 @@ from typing import Any
 
 import numpy as np
 
+from vizcompress.analyzers import analyze_time_series
 from vizcompress.core import CompressionReport, TimeSeries
 
 
@@ -152,6 +153,9 @@ def _build_manifest(
     report: CompressionReport,
     files: dict[str, Path],
 ) -> dict[str, Any]:
+    profile = report.as_dict()["input"]
+    if "x_uniform" not in profile:
+        profile = analyze_time_series(series).as_dict()
     return {
         "schema_version": ASSET_SCHEMA_VERSION,
         "asset_type": "rrkal.visual_compressor.timeseries",
@@ -161,6 +165,7 @@ def _build_manifest(
             "x_min": float(np.min(series.x)),
             "x_max": float(np.max(series.x)),
             "x_domain_mode": "linspace_from_min_max",
+            "profile": profile,
         },
         "model": {
             "type": "time_series",

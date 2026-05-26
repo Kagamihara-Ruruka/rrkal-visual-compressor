@@ -6,6 +6,7 @@ import sys
 
 import numpy as np
 
+from vizcompress.analyzers import analyze_time_series
 from vizcompress.benchmarks import benchmark_synthetic_sizes, parse_sample_sizes
 from vizcompress.compressors import compress_fourier, compress_fourier_channel, compress_rdp
 from vizcompress.core import CompressionReport
@@ -24,6 +25,19 @@ def test_rdp_and_fourier_compress_synthetic_series():
     assert fourier.parameter_count == 96
     assert rdp.metrics["r2"] > 0.9
     assert fourier.metrics["r2"] > 0.99
+
+
+def test_analyze_time_series_reports_domain_profile():
+    series = make_synthetic_signal(1000)
+
+    profile = analyze_time_series(series)
+
+    assert profile.sample_count == 1000
+    assert profile.x_uniform is True
+    assert profile.nonfinite_count == 0
+    assert profile.x_min == 0.0
+    assert profile.x_max == 1.0
+    assert profile.y_min < profile.y_max
 
 
 def test_fourier_channel_models_center_and_residual_band():
@@ -87,6 +101,7 @@ def test_write_vizasset_package(tmp_path):
     manifest = load_vizasset_manifest(package)
     assert manifest["asset_type"] == "rrkal.visual_compressor.timeseries"
     assert manifest["model"]["primary_method"] == "fourier_channel"
+    assert manifest["source"]["profile"]["x_uniform"] is True
     assert manifest["files"]["model"]["path"] == "model.npz"
     assert len(manifest["files"]["preview"]["sha256"]) == 64
     assert (package / "asset.json").exists()
@@ -137,6 +152,7 @@ def test_benchmark_reports_size_sweep():
     assert result["benchmark"] == "synthetic_size_sweep"
     assert len(result["rows"]) == 2
     assert result["rows"][1]["direct_svg_bytes"] > result["rows"][0]["direct_svg_bytes"]
+    assert result["rows"][0]["x_uniform"] is True
     assert result["rows"][1]["direct_svg_to_package_ratio"] > 0.0
 
 

@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from vizcompress.analyzers import analyze_time_series
 from vizcompress.compressors import compress_fourier, compress_fourier_channel, compress_rdp
 from vizcompress.core import CompressionReport, TimeSeries
 from vizcompress.data import make_synthetic_signal
@@ -90,7 +91,7 @@ def _benchmark_one(
             k=channel_k,
             band_epsilon=channel_band_epsilon,
         )
-    report = CompressionReport(series.sample_count, rdp, fourier, channel_model)
+    report = CompressionReport(series.sample_count, rdp, fourier, channel_model, analyze_time_series(series).as_dict())
     direct_svg_bytes = _estimate_direct_svg_bytes(series)
     with tempfile.TemporaryDirectory(prefix="vizcompress-bench-") as temp:
         temp_dir = Path(temp)
@@ -119,6 +120,7 @@ def _benchmark_one(
     ratio = direct_svg_bytes / float(package_bytes) if package_bytes else 0.0
     return {
         "samples": series.sample_count,
+        "x_uniform": bool(report.as_dict()["input"]["x_uniform"]),
         "direct_svg_bytes": direct_svg_bytes,
         "package_bytes": package_bytes,
         "model_npz_bytes": model_bytes,

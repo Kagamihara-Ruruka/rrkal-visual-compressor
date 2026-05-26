@@ -26,6 +26,11 @@ Inspects input data and records basic properties:
 
 The MVP analyzer only needs time series support.
 
+The current analyzer emits a `TimeSeriesProfile` with sample count, x/y ranges,
+step statistics, uniform-sampling detection, and non-finite counts. This profile
+is attached to CLI metrics and `.vizasset` manifests so later agents can make
+strategy decisions without re-reading raw data.
+
 ### Compressor
 
 Transforms data into a compact model.

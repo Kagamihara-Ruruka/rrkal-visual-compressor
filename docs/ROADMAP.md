@@ -32,6 +32,7 @@ Tasks:
 
 - Move RDP, Fourier reconstruction, SVG path writing, and metrics into `src/vizcompress/`.
 - Add synthetic time-series fixture generation.
+- Add time-series analyzer profiles for ranges, step regularity, and non-finite counts.
 - Add unit tests for import, RDP, Fourier, metrics, and SVG export.
 - Keep the implementation CPU/NumPy-first.
 
