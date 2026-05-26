@@ -4,10 +4,10 @@ import argparse
 import json
 from pathlib import Path
 
-from vizcompress.compressors import compress_fourier, compress_rdp
+from vizcompress.compressors import compress_fourier, compress_fourier_channel, compress_rdp
 from vizcompress.core import CompressionReport
 from vizcompress.data import make_synthetic_signal, read_csv_timeseries
-from vizcompress.exporters import write_demo, write_fourier_svg, write_metrics, write_rdp_svg
+from vizcompress.exporters import write_channel_svg, write_demo, write_fourier_svg, write_metrics, write_rdp_svg
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -28,6 +28,16 @@ def main(argv: list[str] | None = None) -> int:
     build.add_argument("--rdp-epsilon", type=float, default=0.012, help="RDP epsilon on normalized y values.")
     build.add_argument("--fourier-terms", type=int, default=96, help="Number of Fourier coefficients to keep.")
     build.add_argument("--svg-samples", type=int, default=2400, help="Number of samples for Fourier SVG realization.")
+    build.add_argument("--channel", action="store_true", help="Also build a Fourier center plus residual band model.")
+    build.add_argument(
+        "--channel-band",
+        choices=["global_std", "rolling_std"],
+        default="rolling_std",
+        help="Residual band estimation method.",
+    )
+    build.add_argument("--channel-window", type=int, default=501, help="Rolling window for channel band estimation.")
+    build.add_argument("--channel-k", type=float, default=3.0, help="Standard-deviation multiplier for channel width.")
+    build.add_argument("--channel-band-epsilon", type=float, default=0.01, help="RDP epsilon for channel band curve.")
 
     args = parser.parse_args(argv)
     if args.version:
@@ -52,7 +62,17 @@ def _build(args: argparse.Namespace) -> int:
 
     rdp = compress_rdp(series, args.rdp_epsilon)
     fourier = compress_fourier(series, args.fourier_terms)
-    report = CompressionReport(input_samples=series.sample_count, rdp=rdp, fourier=fourier)
+    channel = None
+    if args.channel:
+        channel = compress_fourier_channel(
+            series,
+            args.fourier_terms,
+            band_method=args.channel_band,
+            window=args.channel_window,
+            k=args.channel_k,
+            band_epsilon=args.channel_band_epsilon,
+        )
+    report = CompressionReport(input_samples=series.sample_count, rdp=rdp, fourier=fourier, channel=channel)
 
     rdp_svg = write_rdp_svg(out_dir / "rdp_vectorized.svg", series, rdp)
     fourier_svg = write_fourier_svg(
@@ -61,15 +81,25 @@ def _build(args: argparse.Namespace) -> int:
         fourier,
         args.svg_samples,
     )
+    outputs = [rdp_svg.name, fourier_svg.name]
+    if channel is not None:
+        channel_svg = write_channel_svg(
+            out_dir / "fourier_channel.svg",
+            series,
+            channel,
+            args.svg_samples,
+        )
+        outputs.append(channel_svg.name)
     demo = write_demo(out_dir / "demo.py", series.sample_count, args.fourier_terms)
+    outputs.append(demo.name)
     metrics = write_metrics(
         out_dir / "metrics.json",
         report,
-        [rdp_svg.name, fourier_svg.name, demo.name, "metrics.json"],
+        [*outputs, "metrics.json"],
     )
 
     summary = report.as_dict()
-    summary["outputs"] = [str(rdp_svg), str(fourier_svg), str(demo), str(metrics)]
+    summary["outputs"] = [str(out_dir / name) for name in outputs] + [str(metrics)]
     print(json.dumps(summary, indent=2))
     return 0
 

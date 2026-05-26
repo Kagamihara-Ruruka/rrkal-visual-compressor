@@ -6,10 +6,10 @@ import sys
 
 import numpy as np
 
-from vizcompress.compressors import compress_fourier, compress_rdp
+from vizcompress.compressors import compress_fourier, compress_fourier_channel, compress_rdp
 from vizcompress.core import CompressionReport
 from vizcompress.data import make_synthetic_signal, read_csv_timeseries
-from vizcompress.exporters import write_demo, write_fourier_svg, write_metrics, write_rdp_svg
+from vizcompress.exporters import write_channel_svg, write_demo, write_fourier_svg, write_metrics, write_rdp_svg
 
 
 def test_rdp_and_fourier_compress_synthetic_series():
@@ -24,23 +24,43 @@ def test_rdp_and_fourier_compress_synthetic_series():
     assert fourier.metrics["r2"] > 0.99
 
 
+def test_fourier_channel_models_center_and_residual_band():
+    series = make_synthetic_signal(20_000)
+
+    channel = compress_fourier_channel(series, terms=64, window=501, k=3.0, band_epsilon=0.01)
+
+    assert channel.center.parameter_count == 64
+    assert 0 < len(channel.band_indices) < series.sample_count
+    assert channel.parameter_count == 64 + len(channel.band_indices)
+    assert channel.coverage_ratio > 0.94
+    assert channel.metrics["mean_band_width"] > 0.0
+
+
 def test_exporters_write_expected_files(tmp_path):
     series = make_synthetic_signal(10_000)
     rdp = compress_rdp(series, epsilon=0.012)
     fourier = compress_fourier(series, terms=64)
-    report = CompressionReport(input_samples=series.sample_count, rdp=rdp, fourier=fourier)
+    channel = compress_fourier_channel(series, terms=64, window=401, k=3.0, band_epsilon=0.01)
+    report = CompressionReport(input_samples=series.sample_count, rdp=rdp, fourier=fourier, channel=channel)
 
     rdp_svg = write_rdp_svg(tmp_path / "rdp.svg", series, rdp)
     fourier_svg = write_fourier_svg(tmp_path / "fourier.svg", series, fourier, samples=800)
+    channel_svg = write_channel_svg(tmp_path / "channel.svg", series, channel, samples=800)
     demo = write_demo(tmp_path / "demo.py", series.sample_count, terms=64)
-    metrics = write_metrics(tmp_path / "metrics.json", report, [rdp_svg.name, fourier_svg.name, demo.name])
+    metrics = write_metrics(
+        tmp_path / "metrics.json",
+        report,
+        [rdp_svg.name, fourier_svg.name, channel_svg.name, demo.name],
+    )
 
     assert rdp_svg.read_text(encoding="utf-8").startswith("<svg")
     assert "Fourier" in fourier_svg.read_text(encoding="utf-8")
+    assert "Fourier channel model" in channel_svg.read_text(encoding="utf-8")
     assert "FOURIER_TERMS = 64" in demo.read_text(encoding="utf-8")
     data = json.loads(metrics.read_text(encoding="utf-8"))
     assert data["input"]["samples"] == 10_000
     assert data["fourier"]["kept_coefficients"] == 64
+    assert data["channel"]["coverage_ratio"] > 0.94
 
 
 def test_read_csv_timeseries(tmp_path):
@@ -67,6 +87,7 @@ def test_cli_build_synthetic(tmp_path):
             "32",
             "--svg-samples",
             "400",
+            "--channel",
             "--out",
             str(tmp_path),
         ],
@@ -79,5 +100,7 @@ def test_cli_build_synthetic(tmp_path):
     assert summary["input"]["samples"] == 5000
     assert (tmp_path / "rdp_vectorized.svg").exists()
     assert (tmp_path / "fourier_vectorized.svg").exists()
+    assert (tmp_path / "fourier_channel.svg").exists()
     assert (tmp_path / "demo.py").exists()
     assert (tmp_path / "metrics.json").exists()
+    assert "channel" in summary

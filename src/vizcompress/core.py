@@ -71,13 +71,51 @@ class FourierModel:
 
 
 @dataclass(frozen=True)
+class ChannelModel:
+    method: str
+    center: FourierModel
+    band_method: str
+    k: float
+    window: int
+    band_epsilon: float
+    band_indices: np.ndarray
+    band_x: np.ndarray
+    band_y: np.ndarray
+    reconstructed_band: np.ndarray
+    upper_y: np.ndarray
+    lower_y: np.ndarray
+    coverage_ratio: float
+    outlier_count: int
+    metrics: dict[str, float] = field(default_factory=dict)
+
+    @property
+    def parameter_count(self) -> int:
+        return int(self.center.parameter_count + len(self.band_indices))
+
+    def metadata(self) -> dict[str, Any]:
+        return {
+            "method": self.method,
+            "center": self.center.metadata(),
+            "band_method": self.band_method,
+            "k": self.k,
+            "window": self.window,
+            "band_epsilon": self.band_epsilon,
+            "band_points": int(len(self.band_indices)),
+            "parameter_count": self.parameter_count,
+            "coverage_ratio": self.coverage_ratio,
+            "outlier_count": self.outlier_count,
+        }
+
+
+@dataclass(frozen=True)
 class CompressionReport:
     input_samples: int
     rdp: RDPModel
     fourier: FourierModel
+    channel: ChannelModel | None = None
 
     def as_dict(self) -> dict[str, Any]:
-        return {
+        data = {
             "input": {"samples": self.input_samples},
             "rdp": {
                 **self.rdp.metadata(),
@@ -90,3 +128,10 @@ class CompressionReport:
                 **self.fourier.metrics,
             },
         }
+        if self.channel is not None:
+            data["channel"] = {
+                **self.channel.metadata(),
+                "compression_ratio_by_count": self.input_samples / float(self.channel.parameter_count),
+                **self.channel.metrics,
+            }
+        return data

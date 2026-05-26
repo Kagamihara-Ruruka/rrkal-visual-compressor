@@ -100,12 +100,12 @@ valid range = center(t) +/- k * band(t)
 
 Initial implementation:
 
-- `FourierCenterModel`
-- residual calculation
-- `global_std` band
-- `rolling_std` band
-- `rolling_quantile` band
-- RDP or spline simplification for the band curve
+- `ChannelModel` wrapping a Fourier center function.
+- residual calculation.
+- `global_std` band.
+- `rolling_std` band.
+- RDP simplification for the band curve.
+- `rolling_quantile` band remains deferred.
 
 SVG output:
 
@@ -325,4 +325,6 @@ Start with Phase 0 and Phase 1 only:
 5. Add SVG, `demo.py`, and `metrics.json` export.
 6. Push the first implementation branch.
 
-Only after this is stable should Phase 2 channel models begin.
+Phase 2 has started with Fourier channel models. Keep the next work scoped to
+metrics, package contracts, and strategy comparison before moving into 2D
+geometry research.

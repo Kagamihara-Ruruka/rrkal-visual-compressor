@@ -4,7 +4,7 @@ import math
 
 import numpy as np
 
-from vizcompress.core import FourierModel, RDPModel, TimeSeries
+from vizcompress.core import ChannelModel, FourierModel, RDPModel, TimeSeries
 from vizcompress.metrics import regression_metrics
 
 
@@ -88,4 +88,73 @@ def compress_fourier(series: TimeSeries, terms: int) -> FourierModel:
         mean=float(np.mean(series.y)),
         reconstructed_y=reconstructed,
         metrics=regression_metrics(series.y, reconstructed),
+    )
+
+
+def rolling_std(values: np.ndarray, window: int) -> np.ndarray:
+    if window <= 1:
+        return np.full_like(values, float(np.std(values)), dtype=np.float64)
+    window = min(int(window), len(values))
+    kernel = np.ones(window, dtype=np.float64) / float(window)
+    mean = np.convolve(values, kernel, mode="same")
+    mean_sq = np.convolve(values * values, kernel, mode="same")
+    return np.sqrt(np.maximum(mean_sq - mean * mean, 0.0))
+
+
+def compress_fourier_channel(
+    series: TimeSeries,
+    terms: int,
+    *,
+    band_method: str = "rolling_std",
+    window: int = 501,
+    k: float = 3.0,
+    band_epsilon: float = 0.01,
+) -> ChannelModel:
+    if k <= 0:
+        raise ValueError("k must be positive")
+    if band_epsilon < 0:
+        raise ValueError("band_epsilon must be non-negative")
+    center = compress_fourier(series, terms)
+    residual = series.y - center.reconstructed_y
+    if band_method == "global_std":
+        band_raw = np.full_like(series.y, float(np.std(residual)), dtype=np.float64)
+        window_value = int(len(series.y))
+    elif band_method == "rolling_std":
+        band_raw = rolling_std(residual, window)
+        window_value = int(min(max(window, 1), len(series.y)))
+    else:
+        raise ValueError("band_method must be 'global_std' or 'rolling_std'")
+
+    floor = max(float(np.std(residual)) * 1e-6, 1e-12)
+    band_raw = np.maximum(band_raw, floor)
+    band_norm = normalize_unit_interval(band_raw)
+    band_indices = rdp_indices(series.x, band_norm, band_epsilon)
+    reconstructed_band = np.interp(series.x, series.x[band_indices], band_raw[band_indices])
+    reconstructed_band = np.maximum(reconstructed_band, floor)
+    upper = center.reconstructed_y + k * reconstructed_band
+    lower = center.reconstructed_y - k * reconstructed_band
+    covered = np.abs(residual) <= (k * reconstructed_band)
+    coverage_ratio = float(np.mean(covered))
+    metrics = {
+        "center_rmse": center.metrics["rmse"],
+        "center_r2": center.metrics["r2"],
+        "mean_band_width": float(np.mean(2.0 * k * reconstructed_band)),
+        "max_band_width": float(np.max(2.0 * k * reconstructed_band)),
+    }
+    return ChannelModel(
+        method="fourier_channel",
+        center=center,
+        band_method=band_method,
+        k=float(k),
+        window=window_value,
+        band_epsilon=float(band_epsilon),
+        band_indices=band_indices,
+        band_x=series.x[band_indices],
+        band_y=band_raw[band_indices],
+        reconstructed_band=reconstructed_band,
+        upper_y=upper,
+        lower_y=lower,
+        coverage_ratio=coverage_ratio,
+        outlier_count=int(np.size(covered) - np.count_nonzero(covered)),
+        metrics=metrics,
     )

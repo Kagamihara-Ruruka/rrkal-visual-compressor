@@ -91,7 +91,11 @@ docs/
   ARCHITECTURE.md
   ROADMAP.md
   AGENT_HANDOFF.md
+  DEVELOPMENT_GOVERNANCE.md
 ```
+
+See [docs/DEVELOPMENT_GOVERNANCE.md](docs/DEVELOPMENT_GOVERNANCE.md) for the
+RRKAL-inspired development rules used by agents working in this repository.
 
 ## Development
 
@@ -109,12 +113,20 @@ Generate a synthetic time series, compress it with RDP and Fourier, then export 
 py -m vizcompress.cli build --synthetic 100000 --fourier-terms 96 --svg-samples 1200 --out smoke_outputs
 ```
 
+Build the first channel model, where Fourier produces the center function and
+the residual band becomes a visual fidelity envelope:
+
+```powershell
+py -m vizcompress.cli build --synthetic 100000 --fourier-terms 96 --svg-samples 1200 --channel --channel-k 3 --channel-window 501 --out channel_outputs
+```
+
 Outputs:
 
 ```text
 smoke_outputs/
   rdp_vectorized.svg
   fourier_vectorized.svg
+  fourier_channel.svg       # only when --channel is enabled
   demo.py
   metrics.json
 ```
@@ -127,4 +139,4 @@ py -m vizcompress.cli build --csv data.csv --x-column time --y-column value --ou
 
 ## Status
 
-Phase 0/1 implementation has started. The package currently supports synthetic and CSV time-series compression through RDP and Fourier, with SVG, `demo.py`, and metrics exports.
+Phase 0/1 implementation has started. The package currently supports synthetic and CSV time-series compression through RDP and Fourier, with SVG, `demo.py`, and metrics exports. Phase 2 has a first Fourier channel prototype for center-line plus residual-band visual models.
