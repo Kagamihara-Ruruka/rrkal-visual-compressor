@@ -13,7 +13,14 @@ from vizcompress.compressors import compress_fourier, compress_fourier_channel, 
 from vizcompress.core import CompressionReport
 from vizcompress.data import SYNTHETIC_KINDS, make_synthetic_dataset, make_synthetic_signal, read_csv_timeseries
 from vizcompress.exporters import write_channel_svg, write_demo, write_direct_svg, write_fourier_svg, write_metrics, write_rdp_svg
-from vizcompress.packages import load_vizasset_manifest, reconstruct_channel, reconstruct_fourier, write_vizasset
+from vizcompress.packages import (
+    load_vizasset_manifest,
+    reconstruct_channel,
+    reconstruct_fourier,
+    reconstruct_noise_layer,
+    reconstruct_sparse_residual,
+    write_vizasset,
+)
 from vizcompress.residuals import analyze_residual, compress_sparse_residual
 from vizcompress.selectors import count_recommendations, recommend_benchmark_row
 
@@ -169,6 +176,72 @@ def test_vizasset_reconstructs_fourier_and_channel(tmp_path):
     assert channel_reconstructed["x"].shape == (500,)
     assert np.all(channel_reconstructed["upper_y"] >= channel_reconstructed["center_y"])
     assert np.all(channel_reconstructed["lower_y"] <= channel_reconstructed["center_y"])
+
+
+def test_vizasset_reconstructs_sparse_residual_layer(tmp_path):
+    series = make_synthetic_dataset(5000, kind="spikes")
+    clipped = sigma_clip_time_series(series, sigma=2.5)
+    cleaned = clipped.cleaned
+    residual = residual_time_series(series, cleaned)
+    rdp = compress_rdp(cleaned, epsilon=0.012)
+    fourier = compress_fourier(cleaned, terms=48)
+    sparse = compress_sparse_residual(residual)
+    report = CompressionReport(
+        input_samples=cleaned.sample_count,
+        rdp=rdp,
+        fourier=fourier,
+        input_profile=analyze_time_series(cleaned).as_dict(),
+        sparse_residual=sparse,
+        residual_profile=analyze_residual(series, residual).as_dict(),
+    )
+    preview = write_fourier_svg(tmp_path / "preview_source.svg", cleaned, fourier, samples=300)
+    demo = write_demo(tmp_path / "demo_source.py", cleaned.sample_count, terms=48)
+    metrics = write_metrics(tmp_path / "metrics_source.json", report, ["preview_source.svg", "demo_source.py"])
+    package = write_vizasset(
+        tmp_path / "sparse.vizretain",
+        series=cleaned,
+        report=report,
+        preview_svg=preview,
+        metrics_json=metrics,
+        demo_py=demo,
+    )
+
+    reconstructed = reconstruct_sparse_residual(package)
+    assert reconstructed["indices"].shape[0] == sparse.parameter_count
+    assert np.allclose(reconstructed["delta_y"], sparse.delta_y)
+
+
+def test_vizasset_reconstructs_fourier_noise_layer(tmp_path):
+    series = make_synthetic_dataset(5000, kind="noisy")
+    smoothed = smooth_time_series(series, window=51)
+    cleaned = smoothed.cleaned
+    residual = residual_time_series(series, cleaned)
+    rdp = compress_rdp(cleaned, epsilon=0.012)
+    fourier = compress_fourier(cleaned, terms=48)
+    noise = compress_fourier(residual, terms=16)
+    report = CompressionReport(
+        input_samples=cleaned.sample_count,
+        rdp=rdp,
+        fourier=fourier,
+        input_profile=analyze_time_series(cleaned).as_dict(),
+        noise=noise,
+        residual_profile=analyze_residual(series, residual).as_dict(),
+    )
+    preview = write_fourier_svg(tmp_path / "preview_source.svg", cleaned, fourier, samples=300)
+    demo = write_demo(tmp_path / "demo_source.py", cleaned.sample_count, terms=48)
+    metrics = write_metrics(tmp_path / "metrics_source.json", report, ["preview_source.svg", "demo_source.py"])
+    package = write_vizasset(
+        tmp_path / "noise.vizretain",
+        series=cleaned,
+        report=report,
+        preview_svg=preview,
+        metrics_json=metrics,
+        demo_py=demo,
+    )
+
+    reconstructed = reconstruct_noise_layer(package, samples=300)
+    assert reconstructed.sample_count == 300
+    assert np.isfinite(reconstructed.y).all()
 
 
 def test_vizasset_preserves_irregular_x_domain(tmp_path):
@@ -639,3 +712,43 @@ def test_cli_inspect_reports_clean_profile_without_residual_layer(tmp_path):
     summary = json.loads(result.stdout)
     assert summary["package_profile"] == "clean"
     assert summary["contains_sparse_residual_layer"] is False
+
+
+def test_cli_inspect_reports_sparse_residual_details(tmp_path):
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vizcompress.cli",
+            "build",
+            "--synthetic",
+            "5000",
+            "--synthetic-kind",
+            "spikes",
+            "--sigma-clip",
+            "2.5",
+            "--auto-noise-layer",
+            "--package",
+            "--out",
+            str(tmp_path),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vizcompress.cli",
+            "inspect",
+            str(tmp_path / "model.vizretain"),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    summary = json.loads(result.stdout)
+    assert summary["contains_sparse_residual_layer"] is True
+    assert summary["sparse_residual"]["points"] > 0

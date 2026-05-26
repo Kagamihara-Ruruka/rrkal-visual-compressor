@@ -122,6 +122,41 @@ def reconstruct_channel(path: str | Path, samples: int | None = None) -> dict[st
     }
 
 
+def reconstruct_sparse_residual(path: str | Path) -> dict[str, np.ndarray]:
+    package = Path(path)
+    model_path = package / "model.npz" if package.is_dir() else package
+    with np.load(model_path, allow_pickle=False) as data:
+        if not bool(data["sparse_residual_present"]):
+            raise ValueError("package does not contain a sparse residual layer")
+        return {
+            "indices": data["sparse_residual_indices"],
+            "x": data["sparse_residual_x"],
+            "delta_y": data["sparse_residual_delta_y"],
+        }
+
+
+def reconstruct_noise_layer(path: str | Path, samples: int | None = None) -> TimeSeries:
+    package = Path(path)
+    model_path = package / "model.npz" if package.is_dir() else package
+    with np.load(model_path, allow_pickle=False) as data:
+        if not bool(data["noise_present"]):
+            raise ValueError("package does not contain a Fourier noise layer")
+        full_n = int(data["sample_count"])
+        y_full = _reconstruct_noise_y(data, full_n)
+        x_full = reconstruct_x_domain(data, full_n)
+        if samples is None or samples == full_n:
+            x = x_full
+            y = y_full
+        else:
+            if samples < 2:
+                raise ValueError("samples must be >= 2")
+            indices = np.linspace(0, full_n - 1, samples).astype(np.int64)
+            x = x_full[indices]
+            y = y_full[indices]
+        source = str(data["source"])
+    return TimeSeries(x=x, y=y, source=f"noise:{source}")
+
+
 def _write_model_npz(
     path: Path,
     series: TimeSeries,
@@ -278,3 +313,10 @@ def _reconstruct_fourier_y(data: Any, n: int) -> np.ndarray:
     frequencies = data["fourier_frequencies"].astype(np.int64)
     compact[frequencies] = data["fourier_coefficients"]
     return np.fft.irfft(compact, n=n) + float(data["fourier_mean"])
+
+
+def _reconstruct_noise_y(data: Any, n: int) -> np.ndarray:
+    compact = np.zeros(n // 2 + 1, dtype=np.complex128)
+    frequencies = data["noise_frequencies"].astype(np.int64)
+    compact[frequencies] = data["noise_coefficients"]
+    return np.fft.irfft(compact, n=n) + float(data["noise_mean"])

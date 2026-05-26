@@ -11,7 +11,14 @@ from vizcompress.compressors import compress_fourier, compress_fourier_channel, 
 from vizcompress.core import CompressionReport
 from vizcompress.data import SYNTHETIC_KINDS, make_synthetic_dataset, read_csv_timeseries
 from vizcompress.exporters import write_channel_svg, write_demo, write_direct_svg, write_fourier_svg, write_metrics, write_rdp_svg
-from vizcompress.packages import load_vizasset_manifest, reconstruct_channel, reconstruct_fourier, write_vizasset
+from vizcompress.packages import (
+    load_vizasset_manifest,
+    reconstruct_channel,
+    reconstruct_fourier,
+    reconstruct_noise_layer,
+    reconstruct_sparse_residual,
+    write_vizasset,
+)
 from vizcompress.residuals import analyze_residual, compress_sparse_residual
 
 
@@ -296,6 +303,20 @@ def _inspect(args: argparse.Namespace) -> int:
             "upper_max": float(channel["upper_y"].max()),
             "lower_min": float(channel["lower_y"].min()),
         }
+    sparse_summary = None
+    if "sparse_residual_layer" in manifest.get("metrics", {}):
+        sparse = reconstruct_sparse_residual(args.package)
+        sparse_summary = {
+            "points": int(sparse["indices"].shape[0]),
+            "max_abs_delta": float(abs(sparse["delta_y"]).max()) if sparse["delta_y"].size else 0.0,
+        }
+    noise_summary = None
+    if "noise_layer" in manifest.get("metrics", {}):
+        noise = reconstruct_noise_layer(args.package, samples=args.samples)
+        noise_summary = {
+            "samples": noise.sample_count,
+            "max_abs": float(abs(noise.y).max()),
+        }
     summary = {
         "package": str(args.package),
         "asset_type": manifest["asset_type"],
@@ -313,6 +334,8 @@ def _inspect(args: argparse.Namespace) -> int:
             "y_max": float(reconstructed.y.max()),
         },
         "channel": channel_summary,
+        "sparse_residual": sparse_summary,
+        "noise_layer": noise_summary,
         "files": manifest["files"],
     }
     print(json.dumps(summary, indent=2))
