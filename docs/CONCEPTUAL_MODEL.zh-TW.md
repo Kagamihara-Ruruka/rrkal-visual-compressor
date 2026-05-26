@@ -220,3 +220,5 @@ h_y = SHA256(bytes(y))
 ```
 
 這讓後續 agent 可以檢查：現在拿到的 source 是否就是當時產生 accepted metrics 的 source。
+
+使用 `--require-review-pass` 時，build command 會把 `accepted: false` 視為硬失敗。這就是「不要接受超出宣稱 error budget 的 compressed asset」在操作層的形式。

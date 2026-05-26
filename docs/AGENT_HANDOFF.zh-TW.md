@@ -34,6 +34,7 @@
 - `build`、`bench`、`recommend`、`inspect`、`verify` CLI commands
 - source-backed package fidelity verification，支援 optional RMSE/MAE/max-error budgets
 - `review.json` packet generation，包含 source fingerprints 與 accepted metrics
+- `--require-review-pass` build gate，可拒絕超出 review budgets 的 package
 - 繁中版文件：README、architecture、conceptual model、roadmap、governance、handoff
 
 目前本地驗證命令：
@@ -42,7 +43,7 @@
 py -m pytest -q
 ```
 
-最近已知通過數：`33 passed`。
+最近已知通過數：`34 passed`。
 
 ## 原始第一任務
 

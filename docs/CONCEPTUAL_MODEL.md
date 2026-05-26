@@ -247,3 +247,7 @@ h_y = SHA256(bytes(y))
 
 This lets a later agent detect whether the source used for review is the same
 source that produced the accepted metrics.
+
+When `--require-review-pass` is used, the build command treats `accepted: false`
+as a hard failure. This is the operational form of "do not accept a compressed
+asset that exceeds its declared error budget."

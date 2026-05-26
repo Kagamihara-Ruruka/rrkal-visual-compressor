@@ -251,6 +251,9 @@ source-fidelity metrics:
 py -m vizcompress.cli build --synthetic 100000 --fourier-terms 96 --package --review-packet --review-max-rmse 0.01 --out reviewed_outputs
 ```
 
+Add `--require-review-pass` when a failing review should fail the build instead
+of only writing `accepted: false` to `review.json`.
+
 ## Status
 
 Phase 0/1 implementation has started. The package currently supports synthetic and CSV time-series compression through RDP and Fourier, with SVG, `demo.py`, and metrics exports. Phase 2 has a first Fourier channel prototype for center-line plus residual-band visual models.

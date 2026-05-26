@@ -86,6 +86,7 @@ def main(argv: list[str] | None = None) -> int:
     build.add_argument("--review-max-rmse", type=float, default=None, help="Review packet RMSE acceptance budget.")
     build.add_argument("--review-max-mae", type=float, default=None, help="Review packet MAE acceptance budget.")
     build.add_argument("--review-max-error", type=float, default=None, help="Review packet max absolute error budget.")
+    build.add_argument("--require-review-pass", action="store_true", help="Fail build when the generated review packet is not accepted.")
 
     bench = subparsers.add_parser("bench", help="Benchmark direct SVG size against model-backed package size.")
     bench.add_argument(
@@ -287,6 +288,10 @@ def _build(args: argparse.Namespace) -> int:
                 max_error=args.review_max_error,
             )
             outputs.append(str(Path(package.name) / review.name))
+            if args.require_review_pass:
+                review_data = json.loads(review.read_text(encoding="utf-8"))
+                if not bool(review_data.get("accepted")):
+                    raise SystemExit(f"review packet did not pass verification: {review}")
 
     summary = report.as_dict()
     rendered_outputs = [

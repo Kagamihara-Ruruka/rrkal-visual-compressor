@@ -841,6 +841,33 @@ def test_cli_build_can_write_review_packet(tmp_path):
     assert review["source_fingerprint"]["sample_count"] == 5000
 
 
+def test_cli_build_can_require_review_pass(tmp_path):
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vizcompress.cli",
+            "build",
+            "--synthetic",
+            "5000",
+            "--fourier-terms",
+            "96",
+            "--package",
+            "--review-packet",
+            "--review-max-rmse",
+            "0.000001",
+            "--require-review-pass",
+            "--out",
+            str(tmp_path),
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    assert "review packet did not pass verification" in result.stderr
+
+
 def test_cli_inspect_reports_clean_profile_without_residual_layer(tmp_path):
     subprocess.run(
         [
