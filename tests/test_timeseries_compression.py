@@ -7,7 +7,7 @@ import sys
 import numpy as np
 
 from vizcompress.analyzers import analyze_time_series
-from vizcompress.benchmarks import benchmark_synthetic_sizes, parse_sample_sizes
+from vizcompress.benchmarks import benchmark_synthetic_sizes, format_benchmark_markdown, parse_sample_sizes
 from vizcompress.cleaning import residual_time_series, sigma_clip_time_series, smooth_time_series
 from vizcompress.compressors import compress_fourier, compress_fourier_channel, compress_lttb, compress_rdp, lttb_indices
 from vizcompress.core import CompressionReport
@@ -566,6 +566,28 @@ def test_benchmark_reports_size_sweep():
     assert "gzip_recommendation_counts" in result["summary"]
 
 
+def test_benchmark_markdown_report_includes_baseline_evidence():
+    result = benchmark_synthetic_sizes(
+        [1000],
+        synthetic_kind="smooth",
+        fourier_terms=32,
+        rdp_epsilon=0.012,
+        svg_samples=300,
+        channel=True,
+        channel_k=3.0,
+        channel_window=201,
+        channel_band_epsilon=0.01,
+    )
+
+    report = format_benchmark_markdown(result)
+
+    assert "# VizCompress Benchmark Report" in report
+    assert "SVG.gz/package" in report
+    assert "CSV.gz/package" in report
+    assert "LTTB SVG.gz/package" in report
+    assert "package must also pass source verification" in report
+
+
 def test_selector_recommends_from_benchmark_row_shape():
     row = {
         "direct_svg_to_package_ratio": 4.0,
@@ -743,6 +765,7 @@ def test_cli_build_clean_package_profile_drops_residual_layers(tmp_path):
 
 def test_cli_bench_synthetic(tmp_path):
     output = tmp_path / "bench.json"
+    report = tmp_path / "bench.md"
     result = subprocess.run(
         [
             sys.executable,
@@ -763,6 +786,8 @@ def test_cli_bench_synthetic(tmp_path):
             "--auto-noise-layer",
             "--out",
             str(output),
+            "--report-md",
+            str(report),
         ],
         check=True,
         capture_output=True,
@@ -771,12 +796,15 @@ def test_cli_bench_synthetic(tmp_path):
 
     summary = json.loads(result.stdout)
     assert output.exists()
+    assert report.exists()
     assert "summary" in summary
+    assert summary["markdown_report"] == str(report)
     assert summary["parameters"]["auto_noise_layer"] is True
     assert summary["rows"][0]["samples"] == 1000
     assert summary["rows"][0]["residual_strategy"] == "sparse_outlier_layer"
     assert summary["rows"][0]["sparse_residual_parameter_count"] is not None
     assert summary["rows"][1]["samples"] == 5000
+    assert "LTTB SVG.gz/package" in report.read_text(encoding="utf-8")
 
 
 def test_cli_recommend_reads_benchmark_json(tmp_path):

@@ -37,6 +37,7 @@
 - `--require-review-pass` build gate，可拒絕超出 review budgets 的 package
 - `compare` CLI，可對既有 package 產生 raw/gzip baseline size evidence
 - benchmark rows 會包含 LTTB downsampling baseline metrics，以及 LTTB SVG raw/gzip size evidence
+- `bench --report-md` 可額外輸出 Markdown benchmark report
 - 繁中版文件：README、architecture、conceptual model、roadmap、governance、handoff
 
 目前本地驗證命令：
@@ -45,7 +46,7 @@
 py -m pytest -q
 ```
 
-最近已知通過數：`36 passed`。
+最近已知通過數：`37 passed`。
 
 ## 原始第一任務
 

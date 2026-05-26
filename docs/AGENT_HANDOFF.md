@@ -38,6 +38,7 @@ Implemented mainline:
 - `--require-review-pass` build gate for rejecting packages that exceed review budgets
 - `compare` CLI for raw/gzip baseline size evidence against existing packages
 - LTTB downsampling baseline metrics plus LTTB SVG raw/gzip size evidence in benchmark rows
+- optional Markdown benchmark reports via `bench --report-md`
 
 Current local verification command:
 
@@ -45,7 +46,7 @@ Current local verification command:
 py -m pytest -q
 ```
 
-Latest known passing count: `36 passed`.
+Latest known passing count: `37 passed`.
 
 ## Original First Task
 

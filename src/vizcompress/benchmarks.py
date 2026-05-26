@@ -102,6 +102,75 @@ def write_benchmark(path: str | Path, data: dict[str, Any]) -> Path:
     return output
 
 
+def write_benchmark_markdown(path: str | Path, data: dict[str, Any]) -> Path:
+    output = Path(path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(format_benchmark_markdown(data), encoding="utf-8")
+    return output
+
+
+def format_benchmark_markdown(data: dict[str, Any]) -> str:
+    parameters = data.get("parameters", {})
+    summary = data.get("summary", {})
+    rows = data.get("rows", [])
+    lines = [
+        "# VizCompress Benchmark Report",
+        "",
+        "## Parameters",
+        "",
+        f"- Synthetic kind: `{parameters.get('synthetic_kind', 'unknown')}`",
+        f"- Sample sizes: `{parameters.get('sample_sizes', [])}`",
+        f"- Fourier terms: `{parameters.get('fourier_terms', 'unknown')}`",
+        f"- SVG samples: `{parameters.get('svg_samples', 'unknown')}`",
+        f"- Channel model: `{parameters.get('channel', False)}`",
+        f"- X-domain policy: `{parameters.get('x_domain_policy', 'unknown')}`",
+        "",
+        "## Summary",
+        "",
+        f"- Raw SVG break-even samples: `{summary.get('observed_break_even_samples')}`",
+        f"- Best raw SVG/package ratio: `{_format_float(summary.get('best_direct_svg_to_package_ratio'))}`",
+        f"- Best SVG.gz/package ratio: `{_format_float(summary.get('best_direct_svg_gzip_to_package_ratio'))}`",
+        f"- Best CSV.gz/package ratio: `{_format_float(summary.get('best_source_csv_gzip_to_package_ratio'))}`",
+        f"- Package wins against SVG.gz: `{summary.get('package_wins_against_direct_svg_gzip_count', 0)}`",
+        f"- Package wins against CSV.gz: `{summary.get('package_wins_against_source_csv_gzip_count', 0)}`",
+        "",
+        "## Rows",
+        "",
+        "| kind | samples | package bytes | SVG.gz/package | CSV.gz/package | LTTB SVG.gz/package | Fourier R2 | LTTB R2 | gzip recommendation |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+    ]
+    for row in rows:
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    str(row.get("synthetic_kind", "")),
+                    str(row.get("samples", "")),
+                    str(row.get("package_bytes", "")),
+                    _format_float(row.get("direct_svg_gzip_to_package_ratio")),
+                    _format_float(row.get("source_csv_gzip_to_package_ratio")),
+                    _format_float(row.get("lttb_svg_gzip_to_package_ratio")),
+                    _format_float(row.get("fourier_r2")),
+                    _format_float(row.get("lttb_r2")),
+                    str(row.get("gzip_recommendation", "")),
+                ]
+            )
+            + " |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Interpretation Guardrails",
+            "",
+            "- A ratio above `1.0` means the model package is smaller than that baseline.",
+            "- LTTB is a downsampling baseline, not a package format; its SVG ratio estimates the size after exporting sampled points as a path.",
+            "- Higher R2 alone is not enough. The package must also pass source verification and size evidence checks.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def _benchmark_one(
     series: TimeSeries,
     *,
@@ -297,6 +366,14 @@ def _source_csv_document(series: TimeSeries) -> str:
 
 def _directory_size(path: Path) -> int:
     return sum(file.stat().st_size for file in path.rglob("*") if file.is_file())
+
+
+def _format_float(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, (int, float)):
+        return f"{float(value):.6g}"
+    return str(value)
 
 
 def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:

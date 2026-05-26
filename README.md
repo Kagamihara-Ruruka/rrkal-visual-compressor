@@ -188,7 +188,7 @@ Run a size sweep to compare direct SVG growth against model-backed package
 growth:
 
 ```powershell
-py -m vizcompress.cli bench --synthetic-sizes 1000,10000,100000 --synthetic-kind spikes --fourier-terms 96 --svg-samples 1200 --channel --out benchmark_outputs/spike_sweep.json
+py -m vizcompress.cli bench --synthetic-sizes 1000,10000,100000 --synthetic-kind spikes --fourier-terms 96 --svg-samples 1200 --channel --out benchmark_outputs/spike_sweep.json --report-md benchmark_outputs/spike_sweep.md
 ```
 
 The benchmark reports direct SVG bytes, gzip-compressed direct SVG bytes,
@@ -216,6 +216,8 @@ as the baseline and can surface cases such as
 Summaries include `recommendation_counts` and `gzip_recommendation_counts` so
 the whole sweep can be scanned without reading every row. They also include win
 counts against direct SVG.gz and source CSV.gz baselines.
+When `--report-md` is set, the same evidence is written as a compact Markdown
+report for review notes and handoff discussions.
 
 Summarize an existing benchmark report:
 

@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from vizcompress.analyzers import analyze_time_series
-from vizcompress.benchmarks import benchmark_synthetic_sizes, parse_sample_sizes, write_benchmark
+from vizcompress.benchmarks import benchmark_synthetic_sizes, parse_sample_sizes, write_benchmark, write_benchmark_markdown
 from vizcompress.cleaning import residual_time_series, sigma_clip_time_series, smooth_time_series
 from vizcompress.compressors import compress_fourier, compress_fourier_channel, compress_rdp
 from vizcompress.core import CompressionReport
@@ -95,6 +95,7 @@ def main(argv: list[str] | None = None) -> int:
         help="Comma-separated synthetic sample sizes, for example: 1000,10000,100000.",
     )
     bench.add_argument("--out", type=Path, default=Path("benchmark_outputs/size_sweep.json"), help="Benchmark JSON path.")
+    bench.add_argument("--report-md", type=Path, default=None, help="Optional Markdown benchmark report path.")
     bench.add_argument(
         "--synthetic-kind",
         choices=(*SYNTHETIC_KINDS, "all"),
@@ -343,6 +344,8 @@ def _bench(args: argparse.Namespace) -> int:
     )
     output = write_benchmark(args.out, data)
     data["output"] = str(output)
+    if args.report_md is not None:
+        data["markdown_report"] = str(write_benchmark_markdown(args.report_md, data))
     print(json.dumps(data, indent=2))
     return 0
 

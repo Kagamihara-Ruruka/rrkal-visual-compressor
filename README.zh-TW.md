@@ -174,6 +174,12 @@ py -m vizcompress.cli build --synthetic 100000 --fourier-terms 96 --direct-svg -
 py -m vizcompress.cli compare reviewed_outputs/model.vizretain --baseline direct_svg=reviewed_outputs/direct.svg
 ```
 
+執行 benchmark sweep 時，可以同時輸出 JSON 與 Markdown 報告。Markdown 報告會整理 break-even、SVG.gz/package、CSV.gz/package、LTTB SVG.gz/package、Fourier R2 與 LTTB R2，方便用於研發檢討與 handoff：
+
+```powershell
+py -m vizcompress.cli bench --synthetic-sizes 1000,10000,100000 --synthetic-kind spikes --fourier-terms 96 --svg-samples 1200 --channel --out benchmark_outputs/spike_sweep.json --report-md benchmark_outputs/spike_sweep.md
+```
+
 ## 狀態
 
 Phase 0/1 已開始。專案目前支援 synthetic/CSV time-series，透過 RDP/Fourier 輸出 SVG、`demo.py`、metrics 和 package。Phase 2 已有 Fourier channel prototype，可表示 center-line 加 residual-band。
