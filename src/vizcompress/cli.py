@@ -5,7 +5,13 @@ import json
 from pathlib import Path
 
 from vizcompress.analyzers import analyze_time_series
-from vizcompress.benchmarks import benchmark_synthetic_sizes, parse_sample_sizes, write_benchmark, write_benchmark_markdown
+from vizcompress.benchmarks import (
+    benchmark_synthetic_sizes,
+    evaluate_benchmark_gate,
+    parse_sample_sizes,
+    write_benchmark,
+    write_benchmark_markdown,
+)
 from vizcompress.cleaning import residual_time_series, sigma_clip_time_series, smooth_time_series
 from vizcompress.compressors import compress_fourier, compress_fourier_channel, compress_rdp
 from vizcompress.core import CompressionReport
@@ -121,6 +127,9 @@ def main(argv: list[str] | None = None) -> int:
     bench.add_argument("--channel-window", type=int, default=501, help="Rolling window for channel band estimation.")
     bench.add_argument("--channel-k", type=float, default=3.0, help="Standard-deviation multiplier for channel width.")
     bench.add_argument("--channel-band-epsilon", type=float, default=0.01, help="RDP epsilon for channel band curve.")
+    bench.add_argument("--require-svg-gzip-win", action="store_true", help="Fail when no benchmark row beats SVG.gz size.")
+    bench.add_argument("--require-csv-gzip-win", action="store_true", help="Fail when no benchmark row beats source CSV.gz size.")
+    bench.add_argument("--min-fourier-r2", type=float, default=None, help="Fail when any benchmark row has lower Fourier R2.")
 
     inspect = subparsers.add_parser("inspect", help="Inspect a .vizasset package and verify reconstruction.")
     inspect.add_argument("package", type=Path, help=".vizasset package directory.")
@@ -342,12 +351,20 @@ def _bench(args: argparse.Namespace) -> int:
         x_domain_epsilon=args.x_domain_epsilon,
         x_domain_max_error=args.x_domain_max_error,
     )
+    gate = evaluate_benchmark_gate(
+        data,
+        require_svg_gzip_win=args.require_svg_gzip_win,
+        require_csv_gzip_win=args.require_csv_gzip_win,
+        min_fourier_r2=args.min_fourier_r2,
+    )
+    if any((args.require_svg_gzip_win, args.require_csv_gzip_win, args.min_fourier_r2 is not None)):
+        data["benchmark_gate"] = gate
     output = write_benchmark(args.out, data)
     data["output"] = str(output)
     if args.report_md is not None:
         data["markdown_report"] = str(write_benchmark_markdown(args.report_md, data))
     print(json.dumps(data, indent=2))
-    return 0
+    return 0 if gate["ok"] else 1
 
 
 def _inspect(args: argparse.Namespace) -> int:

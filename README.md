@@ -218,6 +218,9 @@ the whole sweep can be scanned without reading every row. They also include win
 counts against direct SVG.gz and source CSV.gz baselines.
 When `--report-md` is set, the same evidence is written as a compact Markdown
 report for review notes and handoff discussions.
+For CI or agent checkpoints, add `--require-svg-gzip-win`,
+`--require-csv-gzip-win`, or `--min-fourier-r2 0.99` to make weak benchmark
+runs fail instead of only writing evidence.
 
 Summarize an existing benchmark report:
 

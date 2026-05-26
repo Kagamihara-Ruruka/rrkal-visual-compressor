@@ -7,7 +7,7 @@ import sys
 import numpy as np
 
 from vizcompress.analyzers import analyze_time_series
-from vizcompress.benchmarks import benchmark_synthetic_sizes, format_benchmark_markdown, parse_sample_sizes
+from vizcompress.benchmarks import benchmark_synthetic_sizes, evaluate_benchmark_gate, format_benchmark_markdown, parse_sample_sizes
 from vizcompress.cleaning import residual_time_series, sigma_clip_time_series, smooth_time_series
 from vizcompress.compressors import compress_fourier, compress_fourier_channel, compress_lttb, compress_rdp, lttb_indices
 from vizcompress.core import CompressionReport
@@ -588,6 +588,28 @@ def test_benchmark_markdown_report_includes_baseline_evidence():
     assert "package must also pass source verification" in report
 
 
+def test_benchmark_gate_checks_size_and_fidelity_policy():
+    result = benchmark_synthetic_sizes(
+        [1000],
+        synthetic_kind="smooth",
+        fourier_terms=32,
+        rdp_epsilon=0.012,
+        svg_samples=300,
+        channel=False,
+        channel_k=3.0,
+        channel_window=201,
+        channel_band_epsilon=0.01,
+    )
+
+    passing = evaluate_benchmark_gate(result, min_fourier_r2=0.8)
+    failing = evaluate_benchmark_gate(result, require_svg_gzip_win=True, min_fourier_r2=1.01)
+
+    assert passing["ok"] is True
+    assert failing["ok"] is False
+    assert failing["policy"]["require_svg_gzip_win"] is True
+    assert failing["errors"]
+
+
 def test_selector_recommends_from_benchmark_row_shape():
     row = {
         "direct_svg_to_package_ratio": 4.0,
@@ -788,6 +810,8 @@ def test_cli_bench_synthetic(tmp_path):
             str(output),
             "--report-md",
             str(report),
+            "--min-fourier-r2",
+            "0.8",
         ],
         check=True,
         capture_output=True,
@@ -799,12 +823,45 @@ def test_cli_bench_synthetic(tmp_path):
     assert report.exists()
     assert "summary" in summary
     assert summary["markdown_report"] == str(report)
+    assert summary["benchmark_gate"]["ok"] is True
     assert summary["parameters"]["auto_noise_layer"] is True
     assert summary["rows"][0]["samples"] == 1000
     assert summary["rows"][0]["residual_strategy"] == "sparse_outlier_layer"
     assert summary["rows"][0]["sparse_residual_parameter_count"] is not None
     assert summary["rows"][1]["samples"] == 5000
     assert "LTTB SVG.gz/package" in report.read_text(encoding="utf-8")
+
+
+def test_cli_bench_gate_can_fail(tmp_path):
+    output = tmp_path / "bench.json"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vizcompress.cli",
+            "bench",
+            "--synthetic-sizes",
+            "1000",
+            "--synthetic-kind",
+            "smooth",
+            "--fourier-terms",
+            "32",
+            "--svg-samples",
+            "300",
+            "--out",
+            str(output),
+            "--min-fourier-r2",
+            "1.01",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    summary = json.loads(result.stdout)
+    assert result.returncode == 1
+    assert output.exists()
+    assert summary["benchmark_gate"]["ok"] is False
 
 
 def test_cli_recommend_reads_benchmark_json(tmp_path):

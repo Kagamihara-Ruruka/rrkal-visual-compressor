@@ -171,6 +171,39 @@ def format_benchmark_markdown(data: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def evaluate_benchmark_gate(
+    data: dict[str, Any],
+    *,
+    require_svg_gzip_win: bool = False,
+    require_csv_gzip_win: bool = False,
+    min_fourier_r2: float | None = None,
+) -> dict[str, Any]:
+    rows = data.get("rows", [])
+    summary = data.get("summary", {})
+    errors = []
+    if require_svg_gzip_win and int(summary.get("package_wins_against_direct_svg_gzip_count", 0)) < 1:
+        errors.append("package did not beat SVG.gz in any benchmark row")
+    if require_csv_gzip_win and int(summary.get("package_wins_against_source_csv_gzip_count", 0)) < 1:
+        errors.append("package did not beat source CSV.gz in any benchmark row")
+    if min_fourier_r2 is not None:
+        weak_rows = [
+            {"synthetic_kind": row.get("synthetic_kind"), "samples": row.get("samples"), "fourier_r2": row.get("fourier_r2")}
+            for row in rows
+            if float(row.get("fourier_r2", 0.0)) < min_fourier_r2
+        ]
+        if weak_rows:
+            errors.append(f"{len(weak_rows)} row(s) below min Fourier R2 {min_fourier_r2}")
+    return {
+        "ok": not errors,
+        "errors": errors,
+        "policy": {
+            "require_svg_gzip_win": require_svg_gzip_win,
+            "require_csv_gzip_win": require_csv_gzip_win,
+            "min_fourier_r2": min_fourier_r2,
+        },
+    }
+
+
 def _benchmark_one(
     series: TimeSeries,
     *,
