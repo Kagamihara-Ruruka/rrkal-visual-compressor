@@ -56,6 +56,7 @@ def benchmark_synthetic_sizes(
     x_domain_policy: str = "preserve",
     x_domain_epsilon: float = 0.002,
     x_domain_max_error: float = 1e-4,
+    defensible_channel_coverage_threshold: float = 0.9,
 ) -> dict[str, Any]:
     kinds = list(SYNTHETIC_KINDS) if synthetic_kind == "all" else [synthetic_kind]
     rows = [
@@ -99,8 +100,9 @@ def benchmark_synthetic_sizes(
             "x_domain_policy": x_domain_policy,
             "x_domain_epsilon": x_domain_epsilon,
             "x_domain_max_error": x_domain_max_error,
+            "defensible_channel_coverage_threshold": defensible_channel_coverage_threshold,
         },
-        "summary": _summarize_rows(rows),
+        "summary": _summarize_rows(rows, defensible_channel_coverage_threshold),
         "summary_by_kind": _summarize_rows_by_kind(rows),
         "rows": rows,
     }
@@ -124,6 +126,7 @@ def benchmark_synthetic_fourier_terms(
     x_domain_policy: str = "preserve",
     x_domain_epsilon: float = 0.002,
     x_domain_max_error: float = 1e-4,
+    defensible_channel_coverage_threshold: float = 0.9,
 ) -> dict[str, Any]:
     rows = []
     for terms in fourier_terms_values:
@@ -144,6 +147,7 @@ def benchmark_synthetic_fourier_terms(
             x_domain_policy=x_domain_policy,
             x_domain_epsilon=x_domain_epsilon,
             x_domain_max_error=x_domain_max_error,
+            defensible_channel_coverage_threshold=defensible_channel_coverage_threshold,
         )
         for row in data["rows"]:
             row["fourier_terms"] = terms
@@ -167,8 +171,9 @@ def benchmark_synthetic_fourier_terms(
             "x_domain_policy": x_domain_policy,
             "x_domain_epsilon": x_domain_epsilon,
             "x_domain_max_error": x_domain_max_error,
+            "defensible_channel_coverage_threshold": defensible_channel_coverage_threshold,
         },
-        "summary": _summarize_rows(rows),
+        "summary": _summarize_rows(rows, defensible_channel_coverage_threshold),
         "summary_by_kind": _summarize_rows_by_kind(rows),
         "summary_by_terms": _summarize_rows_by_terms(rows),
         "rows": rows,
@@ -192,6 +197,7 @@ def benchmark_synthetic_channel_k(
     x_domain_policy: str = "preserve",
     x_domain_epsilon: float = 0.002,
     x_domain_max_error: float = 1e-4,
+    defensible_channel_coverage_threshold: float = 0.9,
 ) -> dict[str, Any]:
     rows = []
     for k_value in channel_k_values:
@@ -212,6 +218,7 @@ def benchmark_synthetic_channel_k(
             x_domain_policy=x_domain_policy,
             x_domain_epsilon=x_domain_epsilon,
             x_domain_max_error=x_domain_max_error,
+            defensible_channel_coverage_threshold=defensible_channel_coverage_threshold,
         )
         for row in data["rows"]:
             row["channel_k"] = k_value
@@ -235,8 +242,9 @@ def benchmark_synthetic_channel_k(
             "x_domain_policy": x_domain_policy,
             "x_domain_epsilon": x_domain_epsilon,
             "x_domain_max_error": x_domain_max_error,
+            "defensible_channel_coverage_threshold": defensible_channel_coverage_threshold,
         },
-        "summary": _summarize_rows(rows),
+        "summary": _summarize_rows(rows, defensible_channel_coverage_threshold),
         "summary_by_kind": _summarize_rows_by_kind(rows),
         "summary_by_channel_k": _summarize_rows_by_channel_k(rows),
         "rows": rows,
@@ -617,7 +625,10 @@ def _parse_positive_int_list(value: str, *, name: str, minimum: int) -> list[int
     return values
 
 
-def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
+def _summarize_rows(
+    rows: list[dict[str, Any]],
+    defensible_channel_coverage_threshold: float = 0.9,
+) -> dict[str, Any]:
     winning_rows = [row for row in rows if row["direct_svg_to_package_ratio"] > 1.0]
     best_row = max(rows, key=lambda row: row["direct_svg_to_package_ratio"])
     gzip_winning_rows = [row for row in rows if row["direct_svg_gzip_to_package_ratio"] > 1.0]
@@ -625,7 +636,7 @@ def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
     best_gzip_row = max(rows, key=lambda row: row["direct_svg_gzip_to_package_ratio"])
     best_csv_gzip_row = max(rows, key=lambda row: row["source_csv_gzip_to_package_ratio"])
     high_fidelity_rows = [row for row in rows if row["fourier_r2"] >= 0.99]
-    defensible_rows = [row for row in high_fidelity_rows if _meets_channel_coverage(row, 0.9)]
+    defensible_rows = [row for row in high_fidelity_rows if _meets_channel_coverage(row, defensible_channel_coverage_threshold)]
     best_high_fidelity_svg_gzip = _best_row(high_fidelity_rows, "direct_svg_gzip_to_package_ratio")
     best_high_fidelity_csv_gzip = _best_row(high_fidelity_rows, "source_csv_gzip_to_package_ratio")
     best_defensible_high_fidelity_svg_gzip = _best_row(defensible_rows, "direct_svg_gzip_to_package_ratio")
@@ -649,7 +660,7 @@ def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "source_csv_gzip": _row_identity(best_csv_gzip_row, ratio_field="source_csv_gzip_to_package_ratio"),
         },
         "high_fidelity_threshold_r2": 0.99,
-        "defensible_channel_coverage_threshold": 0.9,
+        "defensible_channel_coverage_threshold": defensible_channel_coverage_threshold,
         "best_high_fidelity_svg_gzip_candidate": (
             _row_identity(best_high_fidelity_svg_gzip, ratio_field="direct_svg_gzip_to_package_ratio")
             if best_high_fidelity_svg_gzip is not None

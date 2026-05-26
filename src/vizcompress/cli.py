@@ -141,6 +141,12 @@ def main(argv: list[str] | None = None) -> int:
     bench.add_argument("--require-csv-gzip-win", action="store_true", help="Fail when no benchmark row beats source CSV.gz size.")
     bench.add_argument("--min-fourier-r2", type=float, default=None, help="Fail when any benchmark row has lower Fourier R2.")
     bench.add_argument("--min-channel-coverage", type=float, default=None, help="Fail when any benchmark row has lower channel coverage.")
+    bench.add_argument(
+        "--defensible-channel-coverage",
+        type=float,
+        default=0.9,
+        help="Minimum channel coverage used to pick defensible high-fidelity candidates.",
+    )
 
     inspect = subparsers.add_parser("inspect", help="Inspect a .vizasset package and verify reconstruction.")
     inspect.add_argument("package", type=Path, help=".vizasset package directory.")
@@ -360,6 +366,7 @@ def _bench(args: argparse.Namespace) -> int:
         "x_domain_policy": args.x_domain_policy,
         "x_domain_epsilon": args.x_domain_epsilon,
         "x_domain_max_error": args.x_domain_max_error,
+        "defensible_channel_coverage_threshold": args.defensible_channel_coverage,
     }
     if args.channel_k_sweep:
         data = benchmark_synthetic_channel_k(

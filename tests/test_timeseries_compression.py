@@ -662,12 +662,13 @@ def test_benchmark_summary_prefers_defensible_high_fidelity_candidates():
         svg_samples=300,
         channel_window=201,
         channel_band_epsilon=0.01,
+        defensible_channel_coverage_threshold=0.98,
     )
 
     candidate = result["summary"]["best_defensible_high_fidelity_svg_gzip_candidate"]
     assert candidate is not None
     assert candidate["fourier_r2"] >= 0.99
-    assert candidate["channel_coverage_ratio"] >= 0.9
+    assert candidate["channel_coverage_ratio"] >= 0.98
     assert candidate["channel_k"] in {3.0, 4.0}
 
 
@@ -983,9 +984,43 @@ def test_cli_bench_can_sweep_channel_k(tmp_path):
     summary = json.loads(result.stdout)
     assert summary["benchmark"] == "synthetic_channel_k_sweep"
     assert summary["parameters"]["channel_k_values"] == [2.0, 3.0]
+    assert summary["parameters"]["defensible_channel_coverage_threshold"] == 0.9
     assert set(summary["summary_by_channel_k"]) == {"2", "3"}
 
 
+def test_cli_bench_accepts_defensible_coverage_threshold(tmp_path):
+    output = tmp_path / "channel_k_threshold.json"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vizcompress.cli",
+            "bench",
+            "--synthetic-sizes",
+            "1000",
+            "--synthetic-kind",
+            "smooth",
+            "--fourier-terms",
+            "32",
+            "--channel-k-sweep",
+            "3,4",
+            "--defensible-channel-coverage",
+            "0.98",
+            "--svg-samples",
+            "300",
+            "--out",
+            str(output),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    summary = json.loads(result.stdout)
+    assert summary["parameters"]["defensible_channel_coverage_threshold"] == 0.98
+    assert summary["summary"]["defensible_channel_coverage_threshold"] == 0.98
+    candidate = summary["summary"]["best_defensible_high_fidelity_svg_gzip_candidate"]
+    assert candidate["channel_coverage_ratio"] >= 0.98
 def test_cli_bench_gate_can_fail(tmp_path):
     output = tmp_path / "bench.json"
     result = subprocess.run(
