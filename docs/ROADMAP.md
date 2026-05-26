@@ -161,7 +161,8 @@ Current status:
 - Minimal package writer exists.
 - `asset.json` includes file hashes and lineage notes.
 - `model.npz` stores RDP, Fourier, and optional channel compact parameters.
-- Full model loader/reconstructor remains pending.
+- Fourier and channel readback can reconstruct renderable arrays.
+- Irregular time-domain reconstruction remains pending.
 
 ## Phase 4: 2D Curve And Shape Compression
 

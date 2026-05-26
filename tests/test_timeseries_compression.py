@@ -11,7 +11,7 @@ from vizcompress.compressors import compress_fourier, compress_fourier_channel, 
 from vizcompress.core import CompressionReport
 from vizcompress.data import make_synthetic_signal, read_csv_timeseries
 from vizcompress.exporters import write_channel_svg, write_demo, write_fourier_svg, write_metrics, write_rdp_svg
-from vizcompress.packages import load_vizasset_manifest, write_vizasset
+from vizcompress.packages import load_vizasset_manifest, reconstruct_channel, reconstruct_fourier, write_vizasset
 
 
 def test_rdp_and_fourier_compress_synthetic_series():
@@ -92,6 +92,33 @@ def test_write_vizasset_package(tmp_path):
     assert (package / "asset.json").exists()
     assert (package / "model.npz").exists()
     assert (package / "preview.svg").exists()
+
+
+def test_vizasset_reconstructs_fourier_and_channel(tmp_path):
+    series = make_synthetic_signal(5000)
+    rdp = compress_rdp(series, epsilon=0.012)
+    fourier = compress_fourier(series, terms=48)
+    channel = compress_fourier_channel(series, terms=48, window=301, k=3.0, band_epsilon=0.01)
+    report = CompressionReport(input_samples=series.sample_count, rdp=rdp, fourier=fourier, channel=channel)
+    preview = write_channel_svg(tmp_path / "preview_source.svg", series, channel, samples=500)
+    demo = write_demo(tmp_path / "demo_source.py", series.sample_count, terms=48)
+    metrics = write_metrics(tmp_path / "metrics_source.json", report, ["preview_source.svg", "demo_source.py"])
+    package = write_vizasset(
+        tmp_path / "model.vizasset",
+        series=series,
+        report=report,
+        preview_svg=preview,
+        metrics_json=metrics,
+        demo_py=demo,
+    )
+
+    reconstructed = reconstruct_fourier(package, samples=500)
+    channel_reconstructed = reconstruct_channel(package, samples=500)
+
+    assert reconstructed.sample_count == 500
+    assert channel_reconstructed["x"].shape == (500,)
+    assert np.all(channel_reconstructed["upper_y"] >= channel_reconstructed["center_y"])
+    assert np.all(channel_reconstructed["lower_y"] <= channel_reconstructed["center_y"])
 
 
 def test_benchmark_reports_size_sweep():

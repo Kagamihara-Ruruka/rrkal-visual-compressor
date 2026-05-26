@@ -89,6 +89,15 @@ file sizes, file checksums, and lineage notes. `model.npz` stores compact model
 parameters such as RDP points, Fourier coefficients, and optional channel band
 points.
 
+The package module can read this back into renderable arrays:
+
+- `reconstruct_fourier(package, samples=...)`
+- `reconstruct_channel(package, samples=...)`
+
+The current domain reconstruction uses `linspace_from_min_max`, which is correct
+for uniformly sampled time series and acceptable for the first editor handoff.
+Irregular time axes need a later domain model.
+
 ## Export Modes
 
 ### Pure SVG
