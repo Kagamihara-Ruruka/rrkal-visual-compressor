@@ -150,6 +150,16 @@ CSV input is also supported:
 py -m vizcompress.cli build --csv data.csv --x-column time --y-column value --out outputs
 ```
 
+Run a size sweep to compare direct SVG growth against model-backed package
+growth:
+
+```powershell
+py -m vizcompress.cli bench --synthetic-sizes 1000,10000,100000 --fourier-terms 96 --svg-samples 1200 --channel --out benchmark_outputs/size_sweep.json
+```
+
+The benchmark reports direct SVG bytes, `.vizasset` bytes, model bytes, preview
+bytes, fidelity metrics, and the direct-SVG-to-package size ratio.
+
 ## Status
 
 Phase 0/1 implementation has started. The package currently supports synthetic and CSV time-series compression through RDP and Fourier, with SVG, `demo.py`, and metrics exports. Phase 2 has a first Fourier channel prototype for center-line plus residual-band visual models.

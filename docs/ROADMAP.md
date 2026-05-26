@@ -262,6 +262,11 @@ Definition of done:
 - CLI can run `--method auto`.
 - Report explains why a method was selected.
 
+Pre-work now available:
+
+- `bench` can produce size/fidelity rows for direct SVG vs model-backed package.
+- These rows are the data source for future automatic method selection.
+
 ## Phase 7: Path Complexity Optimizer
 
 Goal: reduce SVG size after model reconstruction.

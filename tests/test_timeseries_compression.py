@@ -6,6 +6,7 @@ import sys
 
 import numpy as np
 
+from vizcompress.benchmarks import benchmark_synthetic_sizes, parse_sample_sizes
 from vizcompress.compressors import compress_fourier, compress_fourier_channel, compress_rdp
 from vizcompress.core import CompressionReport
 from vizcompress.data import make_synthetic_signal, read_csv_timeseries
@@ -93,6 +94,25 @@ def test_write_vizasset_package(tmp_path):
     assert (package / "preview.svg").exists()
 
 
+def test_benchmark_reports_size_sweep():
+    result = benchmark_synthetic_sizes(
+        [1000, 5000],
+        fourier_terms=32,
+        rdp_epsilon=0.012,
+        svg_samples=300,
+        channel=True,
+        channel_k=3.0,
+        channel_window=201,
+        channel_band_epsilon=0.01,
+    )
+
+    assert parse_sample_sizes("1000,5000") == [1000, 5000]
+    assert result["benchmark"] == "synthetic_size_sweep"
+    assert len(result["rows"]) == 2
+    assert result["rows"][1]["direct_svg_bytes"] > result["rows"][0]["direct_svg_bytes"]
+    assert result["rows"][1]["direct_svg_to_package_ratio"] > 0.0
+
+
 def test_read_csv_timeseries(tmp_path):
     csv_path = tmp_path / "series.csv"
     csv_path.write_text("time,value\n0,1.0\n1,2.5\n2,3.0\n", encoding="utf-8")
@@ -136,3 +156,32 @@ def test_cli_build_synthetic(tmp_path):
     assert (tmp_path / "metrics.json").exists()
     assert (tmp_path / "model.vizasset" / "asset.json").exists()
     assert "channel" in summary
+
+
+def test_cli_bench_synthetic(tmp_path):
+    output = tmp_path / "bench.json"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vizcompress.cli",
+            "bench",
+            "--synthetic-sizes",
+            "1000,5000",
+            "--fourier-terms",
+            "32",
+            "--svg-samples",
+            "300",
+            "--channel",
+            "--out",
+            str(output),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    summary = json.loads(result.stdout)
+    assert output.exists()
+    assert summary["rows"][0]["samples"] == 1000
+    assert summary["rows"][1]["samples"] == 5000

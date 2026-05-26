@@ -118,3 +118,15 @@ file size vs fidelity
 ```
 
 not a single magic threshold.
+
+The `bench` command is the first implementation of this idea. It compares:
+
+```text
+direct SVG bytes
+  vs
+model-backed .vizasset bytes
+```
+
+for a synthetic sample-size sweep. This keeps the Big-O discussion measurable:
+direct SVG grows with sampled point count, while the model-backed package should
+mostly grow with model parameters, fixed preview resolution, and metadata.
