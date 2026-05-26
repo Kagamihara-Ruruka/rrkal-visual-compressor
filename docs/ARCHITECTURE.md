@@ -127,12 +127,22 @@ The package module can read this back into renderable arrays:
 
 - `reconstruct_fourier(package, samples=...)`
 - `reconstruct_channel(package, samples=...)`
+- `reconstruct_retained_signal(package, samples=...)`
+- `validate_vizasset(package, reconstruction_samples=...)`
 
 The current domain reconstruction uses `linspace_from_min_max`, which is correct
 for uniformly sampled time series and acceptable for the first editor handoff.
 For irregular time axes, `model.npz` stores the original x-domain values and the
 manifest marks `x_domain_mode = stored_x`. This costs more bytes but preserves
 the sampling geometry needed by editor and RRKAL consumers.
+
+Package verification follows the RRKAL-style rule that generated assets should
+be machine-checkable. `vizcompress verify` validates manifest shape, required
+files, byte sizes, SHA-256 hashes, required `model.npz` arrays, x-domain
+consistency, residual layer array consistency, and finite reconstruction. This
+does not prove that the package is globally optimal or universally compressive;
+it proves that the package is internally sound enough for a downstream editor or
+renderer to trust the handoff.
 
 ## Export Modes
 

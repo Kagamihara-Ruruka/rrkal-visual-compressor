@@ -163,7 +163,16 @@ Current status:
 - `asset.json` includes file hashes and lineage notes.
 - `model.npz` stores RDP, Fourier, and optional channel compact parameters.
 - Fourier and channel readback can reconstruct renderable arrays.
-- Irregular time-domain reconstruction remains pending.
+- Irregular time-domain reconstruction supports preserved x values and compressed
+  linear-plus-delta encoding.
+- Package verification exists for manifest/files/hash/model-array/reconstruction
+  self-consistency.
+
+Next package work:
+
+- Add source-backed fidelity verification when original input is available.
+- Emit review packets that record accepted error budgets and baseline comparison.
+- Add schema fixtures so future agents can verify backward compatibility.
 
 ## Phase 4: 2D Curve And Shape Compression
 

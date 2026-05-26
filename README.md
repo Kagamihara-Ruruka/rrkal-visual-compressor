@@ -1,5 +1,7 @@
 # RRKAL Visual Compressor
 
+Traditional Chinese documentation is available in [README.zh-TW.md](README.zh-TW.md).
+
 RRKAL Visual Compressor is a Python-first engine for turning large datasets into compact, reproducible visual models.
 
 It is not a general charting library and it is not the editor UI. Its job is to compile data into an intermediate visual representation that can later be exported as SVG, PNG, `demo.py`, metrics, or an asset package consumed by RRKAL and editor tools.
@@ -89,13 +91,18 @@ src/vizcompress/
 
 docs/
   ARCHITECTURE.md
+  CONCEPTUAL_MODEL.md
   ROADMAP.md
   AGENT_HANDOFF.md
   DEVELOPMENT_GOVERNANCE.md
+  *.zh-TW.md       Traditional Chinese versions
 ```
 
 See [docs/DEVELOPMENT_GOVERNANCE.md](docs/DEVELOPMENT_GOVERNANCE.md) for the
 RRKAL-inspired development rules used by agents working in this repository.
+See [docs/CONCEPTUAL_MODEL.md](docs/CONCEPTUAL_MODEL.md) for the mathematical
+boundary: representation is not compression, accepted packages must be
+verifiable, and the project does not claim universal compression.
 
 ## Development
 
@@ -220,6 +227,13 @@ Inspect a package and verify that it can reconstruct renderable arrays:
 
 ```powershell
 py -m vizcompress.cli inspect channel_outputs/model.vizretain --samples 1200
+```
+
+Validate a package manifest, file hashes, model arrays, x-domain encoding, and
+basic reconstruction path:
+
+```powershell
+py -m vizcompress.cli verify channel_outputs/model.vizretain --samples 1024
 ```
 
 ## Status

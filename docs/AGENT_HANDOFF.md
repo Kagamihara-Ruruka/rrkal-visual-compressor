@@ -32,7 +32,7 @@ Implemented mainline:
 - package readback for Fourier, channel, sparse residual, and noise layers
 - irregular x-domain handling with preserve, compressed, and auto policies
 - benchmark matrix with per-kind summaries and recommendation labels
-- `build`, `bench`, `recommend`, and `inspect` CLI commands
+- `build`, `bench`, `recommend`, `inspect`, and `verify` CLI commands
 
 Current local verification command:
 
@@ -40,7 +40,7 @@ Current local verification command:
 py -m pytest -q
 ```
 
-Latest known passing count: `27 passed`.
+Latest known passing count: `29 passed`.
 
 ## Original First Task
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import shutil
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +15,24 @@ from vizcompress.domains import encode_x_domain, reconstruct_x_domain
 
 
 ASSET_SCHEMA_VERSION = "0.1"
+
+
+@dataclass(frozen=True)
+class PackageValidationResult:
+    package: str
+    ok: bool
+    errors: tuple[str, ...] = ()
+    warnings: tuple[str, ...] = ()
+    details: dict[str, Any] = field(default_factory=dict)
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "package": self.package,
+            "ok": self.ok,
+            "errors": list(self.errors),
+            "warnings": list(self.warnings),
+            "details": self.details,
+        }
 
 
 def write_vizasset(
@@ -69,6 +88,29 @@ def write_vizasset(
 def load_vizasset_manifest(path: str | Path) -> dict[str, Any]:
     asset_path = Path(path) / "asset.json"
     return json.loads(asset_path.read_text(encoding="utf-8"))
+
+
+def validate_vizasset(path: str | Path, *, reconstruction_samples: int = 1024) -> PackageValidationResult:
+    package = Path(path)
+    errors: list[str] = []
+    warnings: list[str] = []
+    details: dict[str, Any] = {}
+
+    if not package.exists():
+        return PackageValidationResult(str(package), False, (f"package does not exist: {package}",), (), {})
+    if not package.is_dir():
+        return PackageValidationResult(str(package), False, (f"package is not a directory: {package}",), (), {})
+
+    manifest = _load_manifest_for_validation(package, errors)
+    if manifest is None:
+        return PackageValidationResult(str(package), False, tuple(errors), tuple(warnings), details)
+
+    _validate_manifest_shape(manifest, errors, warnings)
+    _validate_manifest_files(package, manifest, errors, warnings)
+    model_details = _validate_model_npz(package, manifest, errors, warnings)
+    details.update(model_details)
+    _validate_reconstruction(package, reconstruction_samples, errors, warnings, details)
+    return PackageValidationResult(str(package), not errors, tuple(errors), tuple(warnings), details)
 
 
 def reconstruct_fourier(path: str | Path, samples: int | None = None) -> TimeSeries:
@@ -331,6 +373,210 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _load_manifest_for_validation(package: Path, errors: list[str]) -> dict[str, Any] | None:
+    asset_path = package / "asset.json"
+    if not asset_path.exists():
+        errors.append("missing asset.json")
+        return None
+    try:
+        data = json.loads(asset_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        errors.append(f"invalid asset.json: {exc}")
+        return None
+    if not isinstance(data, dict):
+        errors.append("asset.json must contain an object")
+        return None
+    return data
+
+
+def _validate_manifest_shape(manifest: dict[str, Any], errors: list[str], warnings: list[str]) -> None:
+    required = ("schema_version", "asset_type", "package_profile", "source", "model", "metrics", "files")
+    for key in required:
+        if key not in manifest:
+            errors.append(f"manifest missing required field: {key}")
+    if manifest.get("schema_version") != ASSET_SCHEMA_VERSION:
+        errors.append(f"unsupported schema_version: {manifest.get('schema_version')!r}")
+    if manifest.get("asset_type") != "rrkal.visual_compressor.timeseries":
+        errors.append(f"unsupported asset_type: {manifest.get('asset_type')!r}")
+    if manifest.get("package_profile") not in {"retain-residual", "clean"}:
+        warnings.append(f"unknown package_profile: {manifest.get('package_profile')!r}")
+
+    source = manifest.get("source")
+    if isinstance(source, dict):
+        if int(source.get("sample_count") or 0) < 2:
+            errors.append("source.sample_count must be >= 2")
+        if source.get("x_domain_mode") != (source.get("x_domain") or {}).get("mode"):
+            errors.append("source.x_domain_mode does not match source.x_domain.mode")
+    else:
+        errors.append("source must be an object")
+
+    model = manifest.get("model")
+    if isinstance(model, dict):
+        if model.get("type") != "time_series":
+            errors.append(f"unsupported model.type: {model.get('type')!r}")
+        if model.get("primary_method") not in {"fourier", "fourier_channel"}:
+            errors.append(f"unsupported model.primary_method: {model.get('primary_method')!r}")
+        if model.get("file") != "model.npz":
+            errors.append("model.file must be model.npz")
+    else:
+        errors.append("model must be an object")
+
+
+def _validate_manifest_files(
+    package: Path,
+    manifest: dict[str, Any],
+    errors: list[str],
+    warnings: list[str],
+) -> None:
+    files = manifest.get("files")
+    if not isinstance(files, dict):
+        errors.append("files must be an object")
+        return
+    for key in ("model", "preview", "metrics", "demo"):
+        entry = files.get(key)
+        if not isinstance(entry, dict):
+            errors.append(f"files.{key} must be an object")
+            continue
+        rel_path = entry.get("path")
+        if not isinstance(rel_path, str) or not rel_path:
+            errors.append(f"files.{key}.path must be a non-empty string")
+            continue
+        file_path = package / rel_path
+        if not file_path.exists():
+            errors.append(f"files.{key}.path missing: {rel_path}")
+            continue
+        expected_bytes = int(entry.get("bytes") or -1)
+        actual_bytes = file_path.stat().st_size
+        if expected_bytes != actual_bytes:
+            errors.append(f"files.{key}.bytes mismatch: manifest={expected_bytes} actual={actual_bytes}")
+        expected_sha = str(entry.get("sha256") or "")
+        if len(expected_sha) != 64:
+            errors.append(f"files.{key}.sha256 must be a 64-character hex digest")
+        elif _sha256(file_path) != expected_sha:
+            errors.append(f"files.{key}.sha256 mismatch")
+    extra_keys = sorted(set(files) - {"model", "preview", "metrics", "demo"})
+    if extra_keys:
+        warnings.append(f"manifest has extra file entries: {', '.join(extra_keys)}")
+
+
+def _validate_model_npz(
+    package: Path,
+    manifest: dict[str, Any],
+    errors: list[str],
+    warnings: list[str],
+) -> dict[str, Any]:
+    details: dict[str, Any] = {}
+    model_path = package / "model.npz"
+    if not model_path.exists():
+        return details
+    required_arrays = (
+        "schema_version",
+        "source",
+        "sample_count",
+        "x_min",
+        "x_max",
+        "x_domain_mode",
+        "fourier_terms",
+        "fourier_mean",
+        "fourier_frequencies",
+        "fourier_coefficients",
+        "channel_present",
+        "noise_present",
+        "sparse_residual_present",
+    )
+    try:
+        with np.load(model_path, allow_pickle=False) as data:
+            error_count_before_arrays = len(errors)
+            for key in required_arrays:
+                if key not in data:
+                    errors.append(f"model.npz missing array: {key}")
+            if len(errors) > error_count_before_arrays:
+                return details
+            sample_count = int(data["sample_count"])
+            details["sample_count"] = sample_count
+            details["x_domain_mode"] = str(data["x_domain_mode"])
+            details["channel_present"] = bool(data["channel_present"])
+            details["noise_present"] = bool(data["noise_present"])
+            details["sparse_residual_present"] = bool(data["sparse_residual_present"])
+            if str(data["schema_version"]) != ASSET_SCHEMA_VERSION:
+                errors.append(f"model schema_version mismatch: {str(data['schema_version'])!r}")
+            source_count = int((manifest.get("source") or {}).get("sample_count") or 0)
+            if source_count != sample_count:
+                errors.append(f"sample_count mismatch: manifest={source_count} model={sample_count}")
+            frequencies = data["fourier_frequencies"]
+            coefficients = data["fourier_coefficients"]
+            if frequencies.shape != coefficients.shape:
+                errors.append("fourier_frequencies and fourier_coefficients must have the same shape")
+            if frequencies.size != int(data["fourier_terms"]):
+                warnings.append("fourier_terms does not equal stored coefficient count")
+            _validate_x_domain_arrays(data, sample_count, errors)
+            _validate_residual_arrays(data, sample_count, errors)
+    except Exception as exc:  # noqa: BLE001 - validation should report instead of crashing
+        errors.append(f"could not read model.npz: {exc}")
+    return details
+
+
+def _validate_x_domain_arrays(data: Any, sample_count: int, errors: list[str]) -> None:
+    mode = str(data["x_domain_mode"])
+    if mode == "stored_x":
+        if "x_values" not in data:
+            errors.append("stored_x domain missing x_values")
+        elif data["x_values"].shape != (sample_count,):
+            errors.append("x_values length must match sample_count")
+    elif mode == "linear_plus_rdp_delta":
+        for key in ("x_delta_indices", "x_delta_values"):
+            if key not in data:
+                errors.append(f"compressed x-domain missing {key}")
+        if "x_delta_indices" in data and "x_delta_values" in data:
+            if data["x_delta_indices"].shape != data["x_delta_values"].shape:
+                errors.append("x_delta_indices and x_delta_values must have the same shape")
+    elif mode != "linspace_from_min_max":
+        errors.append(f"unsupported x_domain_mode: {mode!r}")
+
+
+def _validate_residual_arrays(data: Any, sample_count: int, errors: list[str]) -> None:
+    if bool(data["noise_present"]):
+        for key in ("noise_terms", "noise_mean", "noise_frequencies", "noise_coefficients"):
+            if key not in data:
+                errors.append(f"noise layer missing {key}")
+        if "noise_frequencies" in data and "noise_coefficients" in data:
+            if data["noise_frequencies"].shape != data["noise_coefficients"].shape:
+                errors.append("noise_frequencies and noise_coefficients must have the same shape")
+    if bool(data["sparse_residual_present"]):
+        for key in ("sparse_residual_indices", "sparse_residual_x", "sparse_residual_delta_y"):
+            if key not in data:
+                errors.append(f"sparse residual layer missing {key}")
+        if "sparse_residual_indices" in data and "sparse_residual_delta_y" in data:
+            indices = data["sparse_residual_indices"].astype(np.int64)
+            if indices.shape != data["sparse_residual_delta_y"].shape:
+                errors.append("sparse residual indices and deltas must have the same shape")
+            if indices.size and (int(indices.min()) < 0 or int(indices.max()) >= sample_count):
+                errors.append("sparse residual indices must be within sample_count")
+
+
+def _validate_reconstruction(
+    package: Path,
+    reconstruction_samples: int,
+    errors: list[str],
+    warnings: list[str],
+    details: dict[str, Any],
+) -> None:
+    try:
+        reconstructed = reconstruct_fourier(package, samples=reconstruction_samples)
+        retained = reconstruct_retained_signal(package, samples=reconstruction_samples)
+    except Exception as exc:  # noqa: BLE001 - validation should report instead of crashing
+        errors.append(f"reconstruction failed: {exc}")
+        return
+    for label, series in (("reconstructed", reconstructed), ("retained", retained)):
+        if not np.isfinite(series.x).all() or not np.isfinite(series.y).all():
+            errors.append(f"{label} series contains non-finite values")
+        if series.sample_count != reconstruction_samples:
+            warnings.append(f"{label} sample count differs from requested validation samples")
+    details["validated_reconstruction_samples"] = int(reconstructed.sample_count)
+    details["reconstructed_y_min"] = float(np.min(reconstructed.y))
+    details["reconstructed_y_max"] = float(np.max(reconstructed.y))
 
 
 def _reconstruct_fourier_y(data: Any, n: int) -> np.ndarray:
