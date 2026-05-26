@@ -88,6 +88,7 @@ def benchmark_synthetic_sizes(
             "x_domain_max_error": x_domain_max_error,
         },
         "summary": _summarize_rows(rows),
+        "summary_by_kind": _summarize_rows_by_kind(rows),
         "rows": rows,
     }
 
@@ -256,4 +257,12 @@ def _summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "best_direct_svg_to_package_ratio": best_row["direct_svg_to_package_ratio"],
         "package_wins_count": len(winning_rows),
         "direct_svg_wins_count": len(rows) - len(winning_rows),
+    }
+
+
+def _summarize_rows_by_kind(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    kinds = sorted({str(row["synthetic_kind"]) for row in rows})
+    return {
+        kind: _summarize_rows([row for row in rows if row["synthetic_kind"] == kind])
+        for kind in kinds
     }

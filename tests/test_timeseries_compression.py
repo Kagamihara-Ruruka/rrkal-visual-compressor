@@ -292,6 +292,7 @@ def test_benchmark_reports_size_sweep():
     assert result["parameters"]["synthetic_kind"] == "spikes"
     assert result["parameters"]["sigma_clip"] == 2.5
     assert result["parameters"]["x_domain_policy"] == "preserve"
+    assert "spikes" in result["summary_by_kind"]
     assert "observed_break_even_samples" in result["summary"]
     assert len(result["rows"]) == 2
     assert result["rows"][1]["direct_svg_bytes"] > result["rows"][0]["direct_svg_bytes"]
@@ -317,6 +318,7 @@ def test_benchmark_can_run_all_synthetic_kinds():
 
     assert len(result["rows"]) == len(SYNTHETIC_KINDS)
     assert {row["synthetic_kind"] for row in result["rows"]} == set(SYNTHETIC_KINDS)
+    assert set(result["summary_by_kind"]) == set(SYNTHETIC_KINDS)
     irregular = [row for row in result["rows"] if row["synthetic_kind"] == "irregular"][0]
     assert irregular["x_domain_mode"] == "stored_x"
 

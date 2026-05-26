@@ -196,7 +196,8 @@ Use `--x-domain-policy auto --x-domain-max-error 0.0001` to compress the domain
 only when the selected encoding stays within the error budget.
 
 Use `--synthetic-kind all` to run the same sweep across every built-in synthetic
-fixture.
+fixture. The output includes both a global `summary` and `summary_by_kind` for
+per-dataset break-even analysis.
 
 Package suffixes are format-family aliases:
 
