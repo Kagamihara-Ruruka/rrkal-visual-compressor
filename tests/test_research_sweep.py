@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from scripts.run_defensible_research_sweep import _benchmark_rdp_frontier, _parse_float_list, _with_gaussian_noise
+from scripts.run_defensible_research_sweep import (
+    _benchmark_rdp_frontier,
+    _parse_float_list,
+    _summarize_frontier_by_key,
+    _with_gaussian_noise,
+)
 from vizcompress.data import make_synthetic_dataset
 
 
@@ -73,3 +78,35 @@ def test_with_gaussian_noise_is_reproducible_and_preserves_x_domain():
     assert (left.x == series.x).all()
     assert (left.y == right.y).all()
     assert not (left.y == series.y).all()
+
+
+def test_frontier_summary_groups_by_noise_sigma():
+    rows = [
+        {
+            "noise_sigma": 0.0,
+            "best_point_r2_gate_passes": True,
+            "monotonic_keep": True,
+            "best_point": {"payload_ratio": 10.0, "r2": 0.99},
+        },
+        {
+            "noise_sigma": 0.0,
+            "best_point_r2_gate_passes": False,
+            "monotonic_keep": True,
+            "best_point": {"payload_ratio": 8.0, "r2": 0.95},
+        },
+        {
+            "noise_sigma": 0.1,
+            "best_point_r2_gate_passes": False,
+            "monotonic_keep": False,
+            "best_point": {"payload_ratio": 3.0, "r2": 0.8},
+        },
+    ]
+
+    summary = _summarize_frontier_by_key(rows, "noise_sigma")
+
+    assert summary["0.0"]["total"] == 2
+    assert summary["0.0"]["best_points_with_gate"] == 1
+    assert summary["0.0"]["monotonic"] == 2
+    assert summary["0.0"]["best_payload_ratio"] == 10.0
+    assert summary["0.1"]["total"] == 1
+    assert summary["0.1"]["best_points_with_gate"] == 0

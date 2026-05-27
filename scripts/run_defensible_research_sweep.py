@@ -493,6 +493,34 @@ def _grouped_pass_rows(rows: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
     return per_dataset
 
 
+def _summarize_frontier_by_key(rows: list[dict[str, Any]], key: str) -> dict[str, dict[str, Any]]:
+    # Small report helper: group frontier rows by one metadata field, such as
+    # noise sigma, and count which rows met the R2 gate.
+    grouped: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        label = str(row.get(key, "unknown"))
+        entry = grouped.setdefault(
+            label,
+            {
+                "total": 0,
+                "best_points_with_gate": 0,
+                "monotonic": 0,
+                "best_payload_ratio": 0.0,
+                "best_r2": 0.0,
+            },
+        )
+        entry["total"] += 1
+        if row["best_point_r2_gate_passes"]:
+            entry["best_points_with_gate"] += 1
+        if row["monotonic_keep"]:
+            entry["monotonic"] += 1
+        best = row.get("best_point")
+        if best:
+            entry["best_payload_ratio"] = max(entry["best_payload_ratio"], float(best["payload_ratio"]))
+            entry["best_r2"] = max(entry["best_r2"], float(best["r2"]))
+    return grouped
+
+
 def main() -> int:
     args = parse_args()
     # Build a small synthetic stress test set:
@@ -618,6 +646,7 @@ def main() -> int:
                 "noise_rows": len(noise_rows),
                 "best_points_with_gate": sum(1 for row in noise_rows if row["best_point_r2_gate_passes"]),
                 "monotonic_count": sum(1 for row in noise_rows if row["monotonic_keep"]),
+                "by_sigma": _summarize_frontier_by_key(noise_rows, "noise_sigma"),
             },
         }
 
@@ -784,6 +813,28 @@ def main() -> int:
                         _format_float(best_r2),
                         _format_float(best_payload),
                         best_reason,
+                    ]
+                )
+                + " |"
+            )
+        lines.extend(["", "### Noise frontier by sigma", ""])
+        lines.extend(
+            [
+                "| sigma | rows | gate passes | monotonic rows | best R2 | best payload ratio |",
+                "| ---: | ---: | ---: | ---: | ---: | ---: |",
+            ]
+        )
+        for sigma, item in sorted(noise_frontier["summary"]["by_sigma"].items(), key=lambda pair: float(pair[0])):
+            lines.append(
+                "| "
+                + " | ".join(
+                    [
+                        _format_float(sigma),
+                        _format_float(item["total"]),
+                        _format_float(item["best_points_with_gate"]),
+                        _format_float(item["monotonic"]),
+                        _format_float(item["best_r2"]),
+                        _format_float(item["best_payload_ratio"]),
                     ]
                 )
                 + " |"

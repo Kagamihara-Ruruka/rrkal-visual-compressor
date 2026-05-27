@@ -2600,7 +2600,37 @@
     "summary": {
       "noise_rows": 8,
       "best_points_with_gate": 0,
-      "monotonic_count": 8
+      "monotonic_count": 8,
+      "by_sigma": {
+        "0.0": {
+          "total": 2,
+          "best_points_with_gate": 0,
+          "monotonic": 2,
+          "best_payload_ratio": 2.1923814743765417,
+          "best_r2": 0.987280019089193
+        },
+        "0.02": {
+          "total": 2,
+          "best_points_with_gate": 0,
+          "monotonic": 2,
+          "best_payload_ratio": 16.842105263157894,
+          "best_r2": 0.9772092312152211
+        },
+        "0.05": {
+          "total": 2,
+          "best_points_with_gate": 0,
+          "monotonic": 2,
+          "best_payload_ratio": 2.1923814743765417,
+          "best_r2": 0.9654628773117332
+        },
+        "0.1": {
+          "total": 2,
+          "best_points_with_gate": 0,
+          "monotonic": 2,
+          "best_payload_ratio": 2.195992314026901,
+          "best_r2": 0.929992371087045
+        }
+      }
     }
   }
 }
