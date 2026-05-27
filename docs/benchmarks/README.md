@@ -200,15 +200,7 @@ In `5k_noiseclean` (`sigma_clip + auto_noise_layer`) this tendency persists, ind
 For parity between `K:` and local `C:` copies, generate the same artifact in both
 places with the same parameters, then compare hash and key gate fields:
 
-Use the benchmark parity utility:
-
-```bash
-py scripts/check_benchmark_parity.py \
-  --left docs/benchmarks/ci_terms_channel_kind_threshold_sweep.json \
-  --right docs/benchmarks/ci_terms_channel_kind_threshold_sweep.json
-```
-
-Recommended two-step process:
+Use the benchmark parity utility (`_k` from K copy, `_c` from C copy):
 
 ```bash
 py scripts/run_terms_channel_kind_threshold_sweep.py \
