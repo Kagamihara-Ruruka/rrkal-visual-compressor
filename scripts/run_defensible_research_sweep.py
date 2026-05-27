@@ -741,6 +741,34 @@ def _summarize_frontier_by_key(rows: list[dict[str, Any]], key: str) -> dict[str
     return grouped
 
 
+def _summarize_frontier_tiers_by_key(rows: list[dict[str, Any]], key: str) -> dict[str, dict[str, Any]]:
+    # Group frontier best-point quality tiers by a metadata field.
+    # For noise scans, this makes degradation visible by sigma and by dataset kind.
+    grouped: dict[str, dict[str, Any]] = {}
+    tier_names = ["strict_pass", "exploratory_pass", "demo_pass", "reject", "payload_reject"]
+    for row in rows:
+        label = str(row.get(key, "unknown"))
+        entry = grouped.setdefault(
+            label,
+            {
+                "total": 0,
+                "tier_counts": {name: 0 for name in tier_names},
+                "best_payload_ratio": 0.0,
+                "best_r2": 0.0,
+            },
+        )
+        entry["total"] += 1
+        best = row.get("best_point")
+        tier = str(row.get("best_point_tier", "reject"))
+        if tier not in entry["tier_counts"]:
+            entry["tier_counts"][tier] = 0
+        entry["tier_counts"][tier] += 1
+        if best:
+            entry["best_payload_ratio"] = max(entry["best_payload_ratio"], float(best["payload_ratio"]))
+            entry["best_r2"] = max(entry["best_r2"], float(best["r2"]))
+    return grouped
+
+
 def main() -> int:
     args = parse_args()
     # Build a small synthetic stress test set:
@@ -909,6 +937,8 @@ def main() -> int:
                 },
                 "by_sigma": _summarize_frontier_by_key(noise_rows, "noise_sigma"),
                 "by_kind": _summarize_frontier_by_key(noise_rows, "base_kind"),
+                "tier_by_sigma": _summarize_frontier_tiers_by_key(noise_rows, "noise_sigma"),
+                "tier_by_kind": _summarize_frontier_tiers_by_key(noise_rows, "base_kind"),
                 "tier_matrix": (
                     _summarize_frontier_tier_matrix(
                         noise_rows,
@@ -1202,11 +1232,13 @@ def main() -> int:
         lines.extend(["", "### Noise frontier by sigma", ""])
         lines.extend(
             [
-                "| sigma | rows | gate passes | monotonic rows | best R2 | best payload ratio |",
-                "| ---: | ---: | ---: | ---: | ---: | ---: |",
+                "| sigma | rows | gate passes | strict | exploratory | demo | reject | payload reject | monotonic rows | best R2 | best payload ratio |",
+                "| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
             ]
         )
         for sigma, item in sorted(noise_frontier["summary"]["by_sigma"].items(), key=lambda pair: float(pair[0])):
+            tier_item = noise_frontier["summary"]["tier_by_sigma"].get(str(sigma), {})
+            tier_counts = tier_item.get("tier_counts", {})
             lines.append(
                 "| "
                 + " | ".join(
@@ -1214,6 +1246,11 @@ def main() -> int:
                         _format_float(sigma),
                         _format_float(item["total"]),
                         _format_float(item["best_points_with_gate"]),
+                        _format_float(tier_counts.get("strict_pass", 0)),
+                        _format_float(tier_counts.get("exploratory_pass", 0)),
+                        _format_float(tier_counts.get("demo_pass", 0)),
+                        _format_float(tier_counts.get("reject", 0)),
+                        _format_float(tier_counts.get("payload_reject", 0)),
                         _format_float(item["monotonic"]),
                         _format_float(item["best_r2"]),
                         _format_float(item["best_payload_ratio"]),
@@ -1224,11 +1261,13 @@ def main() -> int:
         lines.extend(["", "### Noise frontier by kind", ""])
         lines.extend(
             [
-                "| kind | rows | gate passes | monotonic rows | best R2 | best payload ratio |",
-                "| --- | ---: | ---: | ---: | ---: | ---: |",
+                "| kind | rows | gate passes | strict | exploratory | demo | reject | payload reject | monotonic rows | best R2 | best payload ratio |",
+                "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
             ]
         )
         for kind, item in sorted(noise_frontier["summary"]["by_kind"].items()):
+            tier_item = noise_frontier["summary"]["tier_by_kind"].get(str(kind), {})
+            tier_counts = tier_item.get("tier_counts", {})
             lines.append(
                 "| "
                 + " | ".join(
@@ -1236,6 +1275,11 @@ def main() -> int:
                         kind,
                         _format_float(item["total"]),
                         _format_float(item["best_points_with_gate"]),
+                        _format_float(tier_counts.get("strict_pass", 0)),
+                        _format_float(tier_counts.get("exploratory_pass", 0)),
+                        _format_float(tier_counts.get("demo_pass", 0)),
+                        _format_float(tier_counts.get("reject", 0)),
+                        _format_float(tier_counts.get("payload_reject", 0)),
                         _format_float(item["monotonic"]),
                         _format_float(item["best_r2"]),
                         _format_float(item["best_payload_ratio"]),

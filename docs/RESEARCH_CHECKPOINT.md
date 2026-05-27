@@ -71,6 +71,7 @@ This adds:
 - monotonic sanity flag: `actual_keep_ratio` should be non-decreasing as target increases
 - tier histogram in both JSON summary and Markdown output
 - optional tier matrix via `--run-frontier-tier-matrix`, which re-scores the same frontier sweeps across `frontier_exploratory_r2_gates` and `frontier_demo_r2_gates`
+- noise frontier tier summaries grouped by `sigma` and `base_kind`
 
 ## 5) Advance / rollback rules
 
@@ -94,4 +95,5 @@ Regress immediately if:
 - introduce deterministic low/medium/high `noise_budget` splits before model expansion
 - use the tier matrix to decide which exploratory/demo gate pair is stable enough for reporting
 - compare noise frontier behavior across `smooth`, `spikes`, and `multiscale`
+- use tier-by-sigma and tier-by-kind summaries to decide whether residual, wavelet, or adaptive segmentation should be promoted next
 - prepare renderer-side benchmark: decode cost vs raster budget coupling

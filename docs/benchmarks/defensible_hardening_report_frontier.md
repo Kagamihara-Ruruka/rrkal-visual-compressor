@@ -133,17 +133,17 @@
 
 ### Noise frontier by sigma
 
-| sigma | rows | gate passes | monotonic rows | best R2 | best payload ratio |
-| ---: | ---: | ---: | ---: | ---: | ---: |
-| 0.0 | 6 | 0 | 6 | 0.968669 | 18.4758 |
-| 0.02 | 6 | 0 | 6 | 0.96626 | 18.6047 |
-| 0.05 | 6 | 0 | 6 | 0.951585 | 18.4758 |
-| 0.1 | 6 | 0 | 6 | 0.916234 | 18.4758 |
+| sigma | rows | gate passes | strict | exploratory | demo | reject | payload reject | monotonic rows | best R2 | best payload ratio |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0.0 | 6 | 0 | 0 | 3 | 3 | 0 | 0 | 6 | 0.968669 | 18.4758 |
+| 0.02 | 6 | 0 | 0 | 2 | 3 | 1 | 0 | 6 | 0.96626 | 18.6047 |
+| 0.05 | 6 | 0 | 0 | 1 | 4 | 1 | 0 | 6 | 0.951585 | 18.4758 |
+| 0.1 | 6 | 0 | 0 | 0 | 3 | 3 | 0 | 6 | 0.916234 | 18.4758 |
 
 ### Noise frontier by kind
 
-| kind | rows | gate passes | monotonic rows | best R2 | best payload ratio |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| multiscale | 8 | 0 | 8 | 0.962806 | 18.4758 |
-| smooth | 8 | 0 | 8 | 0.968669 | 18.6047 |
-| spikes | 8 | 0 | 8 | 0.944776 | 18.6047 |
+| kind | rows | gate passes | strict | exploratory | demo | reject | payload reject | monotonic rows | best R2 | best payload ratio |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| multiscale | 8 | 0 | 0 | 2 | 5 | 1 | 0 | 8 | 0.962806 | 18.4758 |
+| smooth | 8 | 0 | 0 | 4 | 4 | 0 | 0 | 8 | 0.968669 | 18.6047 |
+| spikes | 8 | 0 | 0 | 0 | 4 | 4 | 0 | 8 | 0.944776 | 18.6047 |

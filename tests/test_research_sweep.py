@@ -10,6 +10,7 @@ from scripts.run_defensible_research_sweep import (
     _parse_float_list,
     _parse_string_list,
     _summarize_frontier_by_key,
+    _summarize_frontier_tiers_by_key,
     _summarize_frontier_tier_matrix,
     _with_gaussian_noise,
 )
@@ -200,6 +201,34 @@ def test_frontier_summary_groups_by_noise_sigma():
     assert summary["0.0"]["best_payload_ratio"] == 10.0
     assert summary["0.1"]["total"] == 1
     assert summary["0.1"]["best_points_with_gate"] == 0
+
+
+def test_frontier_tier_summary_groups_by_key():
+    rows = [
+        {
+            "base_kind": "smooth",
+            "best_point_tier": "exploratory_pass",
+            "best_point": {"payload_ratio": 10.0, "r2": 0.96},
+        },
+        {
+            "base_kind": "smooth",
+            "best_point_tier": "demo_pass",
+            "best_point": {"payload_ratio": 7.0, "r2": 0.92},
+        },
+        {
+            "base_kind": "spikes",
+            "best_point_tier": "reject",
+            "best_point": {"payload_ratio": 5.0, "r2": 0.82},
+        },
+    ]
+
+    summary = _summarize_frontier_tiers_by_key(rows, "base_kind")
+
+    assert summary["smooth"]["total"] == 2
+    assert summary["smooth"]["tier_counts"]["exploratory_pass"] == 1
+    assert summary["smooth"]["tier_counts"]["demo_pass"] == 1
+    assert summary["smooth"]["best_r2"] == 0.96
+    assert summary["spikes"]["tier_counts"]["reject"] == 1
 
 
 def test_frontier_tier_matrix_rescores_existing_sweeps():

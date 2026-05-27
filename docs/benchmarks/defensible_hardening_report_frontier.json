@@ -4916,6 +4916,94 @@
           "best_r2": 0.9628056964320709
         }
       },
+      "tier_by_sigma": {
+        "0.0": {
+          "total": 6,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 3,
+            "demo_pass": 3,
+            "reject": 0,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.475750577367204,
+          "best_r2": 0.9686687114745337
+        },
+        "0.02": {
+          "total": 6,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 2,
+            "demo_pass": 3,
+            "reject": 1,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.6046511627907,
+          "best_r2": 0.966259911707145
+        },
+        "0.05": {
+          "total": 6,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 1,
+            "demo_pass": 4,
+            "reject": 1,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.475750577367204,
+          "best_r2": 0.9515852035872205
+        },
+        "0.1": {
+          "total": 6,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 0,
+            "demo_pass": 3,
+            "reject": 3,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.475750577367204,
+          "best_r2": 0.9162337067019097
+        }
+      },
+      "tier_by_kind": {
+        "smooth": {
+          "total": 8,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 4,
+            "demo_pass": 4,
+            "reject": 0,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.6046511627907,
+          "best_r2": 0.9686687114745337
+        },
+        "spikes": {
+          "total": 8,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 0,
+            "demo_pass": 4,
+            "reject": 4,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.6046511627907,
+          "best_r2": 0.9447757353631608
+        },
+        "multiscale": {
+          "total": 8,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 2,
+            "demo_pass": 5,
+            "reject": 1,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.475750577367204,
+          "best_r2": 0.9628056964320709
+        }
+      },
       "tier_matrix": [
         {
           "strict_gate": 0.99,
