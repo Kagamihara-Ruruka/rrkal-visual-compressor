@@ -29,6 +29,8 @@ for validating compression claims.
 - `terms_channel_kind_threshold_grid.md`: human-readable report for kind-level stability.
 - `terms_channel_kind_threshold_grid_10k.json` / `_10k.md`: sample run with gate-ready kind sweep dataset.
 - `terms_channel_kind_threshold_grid_10k_gate.json` / `_10k_gate.md`: gate-enabled kind sweep with defensible constraints.
+- `terms_channel_kind_threshold_grid_5k_hard.json` / `_5k_hard.md`: hard-signal sweep (`noisy,spikes,steps`) as robustness probe.
+- `terms_channel_kind_threshold_grid_5k_noiseclean.json` / `_5k_noiseclean.md`: hard-signal sweep with `--sigma-clip 2.5 --auto-noise-layer`.
 
 - `README.zh-TW.md`: benchmark governance and validation notes in Traditional Chinese.
 
@@ -182,6 +184,16 @@ py scripts/run_terms_channel_kind_threshold_sweep.py \
   --out-json docs/benchmarks/terms_channel_kind_threshold_grid.json \
   --out-md docs/benchmarks/terms_channel_kind_threshold_grid.md
 ```
+
+### Hard-signal behavior note
+
+In `5k_hard`, `noisy` and `spikes` rows show little or no high-fidelity coverage (`R²>=0.99`) at this scale, while `steps` remains stable and yields the best ratio.
+
+In `5k_noiseclean` (`sigma_clip + auto_noise_layer`) this tendency persists, indicating that the current residual defaults still underperform for this dataset family under the strictness of the existing `R²` gate and require either:
+
+- stronger denoising before modeling,
+- a relaxed fidelity gate for this domain,
+- or domain-specific profile tuning (channel settings, terms budget, or additional model components).
 
 ## Cross-machine reproducibility check
 

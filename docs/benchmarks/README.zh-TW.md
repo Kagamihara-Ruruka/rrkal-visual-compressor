@@ -15,6 +15,14 @@
 
 這份快照是「10,000 點 + 全部合成族群 + kind/sweep」的版本，並開啟 `--require-svg-gzip-win` 與 `--min-defensible-ratio 0.2`，可直接當成「是否通過可交付門檻」的監控依據。
 
+另有硬訊號穩健性測試：
+- `terms_channel_kind_threshold_grid_5k_hard.json/.md`
+- `terms_channel_kind_threshold_grid_5k_noiseclean.json/.md`
+
+結論：
+- `noisy/spikes` 在既有門檻下仍難達到高保真（R²>=0.99）。
+- `--sigma-clip + --auto-noise-layer` 尚未顯著改善高保真比率，意味著這類資料仍需更明確的前處理策略或放寬門檻。
+
 ## 關鍵欄位（英文原名）
 
 - `defensible_rows_count`：在 `R²>=0.99` 且通道覆蓋率達門檻的列數。
