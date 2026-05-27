@@ -70,16 +70,16 @@
         "payload_ratio": 26.143790849673202
       },
       "gates": {
-        "r2_gate": false,
-        "leakage_gate": false,
+        "r2_gate": true,
+        "leakage_gate": true,
         "residual_gate": true,
         "locality_candidates": [
           0.8331252293818598,
           0.4219496452912082
         ],
-        "locality_mode": "strict",
+        "locality_mode": "any",
         "include_piecewise_polynomial": false,
-        "defensible": false
+        "defensible": true
       }
     },
     {
@@ -148,15 +148,15 @@
       },
       "gates": {
         "r2_gate": true,
-        "leakage_gate": false,
+        "leakage_gate": true,
         "residual_gate": true,
         "locality_candidates": [
           0.7740796637784185,
           0.4008564117767003
         ],
-        "locality_mode": "strict",
+        "locality_mode": "any",
         "include_piecewise_polynomial": false,
-        "defensible": false
+        "defensible": true
       }
     },
     {
@@ -225,15 +225,15 @@
       },
       "gates": {
         "r2_gate": true,
-        "leakage_gate": false,
+        "leakage_gate": true,
         "residual_gate": true,
         "locality_candidates": [
           0.7247229712535149,
           0.4178532594020779
         ],
-        "locality_mode": "strict",
+        "locality_mode": "any",
         "include_piecewise_polynomial": false,
-        "defensible": false
+        "defensible": true
       }
     },
     {
@@ -302,13 +302,13 @@
       },
       "gates": {
         "r2_gate": false,
-        "leakage_gate": false,
+        "leakage_gate": true,
         "residual_gate": true,
         "locality_candidates": [
           0.8674827749955514,
           0.8457134713384785
         ],
-        "locality_mode": "strict",
+        "locality_mode": "any",
         "include_piecewise_polynomial": false,
         "defensible": false
       }
@@ -379,13 +379,13 @@
       },
       "gates": {
         "r2_gate": false,
-        "leakage_gate": false,
+        "leakage_gate": true,
         "residual_gate": true,
         "locality_candidates": [
           0.8437993467101816,
           0.8109563447886089
         ],
-        "locality_mode": "strict",
+        "locality_mode": "any",
         "include_piecewise_polynomial": false,
         "defensible": false
       }
@@ -455,16 +455,16 @@
         "payload_ratio": 55.55555555555556
       },
       "gates": {
-        "r2_gate": false,
-        "leakage_gate": false,
+        "r2_gate": true,
+        "leakage_gate": true,
         "residual_gate": true,
         "locality_candidates": [
           0.8236540624678217,
           0.7706099670974903
         ],
-        "locality_mode": "strict",
+        "locality_mode": "any",
         "include_piecewise_polynomial": false,
-        "defensible": false
+        "defensible": true
       }
     },
     {
@@ -533,15 +533,15 @@
       },
       "gates": {
         "r2_gate": true,
-        "leakage_gate": false,
+        "leakage_gate": true,
         "residual_gate": true,
         "locality_candidates": [
           0.9871746280497518,
           0.7793910194197279
         ],
-        "locality_mode": "strict",
+        "locality_mode": "any",
         "include_piecewise_polynomial": false,
-        "defensible": false
+        "defensible": true
       }
     },
     {
@@ -610,15 +610,15 @@
       },
       "gates": {
         "r2_gate": true,
-        "leakage_gate": false,
+        "leakage_gate": true,
         "residual_gate": true,
         "locality_candidates": [
           0.9670110234031813,
           0.7747082728434
         ],
-        "locality_mode": "strict",
+        "locality_mode": "any",
         "include_piecewise_polynomial": false,
-        "defensible": false
+        "defensible": true
       }
     },
     {
@@ -687,15 +687,15 @@
       },
       "gates": {
         "r2_gate": true,
-        "leakage_gate": false,
+        "leakage_gate": true,
         "residual_gate": true,
         "locality_candidates": [
           0.921610598415807,
           0.7514852078062367
         ],
-        "locality_mode": "strict",
+        "locality_mode": "any",
         "include_piecewise_polynomial": false,
-        "defensible": false
+        "defensible": true
       }
     },
     {
@@ -770,7 +770,7 @@
           0.9449891973109164,
           1.0609288075716377
         ],
-        "locality_mode": "strict",
+        "locality_mode": "any",
         "include_piecewise_polynomial": false,
         "defensible": false
       }
@@ -841,15 +841,15 @@
       },
       "gates": {
         "r2_gate": true,
-        "leakage_gate": false,
+        "leakage_gate": true,
         "residual_gate": true,
         "locality_candidates": [
           0.8386325107111976,
           1.0750699686243028
         ],
-        "locality_mode": "strict",
+        "locality_mode": "any",
         "include_piecewise_polynomial": false,
-        "defensible": false
+        "defensible": true
       }
     },
     {
@@ -918,15 +918,15 @@
       },
       "gates": {
         "r2_gate": true,
-        "leakage_gate": false,
+        "leakage_gate": true,
         "residual_gate": true,
         "locality_candidates": [
           0.6874348031328114,
           1.0774609058370337
         ],
-        "locality_mode": "strict",
+        "locality_mode": "any",
         "include_piecewise_polynomial": false,
-        "defensible": false
+        "defensible": true
       }
     },
     {
@@ -995,15 +995,15 @@
       },
       "gates": {
         "r2_gate": true,
-        "leakage_gate": false,
+        "leakage_gate": true,
         "residual_gate": true,
         "locality_candidates": [
           0.991276952611319,
           0.784063549084213
         ],
-        "locality_mode": "strict",
+        "locality_mode": "any",
         "include_piecewise_polynomial": false,
-        "defensible": false
+        "defensible": true
       }
     },
     {
@@ -1072,15 +1072,15 @@
       },
       "gates": {
         "r2_gate": true,
-        "leakage_gate": false,
+        "leakage_gate": true,
         "residual_gate": true,
         "locality_candidates": [
           0.98012393716992,
           0.7798660637299647
         ],
-        "locality_mode": "strict",
+        "locality_mode": "any",
         "include_piecewise_polynomial": false,
-        "defensible": false
+        "defensible": true
       }
     },
     {
@@ -1149,15 +1149,15 @@
       },
       "gates": {
         "r2_gate": true,
-        "leakage_gate": false,
+        "leakage_gate": true,
         "residual_gate": true,
         "locality_candidates": [
           0.9346958481475808,
           0.7625324673558003
         ],
-        "locality_mode": "strict",
+        "locality_mode": "any",
         "include_piecewise_polynomial": false,
-        "defensible": false
+        "defensible": true
       }
     },
     {
@@ -1175,7 +1175,7 @@
         "leakage_gate": false,
         "residual_gate": false,
         "locality_candidates": [],
-        "locality_mode": "strict",
+        "locality_mode": "any",
         "defensible": false,
         "include_piecewise_polynomial": false
       }
@@ -1183,45 +1183,45 @@
   ],
   "summary": {
     "gate_config": {
-      "r2_gate": 0.99,
-      "leakage_gate": 0.25,
+      "r2_gate": 0.98,
+      "leakage_gate": 0.85,
       "max_adaptive_keep_ratio": 0.45,
-      "locality_mode": "strict",
+      "locality_mode": "any",
       "include_piecewise_polynomial": false
     },
     "best_global_r2": 0.9999501300877904,
     "best_piecewise_leakage": 0.6874348031328114,
     "best_poly_leakage": 1.004557174491441,
     "best_detrended_delta_r2": 8.366884969279731e-05,
-    "defensible_rows": 0,
+    "defensible_rows": 12,
     "rows_with_gate_fields": 16,
     "multichannel_rmse": 0.052811494062675345,
     "dataset_passes": {
       "steps": {
         "total": 3,
-        "pass": 0
+        "pass": 3
       },
       "spikes": {
         "total": 3,
-        "pass": 0
+        "pass": 1
       },
       "irregular": {
         "total": 3,
-        "pass": 0
+        "pass": 3
       },
       "multiscale": {
         "total": 3,
-        "pass": 0
+        "pass": 2
       },
       "smooth": {
         "total": 3,
-        "pass": 0
+        "pass": 3
       },
       "channels_multiaxis": {
         "total": 1,
         "pass": 0
       }
     },
-    "locality_mode_desc": "strict(piecewise_fourier+detrended)"
+    "locality_mode_desc": "any(piecewise_fourier+detrended)"
   }
 }

@@ -18,6 +18,8 @@ from vizcompress.research import (
 
 
 def test_detect_and_split_discontinuity_points_from_step_like_series():
+    # Build a simple step signal and verify local segmentation is triggered.
+    # A global Fourier curve tends to smear jumps; local model should reduce this.
     x = np.linspace(0.0, 1.0, 4000, dtype=np.float64)
     y = np.zeros_like(x, dtype=np.float64)
     y[x > 0.45] = 0.9
@@ -38,6 +40,8 @@ def test_detect_and_split_discontinuity_points_from_step_like_series():
 
 
 def test_piecewise_reconstruction_is_finite_and_well_shaped():
+    # Ensure piecewise Fourier always returns full-length finite output.
+    # Also confirm accounting fields (terms and segment count) stay consistent.
     series = make_synthetic_dataset(3000, kind="spikes")
     piecewise = compress_fourier_piecewise(series, terms=96, max_breaks=3)
 
@@ -48,6 +52,8 @@ def test_piecewise_reconstruction_is_finite_and_well_shaped():
 
 
 def test_piecewise_polynomial_is_finite_and_local_better_than_global_for_steps():
+    # Create a step-like waveform where polynomial pieces should capture local shapes
+    # better around transitions.
     x = np.linspace(0.0, 1.0, 2048, dtype=np.float64)
     y = np.zeros_like(x)
     y[x > 0.25] = 0.6
@@ -67,6 +73,8 @@ def test_piecewise_polynomial_is_finite_and_local_better_than_global_for_steps()
 
 
 def test_locality_metric_is_consistent_for_clean_and_noisy_signals():
+    # In noisy data, global RMSE should not be lower than cleaner data
+    # under the same reconstruction setup.
     x = np.linspace(0.0, 1.0, 512, dtype=np.float64)
     y = np.sin(2 * np.pi * 8 * x) + 0.05 * np.sin(2 * np.pi * 43 * x)
     clean = TimeSeries(x=x, y=y, source="clean")
@@ -87,6 +95,8 @@ def test_locality_metric_is_consistent_for_clean_and_noisy_signals():
 
 
 def test_uniform_param_fourier_captures_irregular_series_without_x_error():
+    # Irregular timestamps can distort frequency fitting.
+    # This checks uniform-parameter mode still preserves reconstruction quality and length.
     n = 1024
     base = np.linspace(0.0, 1.0, n, dtype=np.float64)
     jitter = 0.004 * np.sin(np.linspace(0.0, 17.0, n))
@@ -107,6 +117,8 @@ def test_uniform_param_fourier_captures_irregular_series_without_x_error():
 
 
 def test_multichannel_pca_shared_fourier_beats_independent_budget_on_correlated_channels():
+    # Correlated channels should be compressible as shared latent factors.
+    # We verify the PCA rank=1 path returns lower-entropy latent reconstruction.
     rng = np.random.default_rng(2026)
     x = np.linspace(0.0, 1.0, 900, dtype=np.float64)
     base = np.sin(2 * np.pi * 6.0 * x) + 0.12 * rng.normal(size=x.size)
@@ -125,6 +137,7 @@ def test_multichannel_pca_shared_fourier_beats_independent_budget_on_correlated_
 
 
 def test_haar_threshold_model_is_finite_and_payload_reduced():
+    # Confirm Haar path always outputs valid values and keeps payload ratio in a valid range.
     x = np.linspace(0.0, 1.0, 2048, dtype=np.float64)
     y = (
         0.75 * np.sin(2 * np.pi * 12.0 * x)
@@ -141,6 +154,8 @@ def test_haar_threshold_model_is_finite_and_payload_reduced():
 
 
 def test_detrended_fourier_wins_over_raw_fourier_on_trending_signal():
+    # Signals with obvious trend are better modeled by remove-trend-then-Fourier.
+    # This test checks detrended residual metric is not worse than raw Fourier.
     x = np.linspace(0.0, 1.0, 2000, dtype=np.float64)
     y = 0.9 * x + 0.25 * np.sin(2 * np.pi * 7.0 * x) + 0.03 * np.cos(2 * np.pi * 37.0 * x)
     series = TimeSeries(x=x, y=y, source="manual:detrend")
@@ -154,6 +169,8 @@ def test_detrended_fourier_wins_over_raw_fourier_on_trending_signal():
 
 
 def test_adaptive_threshold_tracks_regions_with_higher_noise():
+    # Inject larger noise in second half and verify adaptive threshold also increases there.
+    # This is key for "adaptive residual keep layer" concept.
     rng = np.random.default_rng(2026)
     x = np.linspace(0.0, 1.0, 3000, dtype=np.float64)
     base = np.sin(2 * np.pi * 5.0 * x)

@@ -1,91 +1,113 @@
-# 研究紀錄：RRKAL 視覺壓縮器的可驗證方向
+﻿# 研究筆記：可證明的壓縮方向（RRKAL Visual Compressor）
 
-更新日期：2026-05-27  
+日期：2026-05-27
 專案：`rrkal-visual-compressor`
 
-## 1. 研究範圍與判讀邏輯
+## 1) 測試重點
 
-這個專案目前聚焦在「可防禦的壓縮流程」，不是在證明一個新的萬用數學公式。  
-任何方法都需要同時滿足：
+本專案的目標是讓壓縮路徑「可被檢驗」，而非宣稱一個普適定理。
+只保留在可度量條件下成立的方法。
 
-- 相同輸入、相同取樣長度比較；
-- 相同誤差目標下比較（R²、RMSE、Max-AE）；
-- 同步報告壓縮負載（係數數、保留殘差比例、元資料規模）；
-- 忠實度與壓縮率分開報告，不互相掩蓋。
+- 同一組輸入、同一個取樣點數；
+- 使用一致的重建度量（R2 / RMSE / Max-AE）；
+- 同步報告複雜度與位元組開銷（參數數、殘差比例、metadata）。
 
-## 2. 四大風險（硬性限制）
+## 2) 風險模型（硬條件）
 
-### 風險 A：全域基底的局部污染
-全域傅立葉在局部突變時，會把訊號能量擴散到非局部位置（吉布斯現象）。
+### 風險 A：全域 Fourier 的局部擴散
+Fourier 是全域基底，局部突變可能在全域擾動（Gibbs）。
 
-- 使用 `src/vizcompress/research.py` 的 `locality_leakage_metric` 做警戒指標；
-- 以階梯型訊號做壓測。
-
-目前結論：在目前測試資料上，局部基線（piecewise）對斷點附近失真擴散較少，但不能直接推廣到所有資料。
+- 我們用 `src/vizcompress/research.py` 的 `locality_leakage_metric` 作為守門閘；
+- 步階訊號是壓力測試。
 
 ### 風險 B：非均勻 x 軸
-非均勻時間戳若處理不好，會破壞精度。
+- 非均勻時間軸若未明確處理，會造成重建偏差。
+- `domains.py` 的 `stored_x` / `linear_plus_rdp_delta` / `linspace_from_min_max` 已列為不同策略。
+- `packages.py` 的 x 軸壓縮 metadata 校驗已修正。
 
-- 生產流程在 `domains.py` 已有 `stored_x`、`linear_plus_rdp_delta`、`linspace_from_min_max` 三條路徑；
-- `packages.py` 已修正驗證鍵位，改為 `x_delta_t` / `x_delta_values`。
+### 風險 C：多通道耦合
+- 單通道獨立壓縮會浪費跨通道共用結構。
+- `compress_multichannel_fourier_pca` 在 PCA/SVD 降維後再做 Fourier，作為第一條替代。
 
-### 風險 C：通道耦合
-逐通道壓縮忽略通道關係。
+### 風險 D：殘差層體積反彈
+- 殘差層可能吃掉大部分收益。
+- 目前回報每個方法的 `payload_ratio`，以及殘差層可估計 payload，避免只看誤差。
 
-- `compress_multichannel_fourier_pca` 先做 PCA/SVD 降到共用 latent，再各 latent 做傅立葉，驗證多通道關聯。
+## 3) 已落地的研究 baseline
 
-### 風險 D：殘差負載反撲
-殘差層若失控會吃掉壓縮收益。
-
-- 目前已追蹤殘差負載，在波基準測試中輸出 `residual_payload_ratio`。
-
-## 3. 已實作研究 baseline
-
-`src/vizcompress/research.py`：
+`src/vizcompress/research.py` 目前包含：
 
 - `compress_fourier_piecewise`
 - `compress_piecewise_polynomial`
 - `compress_fourier_with_uniform_param`
 - `compress_multichannel_fourier_pca`
-- `compress_haar_threshold`（Haar + hard threshold）
+- `compress_haar_threshold`（Haar + 閾值）
+- `compress_fourier_with_linear_detrend`
+- `adaptive_residual_threshold`
 - `locality_leakage_metric`
 
-`tests/test_research.py`：
+`tests/test_research.py` 對應覆蓋：
 
-- 斷點資料漏泄比較
-- piecewise/poly 局部可行性測試
-- 非均勻 x 軸對齊測試
-- 多通道 PCA baseline
-- Haar threshold baseline
+- 跳變點偵測與區域外洩比較
+- 分段 Fourier/多項式可行性
+- 非均勻取樣
+- 多通道 PCA 對比
+- Haar 門檻 baseline
+- 線性去趨勢
+- 自適應殘差門檻
 
-## 4. 新洞見：折線簡化是「螢幕解析度限制」的實作化
+## 4) 點化簡與渲染預算
 
-你提的折線簡化是穩固且實用的概念，不是另一條理論路徑，而是渲染前的取樣策略：
+你的「先做 polyline simplification」是有意義的：
 
-- 若螢幕可呈現寬度約 `P` 像素，不需要輸出明顯高於 `~2P` 的曲線採樣；
-- 在簡化階段用 RDP、角度/曲率門檻、適應式節點刪除，先壓掉不可見細節；
-- 再讓函數化（傅立葉、局部多項式、波）去擬合「已精簡」訊號。
+- 目標畫布 `W×H` 下可視化像素可見度上限約 `2P`（P 為可視度量）；
+- 在這個預算上再做函數近似（Fourier / polynomial / wavelet），可減少無效點與後續 payload。
 
-這是穩健的工程順序：
-1. 先決定視覺目標（解析度、dpi、允許誤差）；
-2. 在誤差 ε 下做折線簡化；
-3. 對簡化結果做函數壓縮。
+可測量：
 
-這個方向可直接驗證：
-- 在不同 ε 下誤差與取樣點數的單調性；
-- 不同畫面大小的穩定壓縮行為；
-- 殘差/保留係數是否同步下降。
+- 誤差-降採樣單調性；
+- 壓縮成本（payload）變化；
+- 在不同 scale 的穩定性。
 
-## 5. 檢驗口令
+## 5) 為何這裡是「可被證明」而非「萬能公式」
+
+我們只聲明：
+
+1. 信號族先決定（平滑、週期、分段規則、有限雜訊）；
+2. 相同資料、相同評估域；
+3. 相同誤差條件下比較。
+
+同時追求：
+
+- 證據先行（defensible checkpoint）；
+- 可重現（隨機種子固定）；
+- 準確記錄 x 軸策略。
+
+### 當前 checkpoint 狀態
+
+- strict（`--locality-mode strict`，預設）：`--terms 16,32,64 --r2-gate 0.99 --leakage-gate 0.25 --max-adaptive-keep-ratio 0.45` 得到 `0 / 16` 通過。
+- any（`--locality-mode any --r2-gate 0.98 --leakage-gate 0.85 --max-adaptive-keep-ratio 0.45`）得到 `12 / 16` 通過。
+
+解讀：strict 是硬門檻；any 用來定位可改進路徑。
+
+## 6) 報告欄位（含 payload）
+
+- `raw_payload_bytes = sample_count * 2 * 8`
+- Fourier payload（估算）`= coeff_count * 24 + 8`
+- piecewise payload（估算）`= Σ segment_bytes + breakpoints*8`
+- polynomial payload（估算）`= (approx_parameter_count + 2*segment_count + breakpoints) * 8`
+
+這些只是估算，不含壓縮器額外封裝（entropy coding / container overhead）。
+
+## 7) 執行檢查清單
 
 ```bash
 python -m pytest tests/test_research.py -q
 py scripts/run_defensible_research_sweep.py --terms 16,32,64 --out-json docs/benchmarks/defensible_hardening_report.json --out-md docs/benchmarks/defensible_hardening_report.md
 ```
 
-## 6. 判讀規則
+## 8) 結果判讀
 
-- R² 變好但負載也變差，不能當成勝利。
-- 局部保真變好但尖峰/台階變差，不可進生產。
-- 若同一個 ε/terms 下同時提升忠實度與降低負載，才算有資格進下一階段。
-
+- R2 若上升但 payload 也同步惡化，不能算有效贏家。
+- 局部外洩降低但在 spikes/steps 上誤差失控，不能上線。
+- 在同一條件下，若 fidelity 與 payload 同時改善，才可提昇到下一級。

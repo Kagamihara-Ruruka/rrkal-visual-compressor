@@ -43,6 +43,8 @@ class DetrendedFourierModel:
 
 
 def _fit_linear_trend(x: np.ndarray, y: np.ndarray) -> tuple[float, float]:
+    # Fit y = a*x + b by least squares.
+    # This lets later Fourier fitting focus on oscillation, not long-term slope.
     """Return coefficients (slope, intercept) for y ~= a*x + b."""
     x = np.asarray(x, dtype=np.float64)
     y = np.asarray(y, dtype=np.float64)
@@ -60,6 +62,9 @@ def compress_fourier_with_linear_detrend(
     series: TimeSeries,
     terms: int,
 ) -> DetrendedFourierModel:
+    # Step 1: remove a straight-line trend from the signal.
+    # Step 2: compress the flattened signal with Fourier.
+    # Step 3: add the trend back before returning.
     """Remove linear trend then fit Fourier, then re-add trend."""
     if terms <= 0:
         raise ValueError("terms must be positive")
@@ -94,6 +99,9 @@ def adaptive_residual_threshold(
     adaptive_factor: float = 3.0,
     min_threshold: float = 1e-8,
 ) -> dict[str, Any]:
+    # Build a per-sample threshold map:
+    # - residual amplitude changes with windowed volatility,
+    # - bigger volatility means a higher allowed error bound.
     """Build a per-sample threshold by fitting a trend on rolling residual volatility."""
     if len(x) != len(residual):
         raise ValueError("x and residual must have same length")
@@ -124,6 +132,7 @@ def adaptive_residual_threshold(
 
 
 def detect_jump_breakpoints(y: np.ndarray, *, jump_fraction: float = 0.05, max_breaks: int = 4) -> np.ndarray:
+    # Detect likely local breakpoints by large slope changes between neighboring samples.
     """Detect large slope-change indices to split a series into local segments."""
     if y.size < 3:
         return np.empty(0, dtype=np.int64)
@@ -152,6 +161,8 @@ def _piecewise_breakpoints_with_limits(
     jump_fraction: float,
     max_breaks: int,
 ) -> np.ndarray:
+    # Pick split points and cap to max_breaks.
+    # If caller already passes breakpoints, we prune invalid or excessive ones.
     if breakpoints is None or breakpoints.size == 0:
         detected = detect_jump_breakpoints(series.y, jump_fraction=jump_fraction, max_breaks=max_breaks)
     else:
@@ -167,6 +178,7 @@ def _piecewise_breakpoints_with_limits(
 
 
 def _piecewise_boundaries(sample_count: int, breakpoints: np.ndarray) -> np.ndarray:
+    # Convert breakpoints into [start, end) boundaries, making sure each segment has length >= 2.
     raw_boundaries = np.array([0, *breakpoints.tolist(), sample_count], dtype=np.int64)
     raw_boundaries = np.unique(raw_boundaries)
     boundaries = [raw_boundaries[0]]
@@ -179,6 +191,7 @@ def _piecewise_boundaries(sample_count: int, breakpoints: np.ndarray) -> np.ndar
 
 
 def _term_allocation(total_terms: int, segment_count: int) -> list[int]:
+    # Evenly give Fourier terms to each segment, then distribute leftovers one-by-one.
     base = max(1, total_terms // max(segment_count, 1))
     allocation = [base for _ in range(segment_count)]
     extra = total_terms - base * segment_count
@@ -197,6 +210,8 @@ def compress_fourier_piecewise(
     breakpoints: np.ndarray | None = None,
     max_breaks: int = 4,
 ) -> PiecewiseModel:
+    # Run one Fourier model per local segment.
+    # This is the first locality-aware defense against global Gibbs artifacts.
     """Compress with independent Fourier models per local segment."""
     if terms <= 0:
         raise ValueError("terms must be positive")
@@ -266,6 +281,7 @@ def compress_fourier_piecewise(
 
 
 def _fit_polynomial_segment(x: np.ndarray, y: np.ndarray, degree: int) -> np.ndarray:
+    # Solve least-squares coefficients for a normalized polynomial segment.
     if x.size <= 1:
         raise ValueError("segment must contain at least two points")
     degree = int(degree)
@@ -283,6 +299,7 @@ def _fit_polynomial_segment(x: np.ndarray, y: np.ndarray, degree: int) -> np.nda
 
 
 def _eval_polynomial_segment(x: np.ndarray, coeffs: np.ndarray, *, x0: float, x_scale: float) -> np.ndarray:
+    # Evaluate normalized polynomial at original x range.
     return np.polynomial.polynomial.polyval((x - x0) / x_scale, coeffs)
 
 
@@ -293,6 +310,8 @@ def compress_piecewise_polynomial(
     breakpoints: np.ndarray | None = None,
     max_breaks: int = 4,
 ) -> PiecewisePolynomialModel:
+    # Fit low-degree polynomial blocks. This is another locality-based baseline,
+    # good to compare when data has smooth curved pieces.
     """Fit low-degree polynomials on local segments for locality-preserving baseline."""
     if degree < 0:
         raise ValueError("degree must be non-negative")
@@ -343,12 +362,14 @@ def compress_piecewise_polynomial(
 
 
 def _largest_power_of_two_leq(value: int) -> int:
+    # Haar transform code below expects length as power of two.
     if value < 2:
         raise ValueError("value must be >= 2")
     return 1 << (value.bit_length() - 1)
 
 
 def _haar_decompose(signal: np.ndarray, level: int) -> tuple[np.ndarray, list[np.ndarray]]:
+    # Repeatedly split signal into average/detail pairs (Haar wavelet).
     levels: list[np.ndarray] = []
     approx = np.asarray(signal, dtype=np.float64).copy()
     for _ in range(level):
@@ -364,6 +385,7 @@ def _haar_decompose(signal: np.ndarray, level: int) -> tuple[np.ndarray, list[np
 
 
 def _haar_reconstruct(approx: np.ndarray, levels: list[np.ndarray]) -> np.ndarray:
+    # Inverse of _haar_decompose using the same sqrt(2) scaling convention.
     signal = approx.astype(np.float64, copy=True)
     for detail in reversed(levels):
         if signal.size != detail.size:
@@ -381,6 +403,8 @@ def compress_haar_threshold(
     level: int = 3,
     threshold: float | None = None,
 ) -> HaarWaveletModel:
+    # Keep only large wavelet details and drop tiny coefficients.
+    # This makes a sparse representation for bursty detail regions.
     """Research baseline: Haar-thresholded wavelet compression."""
     if level <= 0:
         raise ValueError("level must be > 0")
@@ -443,6 +467,8 @@ def locality_leakage_metric(
     *,
     window: int = 64,
 ) -> dict[str, Any]:
+    # Compare reconstruction error near jumps vs far from jumps.
+    # A lower leakage_ratio means errors stay near discontinuities and do not spread far away.
     """Return residual leakage ratio around sharp transitions and in smooth zones."""
     if series.sample_count != reconstructed.size:
         raise ValueError("reconstructed length must match series.sample_count")
@@ -498,6 +524,8 @@ def compress_fourier_with_uniform_param(
     *,
     reparametrize_to_uniform: bool = True,
 ) -> FourierModel:
+    # For irregular x, this re-samples only the x-coordinate to a uniform grid.
+    # It keeps y values untouched but makes FFT-style fitting safer.
     """Fit Fourier on a uniform index when x sampling is irregular."""
     if terms <= 0:
         raise ValueError("terms must be positive")
@@ -517,6 +545,8 @@ def compress_multichannel_fourier_pca(
     *,
     rank: int,
 ) -> dict[str, Any]:
+    # Compress channels together:
+    # first reduce channel correlations by PCA/SVD, then compress each latent track by Fourier.
     """Compress multi-channel signals with PCA basis + Fourier on latent coefficients."""
     if channels.ndim != 2:
         raise ValueError("channels must be 2D [samples, channels]")

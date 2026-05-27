@@ -98,9 +98,19 @@ Research outputs are only advanced when all three are satisfied, otherwise metho
 
 ### Current checkpoint status
 
-Latest sweep (`--terms 16,32,64 --r2-gate 0.99 --leakage-gate 0.25 --max-adaptive-keep-ratio 0.45`) produced `0 / 16` defensible rows.
-This is valid science: the claim is not yet supported under this strict contract on the current synthetic set.
-Next iterations should relax one axis at a time (dataset class, metrics, or gate), then re-run.
+- strict mode (`--locality-mode strict`, default): `--terms 16,32,64 --r2-gate 0.99 --leakage-gate 0.25 --max-adaptive-keep-ratio 0.45` produced `0 / 16` defensible rows.
+- exploratory mode (`--locality-mode any --r2-gate 0.98 --leakage-gate 0.85 --max-adaptive-keep-ratio 0.45`) produced `12 / 16` defensible rows.
+
+Interpretation:
+- strict mode stays a useful "hard claim" baseline (none passed yet).
+- any-locality mode is useful to locate where locality is improved by at least one local method before deciding a stronger requirement.
+- future checkpoints should fix a single control variable at a time (model family, gates, terms).
+
+### Gate model now in script
+
+- `--locality-mode strict`: both detrended Fourier and piecewise Fourier must be under `--leakage-gate`.
+- `--locality-mode any`: at least one of detrended Fourier / piecewise Fourier must be under `--leakage-gate`.
+- `--include-piecewise-polynomial`: optionally add polynomial locality to the check set.
 
 ## 6) Execution checklist
 
@@ -109,7 +119,24 @@ python -m pytest tests/test_research.py -q
 py scripts/run_defensible_research_sweep.py --terms 16,32,64 --out-json docs/benchmarks/defensible_hardening_report.json --out-md docs/benchmarks/defensible_hardening_report.md
 ```
 
-## 7) Interpreting outcomes
+## 7) Payload estimation protocol
+
+We are adding a **shared payload proxy** to keep the research defensible:
+
+- `raw_payload_bytes = sample_count * 2 * 8` (float64 x/y baseline),
+- Fourier payload `≈ coeff_count * 24 + 8` bytes (`selected_frequencies` + `coefficients` + mean),
+- piecewise Fourier payload `≈ Σ segment_fourier_payload + breakpoints*8`,
+- piecewise polynomial payload `≈ (approx_parameter_count + 2*segment_count + breakpoints)*8`.
+
+This estimate is intentionally conservative:
+
+- no entropy coding,
+- no fixed-point/quantization,
+- no container overhead.
+
+The report exposes both raw ratio and each model's `payload_ratio` so we can separate **fidelity gain** from **storage overhead**.
+
+## 8) Interpreting outcomes
 
 - If R2 rises but payload rises similarly, this is not a net win.
 - If locality improves but fidelity regresses severely on spikes/steps, do not ship.

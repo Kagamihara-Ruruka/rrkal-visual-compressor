@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import argparse
 import json
@@ -7,6 +7,10 @@ import sys
 from typing import Any
 
 import numpy as np
+
+# Byte sizes used by the payload estimate formulas (float64 / int64)
+FLOAT64_BYTES = 8
+INT64_BYTES = 8
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 PROJECT_SRC = ROOT_DIR / "src"
@@ -17,6 +21,8 @@ from vizcompress.data import make_synthetic_dataset
 from vizcompress.metrics import regression_metrics
 from vizcompress.research import (
     adaptive_residual_threshold,
+    PiecewiseModel,
+    PiecewisePolynomialModel,
     compress_fourier_piecewise,
     compress_fourier_with_uniform_param,
     compress_fourier_with_linear_detrend,
@@ -26,10 +32,12 @@ from vizcompress.research import (
     locality_leakage_metric,
 )
 from vizcompress.compressors import compress_fourier
-from vizcompress.core import TimeSeries
+from vizcompress.core import FourierModel, TimeSeries
 
 
 def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 4) -> dict[str, Any]:
+    # Fit several representations for the same data series so the report can compare
+    # "quality first" vs "locality / payload" on the same baseline.
     global_model = compress_fourier(series, terms=terms)
     piecewise = compress_fourier_piecewise(series, terms=terms, max_breaks=max_breaks)
     polynomial = compress_piecewise_polynomial(series, degree=3, max_breaks=max_breaks)
@@ -38,7 +46,11 @@ def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 
     haar_level = max(1, int(np.floor(np.log2(series.sample_count))) - 1)
     haar = compress_haar_threshold(series, level=min(3, haar_level))
 
+    # Compute residuals against the detrended reconstruction.
+    # A small residual means the Fourier + trend model already captured most patterns.
     residual = series.y - detrended.reconstructed_y
+    # Keep only "important" residual points by a dynamic threshold.
+    # In this research run, these points represent the second-layer payload.
     adaptive = adaptive_residual_threshold(
         x=series.x,
         residual=residual,
@@ -64,21 +76,36 @@ def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 
     threshold_floor = float(np.min(adaptive["threshold"]))
     threshold_ceiling = float(np.max(adaptive["threshold"]))
 
+    # Baseline payload: raw x and y as float64 arrays, same length.
+    raw_payload = float(series.sample_count) * 2.0 * FLOAT64_BYTES
+    global_payload = _estimate_fourier_payload_bytes(global_model)
+    piecewise_payload = _estimate_piecewise_fourier_payload_bytes(piecewise)
+    poly_payload = _estimate_piecewise_polynomial_payload_bytes(polynomial)
+    uniform_payload = _estimate_fourier_payload_bytes(uniform)
+    detrended_payload = _estimate_fourier_payload_bytes(detrended.raw_fourier) + 2 * FLOAT64_BYTES
+    haar_payload = _estimate_haar_payload_bytes(haar)
+    adaptive_payload = _estimate_sparse_residual_payload_bytes(adaptive["keep_indices"])
+
     return {
         "dataset": name,
         "samples": int(series.sample_count),
         "terms": int(terms),
+        "raw_payload_bytes": raw_payload,
         "global": {
             "r2": float(g_metrics["r2"]),
             "rmse": float(g_metrics["rmse"]),
             "leakage_ratio": global_leak,
             "max_abs": float(g_metrics["max_abs"]),
+            "payload_bytes": global_payload,
+            "payload_ratio": _safe_ratio(raw_payload, global_payload),
         },
         "piecewise_fourier": {
             "r2": float(p_metrics["r2"]),
             "rmse": float(p_metrics["rmse"]),
             "leakage_ratio": piecewise_leak,
             "segment_count": int(piecewise.metrics["segment_count"]),
+            "payload_bytes": piecewise_payload,
+            "payload_ratio": _safe_ratio(raw_payload, piecewise_payload),
         },
         "piecewise_polynomial": {
             "r2": float(poly_metrics["r2"]),
@@ -86,11 +113,15 @@ def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 
             "leakage_ratio": poly_leak,
             "segment_count": int(polynomial.metrics["segment_count"]),
             "approx_parameter_count": int(polynomial.metrics["approx_parameter_count"]),
+            "payload_bytes": poly_payload,
+            "payload_ratio": _safe_ratio(raw_payload, poly_payload),
         },
         "uniform_param_fourier": {
             "r2": float(u_metrics["r2"]),
             "rmse": float(u_metrics["rmse"]),
             "max_abs": float(u_metrics["max_abs"]),
+            "payload_bytes": uniform_payload,
+            "payload_ratio": _safe_ratio(raw_payload, uniform_payload),
         },
         "detrended_fourier": {
             "r2": float(d_metrics["r2"]),
@@ -103,14 +134,64 @@ def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 
             "adaptive_threshold_ratio": adaptive_threshold_ratio,
             "adaptive_threshold_min": threshold_floor,
             "adaptive_threshold_max": threshold_ceiling,
+            "payload_bytes": detrended_payload,
+            "payload_ratio": _safe_ratio(raw_payload, detrended_payload),
         },
         "haar_threshold": {
             "r2": float(h_metrics["r2"]),
             "rmse": float(h_metrics["rmse"]),
             "max_abs": float(h_metrics["max_abs"]),
             "residual_payload_ratio": float(haar.metrics["residual_payload_ratio"]),
+            "payload_bytes": haar_payload,
+            "payload_ratio": _safe_ratio(raw_payload, haar_payload),
+        },
+        "adaptive_residual": {
+            "keep_count": int(adaptive["keep_count"]),
+            "payload_bytes": adaptive_payload,
+            "payload_ratio": _safe_ratio(raw_payload, adaptive_payload),
         },
     }
+
+
+def _safe_ratio(numerator: float, denominator: float, *, eps: float = 1e-12) -> float:
+    # Avoid divide-by-zero noise in reports when a method is temporarily "empty".
+    if denominator <= eps:
+        return 0.0
+    return float(numerator / denominator)
+
+
+def _estimate_fourier_payload_bytes(model: FourierModel) -> int:
+    # Roughly estimate bytes to store one Fourier model:
+    # selected indexes + coefficient pairs + bias/offset.
+    coeff_count = int(model.parameter_count)
+    return int(24 * coeff_count + 8)
+
+
+def _estimate_piecewise_fourier_payload_bytes(model: PiecewiseModel) -> float:
+    # Segment models are stored one by one, plus a tiny list of split positions.
+    segment_bytes = sum(24 * int(seg.parameter_count) for seg in model.segment_models)
+    breakpoint_bytes = int(len(model.breakpoints)) * INT64_BYTES
+    # each breakpoint is an int64 index.
+    return float(segment_bytes + breakpoint_bytes)
+
+
+def _estimate_piecewise_polynomial_payload_bytes(model: PiecewisePolynomialModel) -> float:
+    # Coefficients + interval endpoints + breakpoint indexes.
+    coeff_bytes = float(model.metrics.get("approx_parameter_count", 0) * FLOAT64_BYTES)
+    interval_bytes = float(len(model.segment_coeffs) * 2 * FLOAT64_BYTES)
+    breakpoint_bytes = float(len(model.breakpoints) * INT64_BYTES)
+    return coeff_bytes + interval_bytes + breakpoint_bytes
+
+
+def _estimate_haar_payload_bytes(model) -> float:
+    # Store kept wavelet detail values and a small header.
+    kept = float(model.metrics["kept_coefficients"])
+    return kept * FLOAT64_BYTES + 2 * FLOAT64_BYTES
+
+
+def _estimate_sparse_residual_payload_bytes(keep_indices: np.ndarray) -> float:
+    # Residual layer stores index+value for every kept point.
+    return float(len(keep_indices) * (INT64_BYTES + FLOAT64_BYTES))
 
 
 def parse_args() -> argparse.Namespace:
@@ -121,6 +202,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--r2-gate", type=float, default=0.99)
     parser.add_argument("--leakage-gate", type=float, default=0.25)
     parser.add_argument("--max-adaptive-keep-ratio", type=float, default=0.45)
+    parser.add_argument(
+        "--locality-mode",
+        choices=["strict", "any"],
+        default="strict",
+        help="strict: all selected locality methods must pass; any: any selected method passes",
+    )
+    parser.add_argument(
+        "--include-piecewise-polynomial",
+        action="store_true",
+        default=False,
+        help="Include piecewise polynomial locality in locality gate checks",
+    )
     return parser.parse_args()
 
 
@@ -130,20 +223,49 @@ def _format_float(v: Any) -> str:
     return str(v)
 
 
-def _gate_row(row: dict[str, Any], *, r2_gate: float, leakage_gate: float, max_keep_ratio: float) -> dict[str, bool]:
+def _locality_checks(row: dict[str, Any], *, leakage_gate: float, include_poly: bool, locality_mode: str) -> tuple[list[float], bool]:
+    # Choose whether leakage must pass on all methods (strict), or any one method (any).
+    candidates = [
+        row["piecewise_fourier"]["leakage_ratio"],
+        row["detrended_fourier"]["leakage_ratio"],
+    ]
+    if include_poly:
+        candidates.append(row["piecewise_polynomial"]["leakage_ratio"])
+
+    if locality_mode == "any":
+        ok = any(value <= leakage_gate for value in candidates)
+    else:
+        ok = all(value <= leakage_gate for value in candidates)
+    return candidates, bool(ok)
+
+
+def _gate_row(
+    row: dict[str, Any],
+    *,
+    r2_gate: float,
+    leakage_gate: float,
+    max_keep_ratio: float,
+    locality_mode: str,
+    include_poly: bool,
+) -> dict[str, Any]:
+    # Gate report rows so we can quickly filter "defensible for demo" configs.
     if "global" not in row:
         return {
             "r2_gate": False,
             "leakage_gate": False,
             "residual_gate": False,
+            "locality_candidates": [],
+            "locality_mode": locality_mode,
             "defensible": False,
+            "include_piecewise_polynomial": include_poly,
         }
 
     r2_gate_ok = row["detrended_fourier"]["r2"] >= r2_gate
-    leakage_gate_ok = (
-        row["piecewise_fourier"]["leakage_ratio"] <= leakage_gate
-        and row["detrended_fourier"]["leakage_ratio"] <= leakage_gate
-        and row["piecewise_polynomial"]["leakage_ratio"] <= leakage_gate
+    candidates, leakage_gate_ok = _locality_checks(
+        row,
+        leakage_gate=leakage_gate,
+        include_poly=include_poly,
+        locality_mode=locality_mode,
     )
     residual_gate_ok = row["detrended_fourier"]["adaptive_keep_ratio"] <= max_keep_ratio
 
@@ -151,12 +273,31 @@ def _gate_row(row: dict[str, Any], *, r2_gate: float, leakage_gate: float, max_k
         "r2_gate": bool(r2_gate_ok),
         "leakage_gate": bool(leakage_gate_ok),
         "residual_gate": bool(residual_gate_ok),
+        "locality_candidates": [float(v) for v in candidates],
+        "locality_mode": locality_mode,
+        "include_piecewise_polynomial": include_poly,
         "defensible": bool(r2_gate_ok and leakage_gate_ok and residual_gate_ok),
     }
 
 
+def _grouped_pass_rows(rows: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
+    # Aggregate gate pass counts per dataset so trends are visible at a glance.
+    per_dataset: dict[str, dict[str, int]] = {}
+    for row in rows:
+        dataset = str(row["dataset"])
+        if "gates" not in row:
+            continue
+        entry = per_dataset.setdefault(dataset, {"total": 0, "pass": 0})
+        entry["total"] += 1
+        if row["gates"]["defensible"]:
+            entry["pass"] += 1
+    return per_dataset
+
+
 def main() -> int:
     args = parse_args()
+    # Build a small synthetic stress test set:
+    # abrupt steps, spikes, irregular timestamps, multi-scale structures, and smooth signals.
     terms = [int(item.strip()) for item in args.terms.split(",") if item.strip()]
     datasets = [
         ("steps", make_synthetic_dataset(4000, kind="steps")),
@@ -191,9 +332,22 @@ def main() -> int:
         }
     )
     rows = [
-        {**row, "gates": _gate_row(row, r2_gate=args.r2_gate, leakage_gate=args.leakage_gate, max_keep_ratio=args.max_adaptive_keep_ratio)}
+        {
+            **row,
+            "gates": _gate_row(
+                row,
+                r2_gate=args.r2_gate,
+                leakage_gate=args.leakage_gate,
+                max_keep_ratio=args.max_adaptive_keep_ratio,
+                locality_mode=args.locality_mode,
+                include_poly=args.include_piecewise_polynomial,
+            ),
+        }
         for row in rows
     ]
+
+    per_dataset = _grouped_pass_rows(rows)
+    locality_mode_desc = f"{args.locality_mode}({ 'piecewise_polynomial' if args.include_piecewise_polynomial else 'piecewise_fourier+detrended'})"
 
     payload = {
         "terms": terms,
@@ -203,6 +357,8 @@ def main() -> int:
                 "r2_gate": args.r2_gate,
                 "leakage_gate": args.leakage_gate,
                 "max_adaptive_keep_ratio": args.max_adaptive_keep_ratio,
+                "locality_mode": args.locality_mode,
+                "include_piecewise_polynomial": args.include_piecewise_polynomial,
             },
             "best_global_r2": max(row["global"]["r2"] for row in rows if "global" in row),
             "best_piecewise_leakage": min(
@@ -217,6 +373,8 @@ def main() -> int:
             "defensible_rows": sum(1 for row in rows if row["gates"]["defensible"]),
             "rows_with_gate_fields": sum(1 for row in rows if "gates" in row),
             "multichannel_rmse": mc["metrics"]["rmse"],
+            "dataset_passes": per_dataset,
+            "locality_mode_desc": locality_mode_desc,
         },
     }
 
@@ -225,19 +383,21 @@ def main() -> int:
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
+    # Save both machine-readable and human-readable outputs from the same payload.
     lines = [
         "# Defensible Compression Research Report",
         "",
         f"- Terms: `{terms}`",
         f"- Rows: `{len(rows)}`",
-        f"- Gate config: `R2 >= {args.r2_gate}` `leakage <= {args.leakage_gate}` `adaptive_keep <= {args.max_adaptive_keep_ratio}`",
+        f"- Gate config: `R2 >= {args.r2_gate}` `leakage <= {args.leakage_gate}` `adaptive_keep <= {args.max_adaptive_keep_ratio}` `locality_mode = {args.locality_mode}` `include_poly = {args.include_piecewise_polynomial}`",
         "",
-        "| dataset | terms | global R2 | detrended R2 | piecewise R2 | poly R2 | global leak | detrended leak | piecewise leak | poly leak | r2-delta | adaptive keep | adaptive th mean | defensible |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| dataset | terms | global R2 | detrended R2 | piecewise R2 | poly R2 | global leak | detrended leak | piecewise leak | poly leak | r2-delta | adaptive keep | adaptive th mean | global CR | detrended CR | piecewise CR | poly CR | locality candidates | defensible |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in rows:
         if "global" not in row:
             continue
+        locality_candidates = ", ".join(_format_float(v) for v in row["gates"]["locality_candidates"])
         lines.append(
             "| "
             + " | ".join(
@@ -255,6 +415,11 @@ def main() -> int:
                     _format_float(row["detrended_fourier"]["r2_delta_vs_global"]),
                     _format_float(row["detrended_fourier"]["adaptive_keep_ratio"]),
                     _format_float(row["detrended_fourier"]["adaptive_threshold_ratio"]),
+                    _format_float(row["global"]["payload_ratio"]),
+                    _format_float(row["detrended_fourier"]["payload_ratio"]),
+                    _format_float(row["piecewise_fourier"]["payload_ratio"]),
+                    _format_float(row["piecewise_polynomial"]["payload_ratio"]),
+                    locality_candidates,
                     "pass" if row["gates"]["defensible"] else "fail",
                 ]
             )
@@ -269,8 +434,12 @@ def main() -> int:
             f"- rank = {mc['rank']}",
             f"- rmse = {mc['metrics']['rmse']:.6g}",
             f"- defensible rows = {payload['summary']['defensible_rows']} / {payload['summary']['rows_with_gate_fields']}",
+            "- dataset pass summary:",
         ]
     )
+    for dataset, pass_stat in sorted(per_dataset.items()):
+        lines.append(f"  - {dataset}: {pass_stat['pass']} / {pass_stat['total']}")
+
     out_md.write_text("\n".join(lines), encoding="utf-8")
 
     print(f"wrote {out_json}")
