@@ -73,3 +73,36 @@ py -m vizcompress.cli bench \
   --out docs/benchmarks/fourier_sweep_16_32_threshold_0995.json \
   --report-md docs/benchmarks/fourier_sweep_16_32_threshold_0995.md
 ```
+
+### 兩維前沿（terms × channel-K）
+
+```bash
+py scripts/run_terms_channel_grid_sweep.py \
+  --sample-sizes 10000 \
+  --synthetic-kind smooth \
+  --fourier-terms 16,32,64 \
+  --channel-k 2,3,4 \
+  --channel-window 16 \
+  --channel-band-epsilon 0.04 \
+  --rdp-epsilon 0.6 \
+  --svg-samples 240 \
+  --out-json docs/benchmarks/terms_channel_k_grid.json \
+  --out-md docs/benchmarks/terms_channel_k_grid.md
+```
+
+### 閾值穩定性（terms × channel-K × defensive coverage）
+
+```bash
+py scripts/run_terms_channel_threshold_sweep.py \
+  --sample-sizes 10000 \
+  --synthetic-kind smooth \
+  --fourier-terms 16,32,64 \
+  --channel-k 2,3,4 \
+  --thresholds 0.90,0.92,0.95,0.98,0.995 \
+  --channel-window 16 \
+  --channel-band-epsilon 0.04 \
+  --rdp-epsilon 0.6 \
+  --svg-samples 240 \
+  --out-json docs/benchmarks/terms_channel_k_threshold_grid.json \
+  --out-md docs/benchmarks/terms_channel_k_threshold_grid.md
+```
