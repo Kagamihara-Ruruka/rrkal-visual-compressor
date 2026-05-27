@@ -1,37 +1,40 @@
-# 基準測試彙整（Benchmark Evidence）
+# 基準測試紀錄（Benchmark Evidence）
 
-本資料夾保留可重現的壓縮實驗快照，用於支撐壓縮主張與品質閘道門檻（gate policy）。
+此資料夾放置可重複驗證的小型壓縮實驗快照（`JSON`）與對應報告（`Markdown`），用於支撐壓縮與門檻政策（gate policy）的論證。
 
-## 主要用途
+## 藝術資源
 
-- 提供機器可讀的 JSON 證據，記錄在不同參數下的壓縮比、R²、通道覆蓋率與建議策略。
-- 提供可讀的 Markdown 報告，讓團隊與主管快速做決策。
-- 以固定參數命名（含 `sample_sizes`, `thresholds`, `fourier_terms`, `channel_k`）保證可追溯。
+- `smooth_100k_terms_sweep.json`：100,000 點平滑訊號、頻率項 32/64/96 的 sweep。
+- `smooth_100k_terms_sweep.md`：同上 human-readable 摘要。
+- `smooth_100k_channel_k_sweep.json`：`K` 值 2/2.5/3/3.5/4 sweep。
+- `smooth_100k_channel_k_sweep.md`：同上摘要。
+- `fourier_sweep_16_32_threshold_0995.json`：10,000 點 `fourier_terms` 16 與 32，覆蓋閾值 `0.995`。
+- `fourier_sweep_16_32_threshold_0995.md`：同上摘要。
+- `fourier_sweep_10k_16_32_threshold_0995.json`：帶有額外視窗與 ε 設定的壓力測試。
+- `fourier_sweep_10k_16_32_threshold_0995.md`：同上摘要。
+- `defensible_threshold_sweep_10k_16_terms.json`：16 項 `terms` 的 coverage threshold 敏感度測試。
+- `defensible_threshold_sweep_10k_16_terms.md`：同上摘要。
+- `terms_channel_k_grid.json`：`terms` 與 `channel_k` 網格 sweep。
+- `terms_channel_k_grid.md`：同上摘要。
+- `terms_channel_k_threshold_grid.json`：`terms`×`channel_k`×`threshold` sweep。
+- `terms_channel_k_threshold_grid.md`：同上摘要。
+- `terms_channel_kind_threshold_grid.json`：多種資料型別之穩健性比較。
+- `terms_channel_kind_threshold_grid.md`：同上摘要。
+- `terms_channel_kind_threshold_grid_10k.json` / `_10k.md`：10k 點門檻資料（未加閘門）。
+- `terms_channel_kind_threshold_grid_10k_gate.json` / `_10k_gate.md`：10k 點門檻資料（加上渲染門檻）。
+- `terms_channel_kind_threshold_grid_5k_hard.json` / `_5k_hard.md`：含噪、突變、階梯的堅固訊號穩健性探測。
+- `terms_channel_kind_threshold_grid_5k_noiseclean.json` / `_5k_noiseclean.md`：`--sigma-clip 2.5 --auto-noise-layer` 的去雜訊版本。
+- `README.md`：英文版。
 
-## 最近的 gate 快照
+## 目前觀察重點
 
-- `terms_channel_kind_threshold_grid_10k_gate.json`
-- `terms_channel_kind_threshold_grid_10k_gate.md`
+- `defensible_rows_count`：高保真（`R2>=0.99`）且通過通道覆蓋率閾值的候選列數。
+- `defensible_rows_ratio`：上述可用列的比例。
+- `package_wins_against_direct_svg_gzip_count`：壓縮套件比 `SVG.gz` 小的案例數。
+- `package_wins_against_source_csv_gzip_count`：壓縮套件比原始 `CSV.gz` 小的案例數。
+- `benchmark_gate.ok`：門檻是否同時通過。
 
-這份快照是「10,000 點 + 全部合成族群 + kind/sweep」的版本，並開啟 `--require-svg-gzip-win` 與 `--min-defensible-ratio 0.2`，可直接當成「是否通過可交付門檻」的監控依據。
-
-另有硬訊號穩健性測試：
-- `terms_channel_kind_threshold_grid_5k_hard.json/.md`
-- `terms_channel_kind_threshold_grid_5k_noiseclean.json/.md`
-
-結論：
-- `noisy/spikes` 在既有門檻下仍難達到高保真（R²>=0.99）。
-- `--sigma-clip + --auto-noise-layer` 尚未顯著改善高保真比率，意味著這類資料仍需更明確的前處理策略或放寬門檻。
-
-## 關鍵欄位（英文原名）
-
-- `defensible_rows_count`：在 `R²>=0.99` 且通道覆蓋率達門檻的列數。
-- `defensible_rows_ratio`：上面列數除以高保真列數。
-- `package_wins_against_direct_svg_gzip_count`：模型套件比直接 SVG.gz 更小的列數（比率 > 1）。
-- `package_wins_against_source_csv_gzip_count`：模型套件比來源 CSV.gz 更小的列數（比率 > 1）。
-- `benchmark_gate.ok`：是否通過所有門檻條件。
-
-## 指令範例
+## 指令參考
 
 ```bash
 py scripts/run_terms_channel_kind_threshold_sweep.py \
@@ -50,20 +53,25 @@ py scripts/run_terms_channel_kind_threshold_sweep.py \
   --out-md docs/benchmarks/terms_channel_kind_threshold_grid_10k_gate.md
 ```
 
-## English
+## 英文版
 
-For the English version, see `README.md`.
+See `README.md`.
 
-## 跨機器可重現性檢核
+## 跨機器重現性檢核（推薦）
 
-為了驗證 `K:` 與本機 `C:` 跑出一致結果：
+建議使用 `check_benchmark_parity.py` 除了比對雜湊之外，還能比對關鍵邏輯欄位（`benchmark_gate`、`rows_by_kind`）。  
+流程：
 
-1. 在兩端用同參數重跑一次快照輸出（同一個 JSON/MD 命名）。
-2. 比對 `Get-FileHash`（或 `sha256sum`）是否一致。
-3. 比較 `benchmark_gate` 與 `rows_by_kind` 的關鍵欄位，特別是：
-   - `package_wins_against_direct_svg_gzip_count`
-   - `package_wins_against_source_csv_gzip_count`
-   - `defensible_rows_ratio`
+1. 於 `K:` 與 `C:` 以相同參數輸出同名 JSON（含 `--out-json`）。
+2. 再比較兩個 JSON：
 
-若無法比對，先確認 `C:` 工作區不是舊快照（缺少 `benchmark_synthetic_terms_channel_k_sweep` 等新 API 或腳本落差），
-再確認輸入依賴與 `PYTHONPATH` 是否一致。
+```bash
+py scripts/check_benchmark_parity.py \
+  --left docs/benchmarks/ci_terms_channel_kind_threshold_sweep_k.json \
+  --right docs/benchmarks/ci_terms_channel_kind_threshold_sweep_c.json
+```
+
+這個工具會輸出：
+
+- `hash: MATCH`（表示二進位完全一致）
+- `logical_signature: PASS`（表示關鍵欄位邏輯一致）
