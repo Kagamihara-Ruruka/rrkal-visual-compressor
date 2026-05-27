@@ -1858,5 +1858,749 @@
       "monotonic_count": 10,
       "best_points_with_gate": 1
     }
+  },
+  "noise_frontier": {
+    "base_kind": "smooth",
+    "sigmas": [
+      0.0,
+      0.02,
+      0.05,
+      0.1
+    ],
+    "seed": 20260528,
+    "keep_ratios": [
+      0.02,
+      0.05,
+      0.1,
+      0.2,
+      0.3
+    ],
+    "rows": [
+      {
+        "dataset": "smooth_noise_0",
+        "terms": 16,
+        "samples": 4000,
+        "target_keep_ratios": [
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.3
+        ],
+        "sweep": [
+          {
+            "target_keep_ratio": 0.02,
+            "actual_keep_ratio": 0.032,
+            "r2": 0.9169985673410718,
+            "rmse": 0.11312029707520556,
+            "max_abs": 0.34355476183041594,
+            "kept_points": 128,
+            "payload_bytes": 3464.0,
+            "payload_ratio": 18.475750577367204,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.05,
+            "actual_keep_ratio": 0.05,
+            "r2": 0.9608701161391731,
+            "rmse": 0.0776697705399462,
+            "max_abs": 0.23006516255266607,
+            "kept_points": 200,
+            "payload_bytes": 5192.0,
+            "payload_ratio": 12.326656394453005,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.1,
+            "actual_keep_ratio": 0.1,
+            "r2": 0.9537713326961945,
+            "rmse": 0.08442157096270153,
+            "max_abs": 0.3773194961701245,
+            "kept_points": 400,
+            "payload_bytes": 9992.0,
+            "payload_ratio": 6.405124099279424,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.2,
+            "actual_keep_ratio": 0.2,
+            "r2": 0.9708408305554928,
+            "rmse": 0.06704792123622925,
+            "max_abs": 0.2375043993763022,
+            "kept_points": 800,
+            "payload_bytes": 19592.0,
+            "payload_ratio": 3.2666394446712945,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.3,
+            "actual_keep_ratio": 0.3,
+            "r2": 0.9800791420227642,
+            "rmse": 0.055418116627282826,
+            "max_abs": 0.24673458070712923,
+            "kept_points": 1200,
+            "payload_bytes": 29192.0,
+            "payload_ratio": 2.1923814743765417,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          }
+        ],
+        "monotonic_keep": true,
+        "best_point": {
+          "target_keep_ratio": 0.3,
+          "actual_keep_ratio": 0.3,
+          "r2": 0.9800791420227642,
+          "rmse": 0.055418116627282826,
+          "max_abs": 0.24673458070712923,
+          "kept_points": 1200,
+          "payload_bytes": 29192.0,
+          "payload_ratio": 2.1923814743765417,
+          "r2_gate_pass": false,
+          "gate_reason": "r2_below_gate"
+        },
+        "best_point_r2_gate_passes": false,
+        "noise_sigma": 0.0,
+        "base_kind": "smooth"
+      },
+      {
+        "dataset": "smooth_noise_0",
+        "terms": 32,
+        "samples": 4000,
+        "target_keep_ratios": [
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.3
+        ],
+        "sweep": [
+          {
+            "target_keep_ratio": 0.02,
+            "actual_keep_ratio": 0.032,
+            "r2": 0.9686687114745337,
+            "rmse": 0.06950033063268043,
+            "max_abs": 0.21633040694017064,
+            "kept_points": 128,
+            "payload_bytes": 3848.0,
+            "payload_ratio": 16.632016632016633,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.05,
+            "actual_keep_ratio": 0.05,
+            "r2": 0.9794611966023209,
+            "rmse": 0.05627108790155803,
+            "max_abs": 0.19172759567731323,
+            "kept_points": 200,
+            "payload_bytes": 5576.0,
+            "payload_ratio": 11.477761836441895,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.1,
+            "actual_keep_ratio": 0.1,
+            "r2": 0.9722900663060847,
+            "rmse": 0.06536051807784632,
+            "max_abs": 0.2567624642756255,
+            "kept_points": 400,
+            "payload_bytes": 10376.0,
+            "payload_ratio": 6.168080185042405,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.2,
+            "actual_keep_ratio": 0.2,
+            "r2": 0.9831904439626056,
+            "rmse": 0.05090680775544149,
+            "max_abs": 0.16062965648040795,
+            "kept_points": 800,
+            "payload_bytes": 19976.0,
+            "payload_ratio": 3.2038446135362433,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.3,
+            "actual_keep_ratio": 0.3,
+            "r2": 0.987280019089193,
+            "rmse": 0.0442834014897365,
+            "max_abs": 0.192236403022771,
+            "kept_points": 1200,
+            "payload_bytes": 29576.0,
+            "payload_ratio": 2.1639166892074657,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          }
+        ],
+        "monotonic_keep": true,
+        "best_point": {
+          "target_keep_ratio": 0.3,
+          "actual_keep_ratio": 0.3,
+          "r2": 0.987280019089193,
+          "rmse": 0.0442834014897365,
+          "max_abs": 0.192236403022771,
+          "kept_points": 1200,
+          "payload_bytes": 29576.0,
+          "payload_ratio": 2.1639166892074657,
+          "r2_gate_pass": false,
+          "gate_reason": "r2_below_gate"
+        },
+        "best_point_r2_gate_passes": false,
+        "noise_sigma": 0.0,
+        "base_kind": "smooth"
+      },
+      {
+        "dataset": "smooth_noise_0.02",
+        "terms": 16,
+        "samples": 4000,
+        "target_keep_ratios": [
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.3
+        ],
+        "sweep": [
+          {
+            "target_keep_ratio": 0.02,
+            "actual_keep_ratio": 0.0315,
+            "r2": 0.9375317123487011,
+            "rmse": 0.09807125698191593,
+            "max_abs": 0.34229014019197446,
+            "kept_points": 126,
+            "payload_bytes": 3416.0,
+            "payload_ratio": 18.73536299765808,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.05,
+            "actual_keep_ratio": 0.04975,
+            "r2": 0.9052555705622757,
+            "rmse": 0.12077826409548387,
+            "max_abs": 0.4239853699901959,
+            "kept_points": 199,
+            "payload_bytes": 5168.0,
+            "payload_ratio": 12.38390092879257,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.1,
+            "actual_keep_ratio": 0.1,
+            "r2": 0.8973461135864479,
+            "rmse": 0.1257186298069263,
+            "max_abs": 0.3535481358770051,
+            "kept_points": 400,
+            "payload_bytes": 9992.0,
+            "payload_ratio": 6.405124099279424,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.2,
+            "actual_keep_ratio": 0.2,
+            "r2": 0.9096671363309047,
+            "rmse": 0.11793285980131513,
+            "max_abs": 0.36596370630873554,
+            "kept_points": 800,
+            "payload_bytes": 19592.0,
+            "payload_ratio": 3.2666394446712945,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.3,
+            "actual_keep_ratio": 0.29975,
+            "r2": 0.9377226300988672,
+            "rmse": 0.097921277910674,
+            "max_abs": 0.3090787428554776,
+            "kept_points": 1199,
+            "payload_bytes": 29168.0,
+            "payload_ratio": 2.1941854086670323,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          }
+        ],
+        "monotonic_keep": true,
+        "best_point": {
+          "target_keep_ratio": 0.3,
+          "actual_keep_ratio": 0.29975,
+          "r2": 0.9377226300988672,
+          "rmse": 0.097921277910674,
+          "max_abs": 0.3090787428554776,
+          "kept_points": 1199,
+          "payload_bytes": 29168.0,
+          "payload_ratio": 2.1941854086670323,
+          "r2_gate_pass": false,
+          "gate_reason": "r2_below_gate"
+        },
+        "best_point_r2_gate_passes": false,
+        "noise_sigma": 0.02,
+        "base_kind": "smooth"
+      },
+      {
+        "dataset": "smooth_noise_0.02",
+        "terms": 32,
+        "samples": 4000,
+        "target_keep_ratios": [
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.3
+        ],
+        "sweep": [
+          {
+            "target_keep_ratio": 0.02,
+            "actual_keep_ratio": 0.0315,
+            "r2": 0.9772092312152211,
+            "rmse": 0.05923677802248507,
+            "max_abs": 0.21261048265632368,
+            "kept_points": 126,
+            "payload_bytes": 3800.0,
+            "payload_ratio": 16.842105263157894,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.05,
+            "actual_keep_ratio": 0.04975,
+            "r2": 0.9575762729029836,
+            "rmse": 0.08081953570644336,
+            "max_abs": 0.2937182917024942,
+            "kept_points": 199,
+            "payload_bytes": 5552.0,
+            "payload_ratio": 11.527377521613833,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.1,
+            "actual_keep_ratio": 0.1,
+            "r2": 0.9365765288052187,
+            "rmse": 0.09881820133673153,
+            "max_abs": 0.305088625629878,
+            "kept_points": 400,
+            "payload_bytes": 10376.0,
+            "payload_ratio": 6.168080185042405,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.2,
+            "actual_keep_ratio": 0.2,
+            "r2": 0.9443028223040103,
+            "rmse": 0.09260374182153343,
+            "max_abs": 0.30215080889051266,
+            "kept_points": 800,
+            "payload_bytes": 19976.0,
+            "payload_ratio": 3.2038446135362433,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.3,
+            "actual_keep_ratio": 0.29975,
+            "r2": 0.9568576576607578,
+            "rmse": 0.0815011621108051,
+            "max_abs": 0.3041561088200424,
+            "kept_points": 1199,
+            "payload_bytes": 29552.0,
+            "payload_ratio": 2.165674066053059,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          }
+        ],
+        "monotonic_keep": true,
+        "best_point": {
+          "target_keep_ratio": 0.02,
+          "actual_keep_ratio": 0.0315,
+          "r2": 0.9772092312152211,
+          "rmse": 0.05923677802248507,
+          "max_abs": 0.21261048265632368,
+          "kept_points": 126,
+          "payload_bytes": 3800.0,
+          "payload_ratio": 16.842105263157894,
+          "r2_gate_pass": false,
+          "gate_reason": "r2_below_gate"
+        },
+        "best_point_r2_gate_passes": false,
+        "noise_sigma": 0.02,
+        "base_kind": "smooth"
+      },
+      {
+        "dataset": "smooth_noise_0.05",
+        "terms": 16,
+        "samples": 4000,
+        "target_keep_ratios": [
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.3
+        ],
+        "sweep": [
+          {
+            "target_keep_ratio": 0.02,
+            "actual_keep_ratio": 0.031,
+            "r2": 0.918638005003155,
+            "rmse": 0.11310265407108616,
+            "max_abs": 0.39674081039215575,
+            "kept_points": 124,
+            "payload_bytes": 3368.0,
+            "payload_ratio": 19.002375296912113,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.05,
+            "actual_keep_ratio": 0.04975,
+            "r2": 0.8998659956621295,
+            "rmse": 0.12547372568533807,
+            "max_abs": 0.4770991281841887,
+            "kept_points": 199,
+            "payload_bytes": 5168.0,
+            "payload_ratio": 12.38390092879257,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.1,
+            "actual_keep_ratio": 0.0995,
+            "r2": 0.8896873707765531,
+            "rmse": 0.13169661718924186,
+            "max_abs": 0.4269371893871873,
+            "kept_points": 398,
+            "payload_bytes": 9944.0,
+            "payload_ratio": 6.436041834271923,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.2,
+            "actual_keep_ratio": 0.2,
+            "r2": 0.9188565469077831,
+            "rmse": 0.11295065257483008,
+            "max_abs": 0.3821867906207896,
+            "kept_points": 800,
+            "payload_bytes": 19592.0,
+            "payload_ratio": 3.2666394446712945,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.3,
+            "actual_keep_ratio": 0.3,
+            "r2": 0.9466537508292631,
+            "rmse": 0.09158280612560281,
+            "max_abs": 0.35875005276321215,
+            "kept_points": 1200,
+            "payload_bytes": 29192.0,
+            "payload_ratio": 2.1923814743765417,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          }
+        ],
+        "monotonic_keep": true,
+        "best_point": {
+          "target_keep_ratio": 0.3,
+          "actual_keep_ratio": 0.3,
+          "r2": 0.9466537508292631,
+          "rmse": 0.09158280612560281,
+          "max_abs": 0.35875005276321215,
+          "kept_points": 1200,
+          "payload_bytes": 29192.0,
+          "payload_ratio": 2.1923814743765417,
+          "r2_gate_pass": false,
+          "gate_reason": "r2_below_gate"
+        },
+        "best_point_r2_gate_passes": false,
+        "noise_sigma": 0.05,
+        "base_kind": "smooth"
+      },
+      {
+        "dataset": "smooth_noise_0.05",
+        "terms": 32,
+        "samples": 4000,
+        "target_keep_ratios": [
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.3
+        ],
+        "sweep": [
+          {
+            "target_keep_ratio": 0.02,
+            "actual_keep_ratio": 0.031,
+            "r2": 0.9450436184339174,
+            "rmse": 0.09295463862941077,
+            "max_abs": 0.321644590952513,
+            "kept_points": 124,
+            "payload_bytes": 3752.0,
+            "payload_ratio": 17.057569296375267,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.05,
+            "actual_keep_ratio": 0.04975,
+            "r2": 0.9483842533132009,
+            "rmse": 0.09008512985608673,
+            "max_abs": 0.3542966138052299,
+            "kept_points": 199,
+            "payload_bytes": 5552.0,
+            "payload_ratio": 11.527377521613833,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.1,
+            "actual_keep_ratio": 0.0995,
+            "r2": 0.9342835351112002,
+            "rmse": 0.10164806093800764,
+            "max_abs": 0.35516311722890775,
+            "kept_points": 398,
+            "payload_bytes": 10328.0,
+            "payload_ratio": 6.196746707978312,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.2,
+            "actual_keep_ratio": 0.2,
+            "r2": 0.9463404325860924,
+            "rmse": 0.09185135878614452,
+            "max_abs": 0.36139264037448127,
+            "kept_points": 800,
+            "payload_bytes": 19976.0,
+            "payload_ratio": 3.2038446135362433,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.3,
+            "actual_keep_ratio": 0.3,
+            "r2": 0.9654628773117332,
+            "rmse": 0.07368940984693621,
+            "max_abs": 0.2974699845105966,
+            "kept_points": 1200,
+            "payload_bytes": 29576.0,
+            "payload_ratio": 2.1639166892074657,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          }
+        ],
+        "monotonic_keep": true,
+        "best_point": {
+          "target_keep_ratio": 0.3,
+          "actual_keep_ratio": 0.3,
+          "r2": 0.9654628773117332,
+          "rmse": 0.07368940984693621,
+          "max_abs": 0.2974699845105966,
+          "kept_points": 1200,
+          "payload_bytes": 29576.0,
+          "payload_ratio": 2.1639166892074657,
+          "r2_gate_pass": false,
+          "gate_reason": "r2_below_gate"
+        },
+        "best_point_r2_gate_passes": false,
+        "noise_sigma": 0.05,
+        "base_kind": "smooth"
+      },
+      {
+        "dataset": "smooth_noise_0.1",
+        "terms": 16,
+        "samples": 4000,
+        "target_keep_ratios": [
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.3
+        ],
+        "sweep": [
+          {
+            "target_keep_ratio": 0.02,
+            "actual_keep_ratio": 0.032,
+            "r2": 0.8217240687360091,
+            "rmse": 0.17215452044482235,
+            "max_abs": 0.6419743383924951,
+            "kept_points": 128,
+            "payload_bytes": 3464.0,
+            "payload_ratio": 18.475750577367204,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.05,
+            "actual_keep_ratio": 0.05,
+            "r2": 0.8328753536284486,
+            "rmse": 0.16668339006401586,
+            "max_abs": 0.6098970334407493,
+            "kept_points": 200,
+            "payload_bytes": 5192.0,
+            "payload_ratio": 12.326656394453005,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.1,
+            "actual_keep_ratio": 0.09925,
+            "r2": 0.8589552475375268,
+            "rmse": 0.15312656506135508,
+            "max_abs": 0.5393381215828675,
+            "kept_points": 397,
+            "payload_bytes": 9920.0,
+            "payload_ratio": 6.451612903225806,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.2,
+            "actual_keep_ratio": 0.2,
+            "r2": 0.8903647827373983,
+            "rmse": 0.1350041487590482,
+            "max_abs": 0.4708857462907688,
+            "kept_points": 800,
+            "payload_bytes": 19592.0,
+            "payload_ratio": 3.2666394446712945,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.3,
+            "actual_keep_ratio": 0.2995,
+            "r2": 0.9051809656960937,
+            "rmse": 0.125550902232955,
+            "max_abs": 0.49962632312397093,
+            "kept_points": 1198,
+            "payload_bytes": 29144.0,
+            "payload_ratio": 2.195992314026901,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          }
+        ],
+        "monotonic_keep": true,
+        "best_point": {
+          "target_keep_ratio": 0.3,
+          "actual_keep_ratio": 0.2995,
+          "r2": 0.9051809656960937,
+          "rmse": 0.125550902232955,
+          "max_abs": 0.49962632312397093,
+          "kept_points": 1198,
+          "payload_bytes": 29144.0,
+          "payload_ratio": 2.195992314026901,
+          "r2_gate_pass": false,
+          "gate_reason": "r2_below_gate"
+        },
+        "best_point_r2_gate_passes": false,
+        "noise_sigma": 0.1,
+        "base_kind": "smooth"
+      },
+      {
+        "dataset": "smooth_noise_0.1",
+        "terms": 32,
+        "samples": 4000,
+        "target_keep_ratios": [
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.3
+        ],
+        "sweep": [
+          {
+            "target_keep_ratio": 0.02,
+            "actual_keep_ratio": 0.032,
+            "r2": 0.8480879437622899,
+            "rmse": 0.15891620860102115,
+            "max_abs": 0.5647404499454822,
+            "kept_points": 128,
+            "payload_bytes": 3848.0,
+            "payload_ratio": 16.632016632016633,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.05,
+            "actual_keep_ratio": 0.05,
+            "r2": 0.8734695907851245,
+            "rmse": 0.1450339016441477,
+            "max_abs": 0.504596324184075,
+            "kept_points": 200,
+            "payload_bytes": 5576.0,
+            "payload_ratio": 11.477761836441895,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.1,
+            "actual_keep_ratio": 0.09925,
+            "r2": 0.8855206755592078,
+            "rmse": 0.1379544147143831,
+            "max_abs": 0.5802604443706899,
+            "kept_points": 397,
+            "payload_bytes": 10304.0,
+            "payload_ratio": 6.211180124223603,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.2,
+            "actual_keep_ratio": 0.2,
+            "r2": 0.9142609237609858,
+            "rmse": 0.11938821914181946,
+            "max_abs": 0.43367145741657376,
+            "kept_points": 800,
+            "payload_bytes": 19976.0,
+            "payload_ratio": 3.2038446135362433,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          },
+          {
+            "target_keep_ratio": 0.3,
+            "actual_keep_ratio": 0.2995,
+            "r2": 0.929992371087045,
+            "rmse": 0.10788094906658088,
+            "max_abs": 0.48917829902675036,
+            "kept_points": 1198,
+            "payload_bytes": 29528.0,
+            "payload_ratio": 2.167434299647792,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
+          }
+        ],
+        "monotonic_keep": true,
+        "best_point": {
+          "target_keep_ratio": 0.3,
+          "actual_keep_ratio": 0.2995,
+          "r2": 0.929992371087045,
+          "rmse": 0.10788094906658088,
+          "max_abs": 0.48917829902675036,
+          "kept_points": 1198,
+          "payload_bytes": 29528.0,
+          "payload_ratio": 2.167434299647792,
+          "r2_gate_pass": false,
+          "gate_reason": "r2_below_gate"
+        },
+        "best_point_r2_gate_passes": false,
+        "noise_sigma": 0.1,
+        "base_kind": "smooth"
+      }
+    ],
+    "summary": {
+      "noise_rows": 8,
+      "best_points_with_gate": 0,
+      "monotonic_count": 8
+    }
   }
 }

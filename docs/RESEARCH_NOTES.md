@@ -98,6 +98,8 @@ Therefore it is currently treated as an orthogonal control variable.
 - `--rdp-frontier-ratios`
 - `--rdp-frontier-min-keep`
 - `--rdp-frontier-max-keep`
+- `--run-noise-frontier`
+- `--noise-frontier-sigmas`
 
 The frontier output (JSON + Markdown) records:
 
@@ -108,6 +110,26 @@ The frontier output (JSON + Markdown) records:
 - best candidate under `r2_gate`.
 
 This gives a direct way to find "sweet spots" instead of guessing one fixed ratio.
+
+## 5.1) Noise frontier scan
+
+The noise frontier repeats the same RDP frontier on deterministic Gaussian noise
+levels. Its purpose is to answer a narrow question:
+
+> Does the chosen compression setting still work when the same signal becomes
+> noisier?
+
+Each row records:
+
+- base synthetic kind,
+- noise sigma,
+- selected best point,
+- whether the best point passed `r2_gate`,
+- monotonic keep behavior.
+
+This is important because high-noise data may look "large" to a residual layer.
+If a method only works when sigma is near zero, it should remain a demo-only
+path and not become a default.
 
 ## 6) Payload protocol
 
@@ -125,7 +147,7 @@ All outputs also include model-level `payload_ratio = raw_payload_bytes / payloa
 
 ```bash
 py -m pytest tests/test_research.py tests/test_research_sweep.py -q
-py scripts/run_defensible_research_sweep.py --terms 16,32 --include-piecewise-polynomial --run-rdp-frontier --rdp-frontier-ratios 0.02,0.05,0.10,0.20,0.30
+py scripts/run_defensible_research_sweep.py --terms 16,32 --include-piecewise-polynomial --run-rdp-frontier --run-noise-frontier --rdp-frontier-ratios 0.02,0.05,0.10,0.20,0.30 --noise-frontier-sigmas 0,0.02,0.05,0.10
 ```
 
 ## 8) Interpretation rule

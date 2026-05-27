@@ -95,6 +95,8 @@
 - `--rdp-frontier-ratios`
 - `--rdp-frontier-min-keep`
 - `--rdp-frontier-max-keep`
+- `--run-noise-frontier`
+- `--noise-frontier-sigmas`
 
 frontier 輸出會記錄每個 ratio 的：
 
@@ -104,6 +106,24 @@ frontier 輸出會記錄每個 ratio 的：
 - 在 `r2_gate` 下的最佳點
 
 這樣可以直接找出每種資料型態的「甜蜜區」而非拍腦袋挑一個固定比率。
+
+## 5.1) 噪音 frontier 掃描
+
+noise frontier 會在固定的高斯噪音強度下重跑 RDP frontier。
+它回答的是一個很窄但重要的問題：
+
+> 同一個壓縮設定，遇到更吵的資料時是否仍然成立？
+
+每列會記錄：
+
+- 基礎 synthetic kind，
+- noise sigma，
+- 選出的最佳點，
+- 該點是否通過 `r2_gate`，
+- 保留比例是否維持單調。
+
+這對專案很重要，因為高噪音資料會讓 residual layer 變大。若某方法只在
+sigma 接近零時有效，它應保留在 demo/research 路徑，不應直接成為預設策略。
 
 ## 6) Payload 估算（保守）
 
@@ -121,7 +141,7 @@ frontier 輸出會記錄每個 ratio 的：
 
 ```bash
 py -m pytest tests/test_research.py tests/test_research_sweep.py -q
-py scripts/run_defensible_research_sweep.py --terms 16,32 --include-piecewise-polynomial --run-rdp-frontier --rdp-frontier-ratios 0.02,0.05,0.10,0.20,0.30
+py scripts/run_defensible_research_sweep.py --terms 16,32 --include-piecewise-polynomial --run-rdp-frontier --run-noise-frontier --rdp-frontier-ratios 0.02,0.05,0.10,0.20,0.30 --noise-frontier-sigmas 0,0.02,0.05,0.10
 ```
 
 ## 8) 判讀原則

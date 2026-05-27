@@ -81,6 +81,8 @@ Advance when:
 - frontier sweep monotonic flag is stable (`>= 80%` of rows true)
 - `tests/test_research_sweep.py` passes, so the frontier parser and best-point
   selection are guarded by unit tests
+- noise frontier is reproducible with fixed seed and records when higher sigma
+  causes `r2_below_gate`
 
 Regress immediately if:
 
@@ -91,4 +93,5 @@ Regress immediately if:
 
 - tighten gates in small increments
 - introduce deterministic `noise_budget` splits (low/medium/high noise) before model expansion
+- expand noise frontier from synthetic `smooth` into `spikes` and `multiscale`
 - prepare renderer-side benchmark: decode cost vs raster budget coupling

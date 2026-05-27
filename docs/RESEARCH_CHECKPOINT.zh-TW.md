@@ -80,6 +80,8 @@ py scripts/run_defensible_research_sweep.py \
 - frontier 掃描主要指標穩定（同一命令多次結果一致）
 - `tests/test_research_sweep.py` 通過，代表 frontier ratio 解析、單調性、
   最佳點選擇有單元測試守住
+- noise frontier 在固定 seed 下可重現，並能記錄高 sigma 時是否發生
+  `r2_below_gate`
 
 連續兩個 checkpoint 持續發生硬失敗或結果漂移時，需回退與重設參數。
 
@@ -87,4 +89,5 @@ py scripts/run_defensible_research_sweep.py \
 
 - 逐步提升 gate 嚴格度
 - 加入低、中、高噪音層級的固定測試區
+- 將 noise frontier 從 synthetic `smooth` 擴展到 `spikes` 與 `multiscale`
 - 加入「解碼與渲染時間」作為第二報表軸（目前優先做 payload 與 fidelity）

@@ -44,3 +44,16 @@
 | multiscale | 32 | 0.2 | 0.1995 | 0.967025 | 3.21156 | 798 | r2_below_gate | no |
 | smooth | 16 | 0.3 | 0.3 | 0.980079 | 2.19238 | 1200 | r2_below_gate | no |
 | smooth | 32 | 0.3 | 0.3 | 0.98728 | 2.16392 | 1200 | r2_below_gate | no |
+
+## Noise frontier scan
+
+| base kind | sigma | terms | target keep ratio | actual keep | r2 | payload ratio | gate reason |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| smooth | 0 | 16 | 0.3 | 0.3 | 0.980079 | 2.19238 | r2_below_gate |
+| smooth | 0 | 32 | 0.3 | 0.3 | 0.98728 | 2.16392 | r2_below_gate |
+| smooth | 0.02 | 16 | 0.3 | 0.29975 | 0.937723 | 2.19419 | r2_below_gate |
+| smooth | 0.02 | 32 | 0.02 | 0.0315 | 0.977209 | 16.8421 | r2_below_gate |
+| smooth | 0.05 | 16 | 0.3 | 0.3 | 0.946654 | 2.19238 | r2_below_gate |
+| smooth | 0.05 | 32 | 0.3 | 0.3 | 0.965463 | 2.16392 | r2_below_gate |
+| smooth | 0.1 | 16 | 0.3 | 0.2995 | 0.905181 | 2.19599 | r2_below_gate |
+| smooth | 0.1 | 32 | 0.3 | 0.2995 | 0.929992 | 2.16743 | r2_below_gate |

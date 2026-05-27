@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from scripts.run_defensible_research_sweep import _benchmark_rdp_frontier, _parse_float_list
+from scripts.run_defensible_research_sweep import _benchmark_rdp_frontier, _parse_float_list, _with_gaussian_noise
 from vizcompress.data import make_synthetic_dataset
 
 
@@ -16,6 +16,8 @@ def test_parse_float_list_deduplicates_and_rejects_invalid_ratios():
 
     with pytest.raises(ValueError):
         _parse_float_list("1.2")
+
+    assert _parse_float_list("0,0.05", allow_zero=True) == [0.0, 0.05]
 
 
 def test_rdp_frontier_reports_monotonic_keep_and_best_point():
@@ -59,3 +61,15 @@ def test_rdp_frontier_marks_rows_below_r2_gate():
     assert result["best_point_r2_gate_passes"] is False
     assert all(row["r2_gate_pass"] is False for row in result["sweep"])
     assert all(row["gate_reason"] == "r2_below_gate" for row in result["sweep"])
+
+
+def test_with_gaussian_noise_is_reproducible_and_preserves_x_domain():
+    series = make_synthetic_dataset(128, kind="smooth")
+
+    left = _with_gaussian_noise(series, sigma=0.05, seed=7)
+    right = _with_gaussian_noise(series, sigma=0.05, seed=7)
+
+    assert left.source.endswith("noise_sigma=0.05")
+    assert (left.x == series.x).all()
+    assert (left.y == right.y).all()
+    assert not (left.y == series.y).all()

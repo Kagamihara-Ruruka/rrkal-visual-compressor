@@ -263,6 +263,23 @@ def _benchmark_rdp_frontier(
     }
 
 
+def _with_gaussian_noise(series: TimeSeries, *, sigma: float, seed: int) -> TimeSeries:
+    # Keep the same x-domain and add controlled Gaussian noise to y.
+    # This lets us test whether a compression setting survives noisier data.
+    if sigma < 0.0:
+        raise ValueError("sigma must be >= 0")
+    rng = np.random.default_rng(seed)
+    if sigma == 0.0:
+        y = series.y.copy()
+    else:
+        y = series.y + rng.normal(0.0, sigma, size=series.y.size)
+    return TimeSeries(
+        x=series.x.copy(),
+        y=np.asarray(y, dtype=np.float64),
+        source=f"{series.source}:noise_sigma={sigma}",
+    )
+
+
 def _safe_ratio(numerator: float, denominator: float, *, eps: float = 1e-12) -> float:
     # Avoid divide-by-zero noise in reports.
     # If denominator is near zero, return 0 to keep the table stable.
@@ -271,7 +288,7 @@ def _safe_ratio(numerator: float, denominator: float, *, eps: float = 1e-12) -> 
     return float(numerator / denominator)
 
 
-def _parse_float_list(raw: str) -> list[float]:
+def _parse_float_list(raw: str, *, allow_zero: bool = False) -> list[float]:
     # Parse a user string like "0.02,0.05,0.1,0.2".
     # Invalid tokens are ignored, then duplicates are removed.
     values: list[float] = []
@@ -280,8 +297,9 @@ def _parse_float_list(raw: str) -> list[float]:
         if not token:
             continue
         value = float(token)
-        if value <= 0.0 or value > 1.0:
-            raise ValueError(f"ratio must be in (0,1], got {value}")
+        if value < 0.0 or value > 1.0 or (value == 0.0 and not allow_zero):
+            interval = "[0,1]" if allow_zero else "(0,1]"
+            raise ValueError(f"value must be in {interval}, got {value}")
         if value not in values:
             values.append(value)
     if not values:
@@ -372,6 +390,28 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=0,
         help="Optional maximum RDP keep count (0 means no max limit)",
+    )
+    parser.add_argument(
+        "--run-noise-frontier",
+        action="store_true",
+        default=False,
+        help="Run RDP frontier against fixed Gaussian noise levels",
+    )
+    parser.add_argument(
+        "--noise-frontier-kind",
+        default="smooth",
+        help="Synthetic base kind used for noise frontier",
+    )
+    parser.add_argument(
+        "--noise-frontier-sigmas",
+        default="0,0.02,0.05,0.10",
+        help="Comma-separated Gaussian noise sigma values",
+    )
+    parser.add_argument(
+        "--noise-frontier-seed",
+        type=int,
+        default=20260528,
+        help="Random seed for reproducible noise frontier",
     )
     return parser.parse_args()
 
@@ -538,6 +578,49 @@ def main() -> int:
             },
         }
 
+    noise_frontier = None
+    if args.run_noise_frontier:
+        noise_sigmas = _parse_float_list(args.noise_frontier_sigmas, allow_zero=True)
+        if args.noise_frontier_kind not in {name for name, _ in datasets}:
+            base_series = make_synthetic_dataset(4000, kind=args.noise_frontier_kind)
+        else:
+            base_series = dict(datasets)[args.noise_frontier_kind]
+
+        keep_ratios = _parse_float_list(args.rdp_frontier_ratios)
+        noise_rows = []
+        for sigma in noise_sigmas:
+            noisy_series = _with_gaussian_noise(
+                base_series,
+                sigma=sigma,
+                seed=int(args.noise_frontier_seed + round(sigma * 100000)),
+            )
+            for term in terms:
+                row = _benchmark_rdp_frontier(
+                    name=f"{args.noise_frontier_kind}_noise_{sigma:g}",
+                    series=noisy_series,
+                    terms=term,
+                    keep_ratio_list=keep_ratios,
+                    min_keep=args.rdp_frontier_min_keep,
+                    max_keep=args.rdp_frontier_max_keep or None,
+                    r2_gate=args.r2_gate,
+                )
+                row["noise_sigma"] = float(sigma)
+                row["base_kind"] = args.noise_frontier_kind
+                noise_rows.append(row)
+
+        noise_frontier = {
+            "base_kind": args.noise_frontier_kind,
+            "sigmas": noise_sigmas,
+            "seed": int(args.noise_frontier_seed),
+            "keep_ratios": keep_ratios,
+            "rows": noise_rows,
+            "summary": {
+                "noise_rows": len(noise_rows),
+                "best_points_with_gate": sum(1 for row in noise_rows if row["best_point_r2_gate_passes"]),
+                "monotonic_count": sum(1 for row in noise_rows if row["monotonic_keep"]),
+            },
+        }
+
     payload = {
         "terms": terms,
         "rows": rows,
@@ -570,6 +653,7 @@ def main() -> int:
             "locality_mode_desc": locality_mode_desc,
         },
         "rdp_frontier": frontier,
+        "noise_frontier": noise_frontier,
     }
 
     out_json = Path(args.out_json)
@@ -666,6 +750,40 @@ def main() -> int:
                         _format_float(best_points),
                         best_reason,
                         "yes" if item["best_point_r2_gate_passes"] else "no",
+                    ]
+                )
+                + " |"
+            )
+
+    if noise_frontier is not None:
+        lines.extend(
+            [
+                "",
+                "## Noise frontier scan",
+                "",
+                "| base kind | sigma | terms | target keep ratio | actual keep | r2 | payload ratio | gate reason |",
+                "| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+            ]
+        )
+        for item in noise_frontier["rows"]:
+            best = item["best_point"]
+            best_keep = float(best["target_keep_ratio"]) if best else 0.0
+            best_ratio = float(best["actual_keep_ratio"]) if best else 0.0
+            best_r2 = float(best["r2"]) if best else 0.0
+            best_payload = float(best["payload_ratio"]) if best else 0.0
+            best_reason = str(best["gate_reason"]) if best else "no_candidate"
+            lines.append(
+                "| "
+                + " | ".join(
+                    [
+                        str(item["base_kind"]),
+                        _format_float(item["noise_sigma"]),
+                        _format_float(item["terms"]),
+                        _format_float(best_keep),
+                        _format_float(best_ratio),
+                        _format_float(best_r2),
+                        _format_float(best_payload),
+                        best_reason,
                     ]
                 )
                 + " |"
