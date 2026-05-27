@@ -10,9 +10,24 @@ from vizcompress.core import TimeSeries, FourierModel
 
 
 @dataclass(frozen=True)
+class HaarWaveletModel:
+    reconstructed_y: np.ndarray
+    metrics: dict[str, float]
+
+
+@dataclass(frozen=True)
 class PiecewiseModel:
     breakpoints: np.ndarray
     segment_models: list[FourierModel]
+    reconstructed_y: np.ndarray
+    metrics: dict[str, float]
+
+
+@dataclass(frozen=True)
+class PiecewisePolynomialModel:
+    breakpoints: np.ndarray
+    segment_coeffs: list[np.ndarray]
+    segment_intervals: list[tuple[float, float]]
     reconstructed_y: np.ndarray
     metrics: dict[str, float]
 
@@ -39,6 +54,39 @@ def detect_jump_breakpoints(y: np.ndarray, *, jump_fraction: float = 0.05, max_b
     return np.sort(selected.astype(np.int64))
 
 
+def _piecewise_breakpoints_with_limits(
+    series: TimeSeries,
+    breakpoints: np.ndarray | None,
+    *,
+    jump_fraction: float,
+    max_breaks: int,
+) -> np.ndarray:
+    if breakpoints is None or breakpoints.size == 0:
+        detected = detect_jump_breakpoints(series.y, jump_fraction=jump_fraction, max_breaks=max_breaks)
+    else:
+        detected = np.asarray(breakpoints, dtype=np.int64)
+        detected = detected[(detected > 0) & (detected < series.sample_count - 1)]
+        if detected.size == 0:
+            return np.empty(0, dtype=np.int64)
+        if detected.size > max_breaks:
+            candidate_score = np.abs(np.diff(series.y)[detected - 1])
+            keep = np.argpartition(candidate_score, -max_breaks)[-max_breaks:]
+            detected = np.sort(detected[keep])
+    return detected
+
+
+def _piecewise_boundaries(sample_count: int, breakpoints: np.ndarray) -> np.ndarray:
+    raw_boundaries = np.array([0, *breakpoints.tolist(), sample_count], dtype=np.int64)
+    raw_boundaries = np.unique(raw_boundaries)
+    boundaries = [raw_boundaries[0]]
+    for value in raw_boundaries[1:]:
+        if value <= boundaries[-1]:
+            continue
+        if value - boundaries[-1] >= 2:
+            boundaries.append(int(value))
+    return np.array(boundaries, dtype=np.int64)
+
+
 def _term_allocation(total_terms: int, segment_count: int) -> list[int]:
     base = max(1, total_terms // max(segment_count, 1))
     allocation = [base for _ in range(segment_count)]
@@ -61,23 +109,13 @@ def compress_fourier_piecewise(
     """Compress with independent Fourier models per local segment."""
     if terms <= 0:
         raise ValueError("terms must be positive")
-    if breakpoints is None or breakpoints.size == 0:
-        breakpoints = detect_jump_breakpoints(series.y, max_breaks=max_breaks)
-    else:
-        breakpoints = np.asarray(breakpoints, dtype=np.int64)
-        if breakpoints.size:
-            breakpoints = breakpoints[(breakpoints > 0) & (breakpoints < series.sample_count - 1)]
-
-    # Keep boundaries unique and enforce minimum segment length.
-    raw_boundaries = np.array([0, *breakpoints.tolist(), series.sample_count], dtype=np.int64)
-    raw_boundaries = np.unique(raw_boundaries)
-    boundaries = [raw_boundaries[0]]
-    for value in raw_boundaries[1:]:
-        if value - boundaries[-1] >= 2:
-            boundaries.append(int(value))
-        elif value == raw_boundaries[-1]:
-            continue
-    boundaries = np.array(boundaries, dtype=np.int64)
+    breakpoints = _piecewise_breakpoints_with_limits(
+        series,
+        breakpoints,
+        jump_fraction=0.05,
+        max_breaks=max_breaks,
+    )
+    boundaries = _piecewise_boundaries(series.sample_count, breakpoints)
 
     if boundaries.size < 3:
         model = compress_fourier(series, terms=terms)
@@ -136,6 +174,178 @@ def compress_fourier_piecewise(
     )
 
 
+def _fit_polynomial_segment(x: np.ndarray, y: np.ndarray, degree: int) -> np.ndarray:
+    if x.size <= 1:
+        raise ValueError("segment must contain at least two points")
+    degree = int(degree)
+    if degree < 0:
+        raise ValueError("degree must be >= 0")
+    degree = min(degree, max(0, x.size - 1))
+    x0 = float(np.mean(x))
+    x_scale = float(np.max(np.abs(x - x0)))
+    if not np.isfinite(x_scale) or x_scale == 0.0:
+        x_scale = 1.0
+    x_n = (x - x0) / x_scale
+    v = np.polynomial.polynomial.polyvander(x_n, degree)
+    coeffs, *_ = np.linalg.lstsq(v, y, rcond=None)
+    return np.asarray(coeffs, dtype=np.float64)
+
+
+def _eval_polynomial_segment(x: np.ndarray, coeffs: np.ndarray, *, x0: float, x_scale: float) -> np.ndarray:
+    return np.polynomial.polynomial.polyval((x - x0) / x_scale, coeffs)
+
+
+def compress_piecewise_polynomial(
+    series: TimeSeries,
+    degree: int = 3,
+    *,
+    breakpoints: np.ndarray | None = None,
+    max_breaks: int = 4,
+) -> PiecewisePolynomialModel:
+    """Fit low-degree polynomials on local segments for locality-preserving baseline."""
+    if degree < 0:
+        raise ValueError("degree must be non-negative")
+    breakpoints = _piecewise_breakpoints_with_limits(
+        series,
+        breakpoints,
+        jump_fraction=0.05,
+        max_breaks=max_breaks,
+    )
+    boundaries = _piecewise_boundaries(series.sample_count, breakpoints)
+    min_len = max(2, degree + 1)
+
+    reconstructed = np.empty_like(series.y, dtype=np.float64)
+    segment_coeffs: list[np.ndarray] = []
+    segment_intervals: list[tuple[float, float]] = []
+    approximate_param_count = 0
+
+    for start, stop in zip(boundaries[:-1], boundaries[1:], strict=False):
+        seg_x = series.x[start:stop]
+        seg_y = series.y[start:stop]
+        if seg_y.size < min_len:
+            reconstructed[start:stop] = np.interp(series.x[start:stop], seg_x, seg_y)
+            seg_coeffs = np.array([0.0], dtype=np.float64)
+            parameters = 2
+        else:
+            seg_coeffs = _fit_polynomial_segment(seg_x, seg_y, degree=degree)
+            x0 = float(np.mean(seg_x))
+            x_scale = float(np.max(np.abs(seg_x - x0)))
+            if not np.isfinite(x_scale) or x_scale == 0.0:
+                x_scale = 1.0
+            reconstructed[start:stop] = _eval_polynomial_segment(seg_x, seg_coeffs, x0=x0, x_scale=x_scale)
+            parameters = int(seg_coeffs.size) + 2
+        segment_coeffs.append(seg_coeffs)
+        segment_intervals.append((float(series.x[start]), float(series.x[stop - 1])))
+        approximate_param_count += parameters
+
+    return PiecewisePolynomialModel(
+        breakpoints=breakpoints,
+        segment_coeffs=segment_coeffs,
+        segment_intervals=segment_intervals,
+        reconstructed_y=reconstructed,
+        metrics={
+            "segment_count": len(segment_coeffs),
+            "degree": int(degree),
+            "approx_parameter_count": int(approximate_param_count),
+        },
+    )
+
+
+def _largest_power_of_two_leq(value: int) -> int:
+    if value < 2:
+        raise ValueError("value must be >= 2")
+    return 1 << (value.bit_length() - 1)
+
+
+def _haar_decompose(signal: np.ndarray, level: int) -> tuple[np.ndarray, list[np.ndarray]]:
+    levels: list[np.ndarray] = []
+    approx = np.asarray(signal, dtype=np.float64).copy()
+    for _ in range(level):
+        n = approx.size
+        if n < 2 or (n & 1):
+            break
+        even = approx[::2]
+        odd = approx[1::2]
+        detail = (even - odd) / np.sqrt(2.0)
+        approx = (even + odd) / np.sqrt(2.0)
+        levels.append(detail)
+    return approx, levels
+
+
+def _haar_reconstruct(approx: np.ndarray, levels: list[np.ndarray]) -> np.ndarray:
+    signal = approx.astype(np.float64, copy=True)
+    for detail in reversed(levels):
+        if signal.size != detail.size:
+            raise ValueError("invalid Haar detail hierarchy")
+        combined = np.empty(detail.size * 2, dtype=np.float64)
+        combined[0::2] = (signal + detail) / np.sqrt(2.0)
+        combined[1::2] = (signal - detail) / np.sqrt(2.0)
+        signal = combined
+    return signal
+
+
+def compress_haar_threshold(
+    series: TimeSeries,
+    *,
+    level: int = 3,
+    threshold: float | None = None,
+) -> HaarWaveletModel:
+    """Research baseline: Haar-thresholded wavelet compression."""
+    if level <= 0:
+        raise ValueError("level must be > 0")
+    if series.sample_count < 2:
+        raise ValueError("series must contain at least 2 samples")
+
+    n = _largest_power_of_two_leq(series.sample_count)
+    x_src = np.arange(n, dtype=np.float64)
+    y_src = series.y[:n]
+
+    approx, levels = _haar_decompose(y_src, level=level)
+    if not levels:
+        reconstructed = y_src.astype(np.float64, copy=True)
+        return HaarWaveletModel(
+            reconstructed_y=np.interp(np.arange(series.sample_count), x_src, reconstructed),
+            metrics={
+                "level": float(0),
+                "threshold": float(0.0),
+                "kept_coefficients": float(n),
+                "total_coefficients": float(n),
+                "residual_payload_ratio": 1.0,
+            },
+        )
+
+    if threshold is None:
+        all_detail = np.concatenate(levels)
+        threshold = 0.5 * np.quantile(np.abs(all_detail), 0.90)
+    if threshold < 0.0:
+        raise ValueError("threshold must be non-negative")
+
+    kept = 0
+    sparse_levels: list[np.ndarray] = []
+    for detail in levels:
+        keep = np.abs(detail) >= threshold
+        sparse_levels.append(detail * keep.astype(float))
+        kept += int(keep.sum())
+
+    reconstructed_n = _haar_reconstruct(approx, sparse_levels)
+    reconstructed = np.interp(
+        np.linspace(0.0, float(n - 1), series.sample_count, dtype=np.float64),
+        x_src,
+        reconstructed_n,
+    )
+    total_coeff = float(n)
+    return HaarWaveletModel(
+        reconstructed_y=reconstructed,
+        metrics={
+            "level": float(min(level, len(levels))),
+            "threshold": float(threshold),
+            "kept_coefficients": float(kept + approx.size),
+            "total_coefficients": float(total_coeff),
+            "residual_payload_ratio": float((kept + approx.size) / total_coeff) if total_coeff else 1.0,
+        },
+    )
+
+
 def locality_leakage_metric(
     series: TimeSeries,
     reconstructed: np.ndarray,
@@ -156,7 +366,8 @@ def locality_leakage_metric(
             "local_rmse": float(np.sqrt(np.mean(residual * residual))),
             "far_rmse": float(np.sqrt(np.mean(residual * residual))),
             "local_ratio": 1.0,
-            "local_to_global_ratio": 1.0,
+            "leakage_ratio": 1.0,
+            "jump_count": 0,
         }
 
     jump_points = detect_jump_breakpoints(series.y, max_breaks=8)
@@ -187,4 +398,70 @@ def locality_leakage_metric(
         "local_ratio": local_ratio,
         "leakage_ratio": leakage,
         "jump_count": int(jump_points.size),
+    }
+
+
+def compress_fourier_with_uniform_param(
+    series: TimeSeries,
+    terms: int,
+    *,
+    reparametrize_to_uniform: bool = True,
+) -> FourierModel:
+    """Fit Fourier on a uniform index when x sampling is irregular."""
+    if terms <= 0:
+        raise ValueError("terms must be positive")
+    if not reparametrize_to_uniform:
+        return compress_fourier(series, terms=terms)
+    uniform = TimeSeries(
+        x=np.linspace(0.0, 1.0, series.sample_count, dtype=np.float64),
+        y=series.y,
+        source=f"uniform:{series.source}",
+    )
+    return compress_fourier(uniform, terms=terms)
+
+
+def compress_multichannel_fourier_pca(
+    channels: np.ndarray,
+    terms: int,
+    *,
+    rank: int,
+) -> dict[str, Any]:
+    """Compress multi-channel signals with PCA basis + Fourier on latent coefficients."""
+    if channels.ndim != 2:
+        raise ValueError("channels must be 2D [samples, channels]")
+    if channels.shape[0] < 2:
+        raise ValueError("at least 2 samples required")
+    if terms <= 0:
+        raise ValueError("terms must be positive")
+    if rank <= 0:
+        raise ValueError("rank must be positive")
+
+    n_samples, n_channels = channels.shape
+    rank = int(min(rank, n_channels))
+    mean = np.mean(channels, axis=0, keepdims=True)
+    centered = channels - mean
+    _, _, vt = np.linalg.svd(centered, full_matrices=False)
+    basis = vt[:rank].T
+    scores = centered @ basis
+    score_models = [
+        compress_fourier(TimeSeries(np.arange(n_samples), scores[:, axis], source=f"latent-{axis}"), terms=terms)
+        for axis in range(rank)
+    ]
+    score_recon = np.column_stack([model.reconstructed_y for model in score_models])
+    reconstructed = score_recon @ basis.T + mean
+
+    residual = channels - reconstructed
+    return {
+        "rank": rank,
+        "terms": int(terms),
+        "basis": basis,
+        "mean": mean,
+        "score_models": score_models,
+        "reconstructed": reconstructed,
+        "metrics": {
+            "rmse": float(np.sqrt(np.mean(residual * residual))),
+            "mae": float(np.mean(np.abs(residual))),
+            "max_abs": float(np.max(np.abs(residual))),
+            "parameter_count": float(rank * terms + rank * n_channels + n_channels),
+        },
     }

@@ -583,12 +583,12 @@ def _validate_x_domain_arrays(data: Any, sample_count: int, errors: list[str]) -
         elif data["x_values"].shape != (sample_count,):
             errors.append("x_values length must match sample_count")
     elif mode == "linear_plus_rdp_delta":
-        for key in ("x_delta_indices", "x_delta_values"):
+        for key in ("x_delta_t", "x_delta_values"):
             if key not in data:
                 errors.append(f"compressed x-domain missing {key}")
-        if "x_delta_indices" in data and "x_delta_values" in data:
-            if data["x_delta_indices"].shape != data["x_delta_values"].shape:
-                errors.append("x_delta_indices and x_delta_values must have the same shape")
+        if "x_delta_t" in data and "x_delta_values" in data:
+            if data["x_delta_t"].shape != data["x_delta_values"].shape:
+                errors.append("x_delta_t and x_delta_values must have the same shape")
     elif mode != "linspace_from_min_max":
         errors.append(f"unsupported x_domain_mode: {mode!r}")
 

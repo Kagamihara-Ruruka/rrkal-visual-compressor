@@ -1,0 +1,446 @@
+{
+  "terms": [
+    16,
+    32,
+    64
+  ],
+  "rows": [
+    {
+      "dataset": "steps",
+      "samples": 4000,
+      "terms": 16,
+      "global": {
+        "r2": 0.982742017431227,
+        "rmse": 0.04435449842919513,
+        "leakage_ratio": 0.4263750950089931,
+        "max_abs": 0.32306258815358674
+      },
+      "piecewise_fourier": {
+        "r2": 0.9955574165626189,
+        "rmse": 0.022504038185840042,
+        "leakage_ratio": 0.8331252293818598,
+        "segment_count": 5
+      },
+      "piecewise_polynomial": {
+        "r2": 0.8316372309027158,
+        "rmse": 0.13853697152260874,
+        "leakage_ratio": 1.0587898517039094,
+        "segment_count": 5,
+        "approx_parameter_count": 30
+      },
+      "uniform_param_fourier": {
+        "r2": 0.982742017431227,
+        "rmse": 0.04435449842919513,
+        "max_abs": 0.32306258815358674
+      },
+      "haar_threshold": {
+        "r2": -1.5295770342146997,
+        "rmse": 0.5369905145542169,
+        "max_abs": 1.0725615114759777,
+        "residual_payload_ratio": 0.37109375
+      }
+    },
+    {
+      "dataset": "steps",
+      "samples": 4000,
+      "terms": 32,
+      "global": {
+        "r2": 0.9912924085992199,
+        "rmse": 0.03150588477947639,
+        "leakage_ratio": 0.42912257744473525,
+        "max_abs": 0.3279920580040715
+      },
+      "piecewise_fourier": {
+        "r2": 0.998126416787171,
+        "rmse": 0.014614338177740622,
+        "leakage_ratio": 0.7740796637784185,
+        "segment_count": 5
+      },
+      "piecewise_polynomial": {
+        "r2": 0.8316372309027158,
+        "rmse": 0.13853697152260874,
+        "leakage_ratio": 1.0587898517039094,
+        "segment_count": 5,
+        "approx_parameter_count": 30
+      },
+      "uniform_param_fourier": {
+        "r2": 0.9912924085992199,
+        "rmse": 0.03150588477947639,
+        "max_abs": 0.3279920580040715
+      },
+      "haar_threshold": {
+        "r2": -1.5295770342146997,
+        "rmse": 0.5369905145542169,
+        "max_abs": 1.0725615114759777,
+        "residual_payload_ratio": 0.37109375
+      }
+    },
+    {
+      "dataset": "steps",
+      "samples": 4000,
+      "terms": 64,
+      "global": {
+        "r2": 0.9956041791118095,
+        "rmse": 0.02238528632415272,
+        "leakage_ratio": 0.392120410306652,
+        "max_abs": 0.313300188641325
+      },
+      "piecewise_fourier": {
+        "r2": 0.9990550844842112,
+        "rmse": 0.01037860897249473,
+        "leakage_ratio": 0.7247229712535149,
+        "segment_count": 5
+      },
+      "piecewise_polynomial": {
+        "r2": 0.8316372309027158,
+        "rmse": 0.13853697152260874,
+        "leakage_ratio": 1.0587898517039094,
+        "segment_count": 5,
+        "approx_parameter_count": 30
+      },
+      "uniform_param_fourier": {
+        "r2": 0.9956041791118095,
+        "rmse": 0.02238528632415272,
+        "max_abs": 0.313300188641325
+      },
+      "haar_threshold": {
+        "r2": -1.5295770342146997,
+        "rmse": 0.5369905145542169,
+        "max_abs": 1.0725615114759777,
+        "residual_payload_ratio": 0.37109375
+      }
+    },
+    {
+      "dataset": "spikes",
+      "samples": 4000,
+      "terms": 16,
+      "global": {
+        "r2": 0.9491171121873097,
+        "rmse": 0.09432316322759218,
+        "leakage_ratio": 0.8458288937288047,
+        "max_abs": 0.947029158443412
+      },
+      "piecewise_fourier": {
+        "r2": 0.9085748178628263,
+        "rmse": 0.12643444261033915,
+        "leakage_ratio": 0.8674827749955514,
+        "segment_count": 3
+      },
+      "piecewise_polynomial": {
+        "r2": 0.1846169892413999,
+        "rmse": 0.3775837630054123,
+        "leakage_ratio": 1.0085125559161265,
+        "segment_count": 3,
+        "approx_parameter_count": 14
+      },
+      "uniform_param_fourier": {
+        "r2": 0.9491171121873097,
+        "rmse": 0.09432316322759218,
+        "max_abs": 0.947029158443412
+      },
+      "haar_threshold": {
+        "r2": -1.0472517152195788,
+        "rmse": 0.5982987603650181,
+        "max_abs": 1.5964954313335111,
+        "residual_payload_ratio": 0.3310546875
+      }
+    },
+    {
+      "dataset": "spikes",
+      "samples": 4000,
+      "terms": 32,
+      "global": {
+        "r2": 0.9681523680974834,
+        "rmse": 0.07462271633169769,
+        "leakage_ratio": 0.8242161858845528,
+        "max_abs": 0.8149536029294236
+      },
+      "piecewise_fourier": {
+        "r2": 0.9431873604752463,
+        "rmse": 0.09966782127852879,
+        "leakage_ratio": 0.8437993467101816,
+        "segment_count": 3
+      },
+      "piecewise_polynomial": {
+        "r2": 0.1846169892413999,
+        "rmse": 0.3775837630054123,
+        "leakage_ratio": 1.0085125559161265,
+        "segment_count": 3,
+        "approx_parameter_count": 14
+      },
+      "uniform_param_fourier": {
+        "r2": 0.9681523680974834,
+        "rmse": 0.07462271633169769,
+        "max_abs": 0.8149536029294236
+      },
+      "haar_threshold": {
+        "r2": -1.0472517152195788,
+        "rmse": 0.5982987603650181,
+        "max_abs": 1.5964954313335111,
+        "residual_payload_ratio": 0.3310546875
+      }
+    },
+    {
+      "dataset": "spikes",
+      "samples": 4000,
+      "terms": 64,
+      "global": {
+        "r2": 0.987130208455671,
+        "rmse": 0.04743711160960014,
+        "leakage_ratio": 0.7591852274407426,
+        "max_abs": 0.5004758184474432
+      },
+      "piecewise_fourier": {
+        "r2": 0.9719167692811733,
+        "rmse": 0.07007385580689954,
+        "leakage_ratio": 0.8236540624678217,
+        "segment_count": 3
+      },
+      "piecewise_polynomial": {
+        "r2": 0.1846169892413999,
+        "rmse": 0.3775837630054123,
+        "leakage_ratio": 1.0085125559161265,
+        "segment_count": 3,
+        "approx_parameter_count": 14
+      },
+      "uniform_param_fourier": {
+        "r2": 0.987130208455671,
+        "rmse": 0.04743711160960014,
+        "max_abs": 0.5004758184474432
+      },
+      "haar_threshold": {
+        "r2": -1.0472517152195788,
+        "rmse": 0.5982987603650181,
+        "max_abs": 1.5964954313335111,
+        "residual_payload_ratio": 0.3310546875
+      }
+    },
+    {
+      "dataset": "irregular",
+      "samples": 4000,
+      "terms": 16,
+      "global": {
+        "r2": 0.9997617701906519,
+        "rmse": 0.006060535795986297,
+        "leakage_ratio": 0.8378114922866228,
+        "max_abs": 0.04678719730874137
+      },
+      "piecewise_fourier": {
+        "r2": 0.9412302536963222,
+        "rmse": 0.09518968224296259,
+        "leakage_ratio": 0.9871746280497518,
+        "segment_count": 3
+      },
+      "piecewise_polynomial": {
+        "r2": 0.20655407558082095,
+        "rmse": 0.3497612045552999,
+        "leakage_ratio": 1.004557174491441,
+        "segment_count": 3,
+        "approx_parameter_count": 14
+      },
+      "uniform_param_fourier": {
+        "r2": 0.9997617701906519,
+        "rmse": 0.006060535795986297,
+        "max_abs": 0.04678719730874137
+      },
+      "haar_threshold": {
+        "r2": -0.9932093580119985,
+        "rmse": 0.5543568621539945,
+        "max_abs": 1.4291931796795385,
+        "residual_payload_ratio": 0.33544921875
+      }
+    },
+    {
+      "dataset": "irregular",
+      "samples": 4000,
+      "terms": 32,
+      "global": {
+        "r2": 0.9998971126426728,
+        "rmse": 0.003982850227330032,
+        "leakage_ratio": 0.7723112023725617,
+        "max_abs": 0.0465709071031678
+      },
+      "piecewise_fourier": {
+        "r2": 0.9867440059649983,
+        "rmse": 0.04520839814591399,
+        "leakage_ratio": 0.9670110234031813,
+        "segment_count": 3
+      },
+      "piecewise_polynomial": {
+        "r2": 0.20655407558082095,
+        "rmse": 0.3497612045552999,
+        "leakage_ratio": 1.004557174491441,
+        "segment_count": 3,
+        "approx_parameter_count": 14
+      },
+      "uniform_param_fourier": {
+        "r2": 0.9998971126426728,
+        "rmse": 0.003982850227330032,
+        "max_abs": 0.0465709071031678
+      },
+      "haar_threshold": {
+        "r2": -0.9932093580119985,
+        "rmse": 0.5543568621539945,
+        "max_abs": 1.4291931796795385,
+        "residual_payload_ratio": 0.33544921875
+      }
+    },
+    {
+      "dataset": "irregular",
+      "samples": 4000,
+      "terms": 64,
+      "global": {
+        "r2": 0.9999495004185149,
+        "rmse": 0.0027903382892737693,
+        "leakage_ratio": 0.7603187734324705,
+        "max_abs": 0.047037445505140774
+      },
+      "piecewise_fourier": {
+        "r2": 0.997392082726885,
+        "rmse": 0.020052100588342253,
+        "leakage_ratio": 0.921610598415807,
+        "segment_count": 3
+      },
+      "piecewise_polynomial": {
+        "r2": 0.20655407558082095,
+        "rmse": 0.3497612045552999,
+        "leakage_ratio": 1.004557174491441,
+        "segment_count": 3,
+        "approx_parameter_count": 14
+      },
+      "uniform_param_fourier": {
+        "r2": 0.9999495004185149,
+        "rmse": 0.0027903382892737693,
+        "max_abs": 0.047037445505140774
+      },
+      "haar_threshold": {
+        "r2": -0.9932093580119985,
+        "rmse": 0.5543568621539945,
+        "max_abs": 1.4291931796795385,
+        "residual_payload_ratio": 0.33544921875
+      }
+    },
+    {
+      "dataset": "multiscale",
+      "samples": 4000,
+      "terms": 16,
+      "global": {
+        "r2": 0.9996854276789149,
+        "rmse": 0.0055176166565342015,
+        "leakage_ratio": 0.9938075931058116,
+        "max_abs": 0.03852211308784566
+      },
+      "piecewise_fourier": {
+        "r2": 0.9687186407947154,
+        "rmse": 0.055021709332298024,
+        "leakage_ratio": 0.9449891973109164,
+        "segment_count": 5
+      },
+      "piecewise_polynomial": {
+        "r2": 0.4293304028054057,
+        "rmse": 0.2350085368105053,
+        "leakage_ratio": 1.011880308617502,
+        "segment_count": 5,
+        "approx_parameter_count": 30
+      },
+      "uniform_param_fourier": {
+        "r2": 0.9996854276789149,
+        "rmse": 0.0055176166565342015,
+        "max_abs": 0.03852211308784566
+      },
+      "haar_threshold": {
+        "r2": -0.9244866228041957,
+        "rmse": 0.43156748713877996,
+        "max_abs": 1.171542018015635,
+        "residual_payload_ratio": 0.41064453125
+      }
+    },
+    {
+      "dataset": "multiscale",
+      "samples": 4000,
+      "terms": 32,
+      "global": {
+        "r2": 0.9998440172982465,
+        "rmse": 0.0038853441206999416,
+        "leakage_ratio": 1.0517306941080862,
+        "max_abs": 0.0385900482527468
+      },
+      "piecewise_fourier": {
+        "r2": 0.9875127499078746,
+        "rmse": 0.03476359450403509,
+        "leakage_ratio": 0.8386325107111976,
+        "segment_count": 5
+      },
+      "piecewise_polynomial": {
+        "r2": 0.4293304028054057,
+        "rmse": 0.2350085368105053,
+        "leakage_ratio": 1.011880308617502,
+        "segment_count": 5,
+        "approx_parameter_count": 30
+      },
+      "uniform_param_fourier": {
+        "r2": 0.9998440172982465,
+        "rmse": 0.0038853441206999416,
+        "max_abs": 0.0385900482527468
+      },
+      "haar_threshold": {
+        "r2": -0.9244866228041957,
+        "rmse": 0.43156748713877996,
+        "max_abs": 1.171542018015635,
+        "residual_payload_ratio": 0.41064453125
+      }
+    },
+    {
+      "dataset": "multiscale",
+      "samples": 4000,
+      "terms": 64,
+      "global": {
+        "r2": 0.9999227424811921,
+        "rmse": 0.002734397502854213,
+        "leakage_ratio": 1.0756103242660513,
+        "max_abs": 0.038046684213518846
+      },
+      "piecewise_fourier": {
+        "r2": 0.9953152364422541,
+        "rmse": 0.02129291443916718,
+        "leakage_ratio": 0.6874348031328114,
+        "segment_count": 5
+      },
+      "piecewise_polynomial": {
+        "r2": 0.4293304028054057,
+        "rmse": 0.2350085368105053,
+        "leakage_ratio": 1.011880308617502,
+        "segment_count": 5,
+        "approx_parameter_count": 30
+      },
+      "uniform_param_fourier": {
+        "r2": 0.9999227424811921,
+        "rmse": 0.002734397502854213,
+        "max_abs": 0.038046684213518846
+      },
+      "haar_threshold": {
+        "r2": -0.9244866228041957,
+        "rmse": 0.43156748713877996,
+        "max_abs": 1.171542018015635,
+        "residual_payload_ratio": 0.41064453125
+      }
+    },
+    {
+      "dataset": "channels_multiaxis",
+      "samples": 1500,
+      "multichannel_rank": 2,
+      "multichannel_metrics": {
+        "rmse": 0.052811494062675345,
+        "mae": 0.038772715052623176,
+        "max_abs": 0.11002354587585872,
+        "parameter_count": 73.0
+      }
+    }
+  ],
+  "summary": {
+    "best_global_r2": 0.9999495004185149,
+    "best_piecewise_leakage": 0.6874348031328114,
+    "best_poly_leakage": 1.004557174491441,
+    "multichannel_rmse": 0.052811494062675345
+  }
+}

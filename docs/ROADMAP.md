@@ -179,6 +179,29 @@ Acceptance criteria:
   on discontinuity-heavy signals under the same term budget.
 - every future model variant must declare its locality behavior in benchmark rows.
 
+### Phase 2.7: Defensible Baseline Expansion
+
+Goal: add two failure-focused baselines before broader production claims.
+
+Tasks:
+
+- Add irregular-x Fourier baseline via uniform re-parameterization (`compress_fourier_with_uniform_param`).
+- Add local polynomial baseline for locality stress (`compress_piecewise_polynomial`).
+- Add correlated multichannel baseline (`compress_multichannel_fourier_pca`).
+- Add polyline simplification stress as a pre-pass (RDP/angle/curvature pruning) to model DPI-aware sampling budgets.
+- Extend benchmark evidence with:
+  - locality leakage metrics
+  - x-domain max error
+  - residual payload ratio
+- Add a DPI-gating rule in research: if the requested output is `W×H`, clamp target samples to a multiple of visible pixel span.
+
+Definition of done:
+
+- Each baseline has at least one reproducible benchmark row.
+- No single baseline is considered “better” unless it wins both:
+  - error budget constraints
+  - payload constraints
+
 ## Phase 3: `.vizasset` Package Format
 
 Goal: define the handoff contract between compressor, editor, and RRKAL.
