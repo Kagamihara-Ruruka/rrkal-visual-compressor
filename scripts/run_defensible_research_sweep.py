@@ -375,6 +375,12 @@ def _parse_float_list(raw: str, *, allow_zero: bool = False) -> list[float]:
     return values
 
 
+def _parse_gate_list(raw: str) -> list[float]:
+    # Gate lists use normal float thresholds, usually around 0.90-0.99.
+    values = _parse_float_list(raw, allow_zero=False)
+    return sorted(values)
+
+
 def _parse_string_list(raw: str) -> list[str]:
     # Parse comma-separated names while preserving order and removing duplicates.
     values: list[str] = []
@@ -385,6 +391,101 @@ def _parse_string_list(raw: str) -> list[str]:
     if not values:
         raise ValueError(f"no valid value found in {raw!r}")
     return values
+
+
+def _best_frontier_point_for_tier_config(
+    sweep: list[dict[str, Any]],
+    *,
+    strict_gate: float,
+    exploratory_gate: float,
+    demo_gate: float,
+    min_payload_ratio: float,
+) -> dict[str, Any] | None:
+    # Re-score an already computed sweep under another tier configuration.
+    # This avoids rerunning model fitting just to ask "what if the gate changed?"
+    candidates: list[dict[str, Any]] = []
+    for item in sweep:
+        rescored = dict(item)
+        tier = _frontier_tier(
+            r2=float(item["r2"]),
+            payload_ratio=float(item["payload_ratio"]),
+            strict_gate=strict_gate,
+            exploratory_gate=exploratory_gate,
+            demo_gate=demo_gate,
+            min_payload_ratio=min_payload_ratio,
+        )
+        rescored["frontier_tier"] = tier
+        rescored["r2_gate_pass"] = bool(float(item["r2"]) >= strict_gate)
+        rescored["payload_gate_pass"] = bool(float(item["payload_ratio"]) >= min_payload_ratio)
+        candidates.append(rescored)
+
+    if not candidates:
+        return None
+
+    payload_candidates = [item for item in candidates if item["payload_gate_pass"]]
+    if payload_candidates:
+        return max(
+            payload_candidates,
+            key=lambda item: (
+                _frontier_tier_score(str(item["frontier_tier"])),
+                float(item["payload_ratio"]),
+                float(item["r2"]),
+                -float(item["actual_keep_ratio"]),
+            ),
+        )
+    return max(candidates, key=lambda item: float(item["r2"]))
+
+
+def _summarize_frontier_tier_matrix(
+    rows: list[dict[str, Any]],
+    *,
+    strict_gate: float,
+    exploratory_gates: list[float],
+    demo_gates: list[float],
+    min_payload_ratio: float,
+) -> list[dict[str, Any]]:
+    # Summarize how tier counts move as demo/exploratory gates change.
+    matrix: list[dict[str, Any]] = []
+    for exploratory_gate in exploratory_gates:
+        for demo_gate in demo_gates:
+            if demo_gate > exploratory_gate:
+                continue
+            counts = {
+                "strict_pass": 0,
+                "exploratory_pass": 0,
+                "demo_pass": 0,
+                "reject": 0,
+                "payload_reject": 0,
+            }
+            best_payload_ratio = 0.0
+            best_r2 = 0.0
+            for row in rows:
+                best = _best_frontier_point_for_tier_config(
+                    row.get("sweep", []),
+                    strict_gate=strict_gate,
+                    exploratory_gate=exploratory_gate,
+                    demo_gate=demo_gate,
+                    min_payload_ratio=min_payload_ratio,
+                )
+                if best is None:
+                    counts["reject"] += 1
+                    continue
+                tier = str(best["frontier_tier"])
+                counts[tier] = counts.get(tier, 0) + 1
+                best_payload_ratio = max(best_payload_ratio, float(best["payload_ratio"]))
+                best_r2 = max(best_r2, float(best["r2"]))
+            matrix.append(
+                {
+                    "strict_gate": float(strict_gate),
+                    "exploratory_gate": float(exploratory_gate),
+                    "demo_gate": float(demo_gate),
+                    "row_count": len(rows),
+                    "tier_counts": counts,
+                    "best_payload_ratio": best_payload_ratio,
+                    "best_r2": best_r2,
+                }
+            )
+    return matrix
 
 
 def _estimate_fourier_payload_bytes(model: FourierModel) -> int:
@@ -488,6 +589,22 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=0.90,
         help="R2 threshold for demo-only frontier tier",
+    )
+    parser.add_argument(
+        "--frontier-exploratory-r2-gates",
+        default="0.94,0.95,0.96,0.97",
+        help="Comma-separated exploratory R2 gates used by the optional tier matrix",
+    )
+    parser.add_argument(
+        "--frontier-demo-r2-gates",
+        default="0.88,0.90,0.92,0.94",
+        help="Comma-separated demo R2 gates used by the optional tier matrix",
+    )
+    parser.add_argument(
+        "--run-frontier-tier-matrix",
+        action="store_true",
+        default=False,
+        help="Re-score existing frontier sweeps across demo/exploratory R2 gate pairs",
     )
     parser.add_argument(
         "--run-noise-frontier",
@@ -703,6 +820,17 @@ def main() -> int:
         for item in frontier_rows:
             key = str(item["best_point_tier"])
             frontier_tier_counts[key] = frontier_tier_counts.get(key, 0) + 1
+        frontier_tier_matrix = (
+            _summarize_frontier_tier_matrix(
+                frontier_rows,
+                strict_gate=args.r2_gate,
+                exploratory_gates=_parse_gate_list(args.frontier_exploratory_r2_gates),
+                demo_gates=_parse_gate_list(args.frontier_demo_r2_gates),
+                min_payload_ratio=args.frontier_min_payload_ratio,
+            )
+            if args.run_frontier_tier_matrix
+            else []
+        )
         frontier = {
             "keep_ratios": keep_ratios,
             "min_keep": int(args.rdp_frontier_min_keep),
@@ -717,6 +845,7 @@ def main() -> int:
                 "monotonic_count": sum(1 for row in frontier_rows if row["monotonic_keep"]),
                 "best_points_with_gate": sum(1 for row in frontier_rows if row["best_point_r2_gate_passes"]),
                 "best_point_tier_counts": frontier_tier_counts,
+                "tier_matrix": frontier_tier_matrix,
             },
         }
 
@@ -780,6 +909,17 @@ def main() -> int:
                 },
                 "by_sigma": _summarize_frontier_by_key(noise_rows, "noise_sigma"),
                 "by_kind": _summarize_frontier_by_key(noise_rows, "base_kind"),
+                "tier_matrix": (
+                    _summarize_frontier_tier_matrix(
+                        noise_rows,
+                        strict_gate=args.r2_gate,
+                        exploratory_gates=_parse_gate_list(args.frontier_exploratory_r2_gates),
+                        demo_gates=_parse_gate_list(args.frontier_demo_r2_gates),
+                        min_payload_ratio=args.frontier_min_payload_ratio,
+                    )
+                    if args.run_frontier_tier_matrix
+                    else []
+                ),
             },
         }
         for item in noise_rows:
@@ -796,6 +936,9 @@ def main() -> int:
                 "r2_gate": args.r2_gate,
                 "frontier_exploratory_r2_gate": args.frontier_exploratory_r2_gate,
                 "frontier_demo_r2_gate": args.frontier_demo_r2_gate,
+                "frontier_exploratory_r2_gates": _parse_gate_list(args.frontier_exploratory_r2_gates),
+                "frontier_demo_r2_gates": _parse_gate_list(args.frontier_demo_r2_gates),
+                "run_frontier_tier_matrix": args.run_frontier_tier_matrix,
                 "leakage_gate": args.leakage_gate,
                 "max_adaptive_keep_ratio": args.max_adaptive_keep_ratio,
                 "locality_mode": args.locality_mode,
@@ -918,6 +1061,35 @@ def main() -> int:
         )
         for tier_name, tier_count in sorted(frontier["summary"]["best_point_tier_counts"].items()):
             lines.append(f"  - {tier_name}: {tier_count}")
+        if frontier["summary"]["tier_matrix"]:
+            lines.extend(
+                [
+                    "",
+                    "### RDP frontier tier matrix",
+                    "",
+                    "| exploratory gate | demo gate | strict | exploratory | demo | reject | payload reject | best R2 | best payload ratio |",
+                    "| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+                ]
+            )
+            for item in frontier["summary"]["tier_matrix"]:
+                counts = item["tier_counts"]
+                lines.append(
+                    "| "
+                    + " | ".join(
+                        [
+                            _format_float(item["exploratory_gate"]),
+                            _format_float(item["demo_gate"]),
+                            _format_float(counts["strict_pass"]),
+                            _format_float(counts["exploratory_pass"]),
+                            _format_float(counts["demo_pass"]),
+                            _format_float(counts["reject"]),
+                            _format_float(counts["payload_reject"]),
+                            _format_float(item["best_r2"]),
+                            _format_float(item["best_payload_ratio"]),
+                        ]
+                    )
+                    + " |"
+                )
         lines.extend(
             [
                 "",
@@ -965,6 +1137,35 @@ def main() -> int:
             noise_frontier["summary"]["best_point_tier_counts"].items()
         ):
             lines.append(f"  - {tier_name}: {tier_count}")
+        if noise_frontier["summary"]["tier_matrix"]:
+            lines.extend(
+                [
+                    "",
+                    "### Noise frontier tier matrix",
+                    "",
+                    "| exploratory gate | demo gate | strict | exploratory | demo | reject | payload reject | best R2 | best payload ratio |",
+                    "| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+                ]
+            )
+            for item in noise_frontier["summary"]["tier_matrix"]:
+                counts = item["tier_counts"]
+                lines.append(
+                    "| "
+                    + " | ".join(
+                        [
+                            _format_float(item["exploratory_gate"]),
+                            _format_float(item["demo_gate"]),
+                            _format_float(counts["strict_pass"]),
+                            _format_float(counts["exploratory_pass"]),
+                            _format_float(counts["demo_pass"]),
+                            _format_float(counts["reject"]),
+                            _format_float(counts["payload_reject"]),
+                            _format_float(item["best_r2"]),
+                            _format_float(item["best_payload_ratio"]),
+                        ]
+                    )
+                    + " |"
+                )
         lines.extend(
             [
                 "",

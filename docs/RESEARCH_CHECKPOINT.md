@@ -70,6 +70,7 @@ This adds:
 - best point frontier tier: `strict_pass`, `exploratory_pass`, `demo_pass`, `reject`, `payload_reject`
 - monotonic sanity flag: `actual_keep_ratio` should be non-decreasing as target increases
 - tier histogram in both JSON summary and Markdown output
+- optional tier matrix via `--run-frontier-tier-matrix`, which re-scores the same frontier sweeps across `frontier_exploratory_r2_gates` and `frontier_demo_r2_gates`
 
 ## 5) Advance / rollback rules
 
@@ -91,6 +92,6 @@ Regress immediately if:
 
 - tighten gates in small increments
 - introduce deterministic low/medium/high `noise_budget` splits before model expansion
-- add a tuning matrix for `frontier_demo_r2_gate` and `frontier_exploratory_r2_gate`
+- use the tier matrix to decide which exploratory/demo gate pair is stable enough for reporting
 - compare noise frontier behavior across `smooth`, `spikes`, and `multiscale`
 - prepare renderer-side benchmark: decode cost vs raster budget coupling

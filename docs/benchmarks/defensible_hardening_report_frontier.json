@@ -920,6 +920,19 @@
       "r2_gate": 0.99,
       "frontier_exploratory_r2_gate": 0.95,
       "frontier_demo_r2_gate": 0.9,
+      "frontier_exploratory_r2_gates": [
+        0.94,
+        0.95,
+        0.96,
+        0.97
+      ],
+      "frontier_demo_r2_gates": [
+        0.88,
+        0.9,
+        0.92,
+        0.94
+      ],
+      "run_frontier_tier_matrix": true,
       "leakage_gate": 0.25,
       "max_adaptive_keep_ratio": 0.45,
       "locality_mode": "strict",
@@ -2051,7 +2064,249 @@
         "exploratory_pass": 6,
         "strict_pass": 1,
         "demo_pass": 3
-      }
+      },
+      "tier_matrix": [
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.94,
+          "demo_gate": 0.88,
+          "row_count": 10,
+          "tier_counts": {
+            "strict_pass": 1,
+            "exploratory_pass": 8,
+            "demo_pass": 1,
+            "reject": 0,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.475750577367204,
+          "best_r2": 0.9933495611158721
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.94,
+          "demo_gate": 0.9,
+          "row_count": 10,
+          "tier_counts": {
+            "strict_pass": 1,
+            "exploratory_pass": 8,
+            "demo_pass": 1,
+            "reject": 0,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.475750577367204,
+          "best_r2": 0.9933495611158721
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.94,
+          "demo_gate": 0.92,
+          "row_count": 10,
+          "tier_counts": {
+            "strict_pass": 1,
+            "exploratory_pass": 8,
+            "demo_pass": 1,
+            "reject": 0,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.475750577367204,
+          "best_r2": 0.9933495611158721
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.94,
+          "demo_gate": 0.94,
+          "row_count": 10,
+          "tier_counts": {
+            "strict_pass": 1,
+            "exploratory_pass": 8,
+            "demo_pass": 0,
+            "reject": 1,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.867924528301888,
+          "best_r2": 0.9933495611158721
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.95,
+          "demo_gate": 0.88,
+          "row_count": 10,
+          "tier_counts": {
+            "strict_pass": 1,
+            "exploratory_pass": 6,
+            "demo_pass": 3,
+            "reject": 0,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.475750577367204,
+          "best_r2": 0.9933495611158721
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.95,
+          "demo_gate": 0.9,
+          "row_count": 10,
+          "tier_counts": {
+            "strict_pass": 1,
+            "exploratory_pass": 6,
+            "demo_pass": 3,
+            "reject": 0,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.475750577367204,
+          "best_r2": 0.9933495611158721
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.95,
+          "demo_gate": 0.92,
+          "row_count": 10,
+          "tier_counts": {
+            "strict_pass": 1,
+            "exploratory_pass": 6,
+            "demo_pass": 3,
+            "reject": 0,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.475750577367204,
+          "best_r2": 0.9933495611158721
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.95,
+          "demo_gate": 0.94,
+          "row_count": 10,
+          "tier_counts": {
+            "strict_pass": 1,
+            "exploratory_pass": 6,
+            "demo_pass": 2,
+            "reject": 1,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.867924528301888,
+          "best_r2": 0.9933495611158721
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.96,
+          "demo_gate": 0.88,
+          "row_count": 10,
+          "tier_counts": {
+            "strict_pass": 1,
+            "exploratory_pass": 6,
+            "demo_pass": 3,
+            "reject": 0,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.475750577367204,
+          "best_r2": 0.9933495611158721
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.96,
+          "demo_gate": 0.9,
+          "row_count": 10,
+          "tier_counts": {
+            "strict_pass": 1,
+            "exploratory_pass": 6,
+            "demo_pass": 3,
+            "reject": 0,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.475750577367204,
+          "best_r2": 0.9933495611158721
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.96,
+          "demo_gate": 0.92,
+          "row_count": 10,
+          "tier_counts": {
+            "strict_pass": 1,
+            "exploratory_pass": 6,
+            "demo_pass": 3,
+            "reject": 0,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.475750577367204,
+          "best_r2": 0.9933495611158721
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.96,
+          "demo_gate": 0.94,
+          "row_count": 10,
+          "tier_counts": {
+            "strict_pass": 1,
+            "exploratory_pass": 6,
+            "demo_pass": 2,
+            "reject": 1,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.867924528301888,
+          "best_r2": 0.9933495611158721
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.97,
+          "demo_gate": 0.88,
+          "row_count": 10,
+          "tier_counts": {
+            "strict_pass": 1,
+            "exploratory_pass": 5,
+            "demo_pass": 4,
+            "reject": 0,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.475750577367204,
+          "best_r2": 0.9933495611158721
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.97,
+          "demo_gate": 0.9,
+          "row_count": 10,
+          "tier_counts": {
+            "strict_pass": 1,
+            "exploratory_pass": 5,
+            "demo_pass": 4,
+            "reject": 0,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.475750577367204,
+          "best_r2": 0.9933495611158721
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.97,
+          "demo_gate": 0.92,
+          "row_count": 10,
+          "tier_counts": {
+            "strict_pass": 1,
+            "exploratory_pass": 5,
+            "demo_pass": 4,
+            "reject": 0,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.475750577367204,
+          "best_r2": 0.9933495611158721
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.97,
+          "demo_gate": 0.94,
+          "row_count": 10,
+          "tier_counts": {
+            "strict_pass": 1,
+            "exploratory_pass": 5,
+            "demo_pass": 3,
+            "reject": 1,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.867924528301888,
+          "best_r2": 0.9933495611158721
+        }
+      ]
     }
   },
   "noise_frontier": {
@@ -4660,7 +4915,249 @@
           "best_payload_ratio": 18.475750577367204,
           "best_r2": 0.9628056964320709
         }
-      }
+      },
+      "tier_matrix": [
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.94,
+          "demo_gate": 0.88,
+          "row_count": 24,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 12,
+            "demo_pass": 9,
+            "reject": 3,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.6046511627907,
+          "best_r2": 0.9686687114745337
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.94,
+          "demo_gate": 0.9,
+          "row_count": 24,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 12,
+            "demo_pass": 7,
+            "reject": 5,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.6046511627907,
+          "best_r2": 0.9686687114745337
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.94,
+          "demo_gate": 0.92,
+          "row_count": 24,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 12,
+            "demo_pass": 4,
+            "reject": 8,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.6046511627907,
+          "best_r2": 0.9686687114745337
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.94,
+          "demo_gate": 0.94,
+          "row_count": 24,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 12,
+            "demo_pass": 0,
+            "reject": 12,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.867924528301888,
+          "best_r2": 0.9686687114745337
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.95,
+          "demo_gate": 0.88,
+          "row_count": 24,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 6,
+            "demo_pass": 15,
+            "reject": 3,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.6046511627907,
+          "best_r2": 0.9686687114745337
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.95,
+          "demo_gate": 0.9,
+          "row_count": 24,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 6,
+            "demo_pass": 13,
+            "reject": 5,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.6046511627907,
+          "best_r2": 0.9686687114745337
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.95,
+          "demo_gate": 0.92,
+          "row_count": 24,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 6,
+            "demo_pass": 10,
+            "reject": 8,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.6046511627907,
+          "best_r2": 0.9686687114745337
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.95,
+          "demo_gate": 0.94,
+          "row_count": 24,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 6,
+            "demo_pass": 6,
+            "reject": 12,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.867924528301888,
+          "best_r2": 0.9686687114745337
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.96,
+          "demo_gate": 0.88,
+          "row_count": 24,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 5,
+            "demo_pass": 16,
+            "reject": 3,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.6046511627907,
+          "best_r2": 0.9686687114745337
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.96,
+          "demo_gate": 0.9,
+          "row_count": 24,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 5,
+            "demo_pass": 14,
+            "reject": 5,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.6046511627907,
+          "best_r2": 0.9686687114745337
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.96,
+          "demo_gate": 0.92,
+          "row_count": 24,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 5,
+            "demo_pass": 11,
+            "reject": 8,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.6046511627907,
+          "best_r2": 0.9686687114745337
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.96,
+          "demo_gate": 0.94,
+          "row_count": 24,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 5,
+            "demo_pass": 7,
+            "reject": 12,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.867924528301888,
+          "best_r2": 0.9686687114745337
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.97,
+          "demo_gate": 0.88,
+          "row_count": 24,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 2,
+            "demo_pass": 19,
+            "reject": 3,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.6046511627907,
+          "best_r2": 0.9794611966023209
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.97,
+          "demo_gate": 0.9,
+          "row_count": 24,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 2,
+            "demo_pass": 17,
+            "reject": 5,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.6046511627907,
+          "best_r2": 0.9794611966023209
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.97,
+          "demo_gate": 0.92,
+          "row_count": 24,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 2,
+            "demo_pass": 14,
+            "reject": 8,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.6046511627907,
+          "best_r2": 0.9794611966023209
+        },
+        {
+          "strict_gate": 0.99,
+          "exploratory_gate": 0.97,
+          "demo_gate": 0.94,
+          "row_count": 24,
+          "tier_counts": {
+            "strict_pass": 0,
+            "exploratory_pass": 2,
+            "demo_pass": 10,
+            "reject": 12,
+            "payload_reject": 0
+          },
+          "best_payload_ratio": 18.867924528301888,
+          "best_r2": 0.9794611966023209
+        }
+      ]
     }
   }
 }

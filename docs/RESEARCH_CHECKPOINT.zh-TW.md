@@ -71,6 +71,7 @@ py scripts/run_defensible_research_sweep.py \
   `strict_pass`、`exploratory_pass`、`demo_pass`、`reject`、`payload_reject`
 - monotonic sanity flag：`actual_keep_ratio` 應隨 target ratio 非遞減
 - JSON summary 與 Markdown 報表中的 tier histogram
+- 可選 `--run-frontier-tier-matrix`，用同一批 frontier sweeps 重新評估多組 `frontier_exploratory_r2_gates` 與 `frontier_demo_r2_gates`
 
 ## 5) 推進與回退規則
 
@@ -93,6 +94,6 @@ py scripts/run_defensible_research_sweep.py \
 
 - 小幅收嚴 gates，避免一次改太多造成不可解釋變化
 - 在模型擴張前，先建立低 / 中 / 高 noise budget 分層
-- 建立 `frontier_demo_r2_gate` 與 `frontier_exploratory_r2_gate` 的掃描矩陣
+- 用 tier matrix 判斷哪一組 exploratory/demo gate 足夠穩定，可以拿來對外報告
 - 比較 `smooth`、`spikes`、`multiscale` 三種資料族群下的 noise frontier
 - 準備 renderer-side benchmark：decode cost 與 raster budget 的耦合

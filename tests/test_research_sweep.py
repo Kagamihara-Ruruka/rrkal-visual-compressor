@@ -6,9 +6,11 @@ from scripts.run_defensible_research_sweep import (
     _benchmark_rdp_frontier,
     _frontier_gate_reason,
     _frontier_tier,
+    _parse_gate_list,
     _parse_float_list,
     _parse_string_list,
     _summarize_frontier_by_key,
+    _summarize_frontier_tier_matrix,
     _with_gaussian_noise,
 )
 from vizcompress.data import make_synthetic_dataset
@@ -26,6 +28,10 @@ def test_parse_float_list_deduplicates_and_rejects_invalid_ratios():
         _parse_float_list("1.2")
 
     assert _parse_float_list("0,0.05", allow_zero=True) == [0.0, 0.05]
+
+
+def test_parse_gate_list_sorts_unique_gate_values():
+    assert _parse_gate_list("0.96,0.94,0.96") == [0.94, 0.96]
 
 
 def test_frontier_gate_reason_combines_fidelity_and_payload():
@@ -194,3 +200,44 @@ def test_frontier_summary_groups_by_noise_sigma():
     assert summary["0.0"]["best_payload_ratio"] == 10.0
     assert summary["0.1"]["total"] == 1
     assert summary["0.1"]["best_points_with_gate"] == 0
+
+
+def test_frontier_tier_matrix_rescores_existing_sweeps():
+    rows = [
+        {
+            "sweep": [
+                {
+                    "r2": 0.965,
+                    "payload_ratio": 10.0,
+                    "actual_keep_ratio": 0.05,
+                },
+                {
+                    "r2": 0.91,
+                    "payload_ratio": 20.0,
+                    "actual_keep_ratio": 0.02,
+                },
+            ]
+        },
+        {
+            "sweep": [
+                {
+                    "r2": 0.925,
+                    "payload_ratio": 8.0,
+                    "actual_keep_ratio": 0.10,
+                }
+            ]
+        },
+    ]
+
+    matrix = _summarize_frontier_tier_matrix(
+        rows,
+        strict_gate=0.99,
+        exploratory_gates=[0.95, 0.97],
+        demo_gates=[0.90],
+        min_payload_ratio=1.0,
+    )
+
+    assert matrix[0]["tier_counts"]["exploratory_pass"] == 1
+    assert matrix[0]["tier_counts"]["demo_pass"] == 1
+    assert matrix[1]["tier_counts"]["exploratory_pass"] == 0
+    assert matrix[1]["tier_counts"]["demo_pass"] == 2
