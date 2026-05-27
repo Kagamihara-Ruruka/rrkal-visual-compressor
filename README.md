@@ -93,11 +93,17 @@ docs/
   ARCHITECTURE.md
   CONCEPTUAL_MODEL.md
   ROADMAP.md
+  RESEARCH_NOTES.md
   VIDEO_FUNCTIONAL_COMPRESSION.md
   AGENT_HANDOFF.md
   DEVELOPMENT_GOVERNANCE.md
   *.zh-TW.md       Traditional Chinese versions
 ```
+
+Additional research notes on hard risks and defendable assumptions are in:
+
+- [docs/RESEARCH_NOTES.md](docs/RESEARCH_NOTES.md)
+- [docs/RESEARCH_NOTES.zh-TW.md](docs/RESEARCH_NOTES.zh-TW.md)
 
 Video-oriented research is also available:
 

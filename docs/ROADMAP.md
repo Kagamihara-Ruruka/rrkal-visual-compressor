@@ -161,6 +161,24 @@ Definition of done:
 This phase is experimental and does not change package format yet; it should produce
 research-level checkpoints and scripts first.
 
+### Phase 2.6: Locality Defect Research (Defensible)
+
+Goal: address global basis locality risk with evidence, not opinion.
+
+Current checkpoint:
+
+- `src/vizcompress/research.py` supports jump detection, piecewise Fourier,
+  and locality leakage metrics.
+- `tests/test_research.py` verifies finite reconstruction and compares
+  jump-neighborhood leakage for step-like data.
+- `docs/RESEARCH_NOTES.md` documents the hard risks and interpretation protocol.
+
+Acceptance criteria:
+
+- local leakage ratio for piecewise path should not be worse than global Fourier
+  on discontinuity-heavy signals under the same term budget.
+- every future model variant must declare its locality behavior in benchmark rows.
+
 ## Phase 3: `.vizasset` Package Format
 
 Goal: define the handoff contract between compressor, editor, and RRKAL.
