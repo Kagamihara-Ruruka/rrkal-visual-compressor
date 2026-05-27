@@ -11,6 +11,8 @@ from vizcompress.research import (
     compress_haar_threshold,
     compress_multichannel_fourier_pca,
     compress_piecewise_polynomial,
+    compress_fourier_with_linear_detrend,
+    adaptive_residual_threshold,
     locality_leakage_metric,
 )
 
@@ -136,3 +138,40 @@ def test_haar_threshold_model_is_finite_and_payload_reduced():
     assert model.reconstructed_y.shape == series.y.shape
     assert 0.0 <= model.metrics["residual_payload_ratio"] <= 1.0
     assert model.metrics["residual_payload_ratio"] <= 1.0
+
+
+def test_detrended_fourier_wins_over_raw_fourier_on_trending_signal():
+    x = np.linspace(0.0, 1.0, 2000, dtype=np.float64)
+    y = 0.9 * x + 0.25 * np.sin(2 * np.pi * 7.0 * x) + 0.03 * np.cos(2 * np.pi * 37.0 * x)
+    series = TimeSeries(x=x, y=y, source="manual:detrend")
+
+    raw = compress_fourier(series, terms=24)
+    detrended = compress_fourier_with_linear_detrend(series, terms=24)
+    assert detrended.metrics["trend_removed_rmse"] <= raw.metrics["rmse"] * 1.5
+    assert detrended.metrics["rmse"] <= raw.metrics["rmse"] + 1e-6
+    assert np.isfinite(detrended.reconstructed_y).all()
+    assert len(detrended.trend_coeffs) == 2
+
+
+def test_adaptive_threshold_tracks_regions_with_higher_noise():
+    rng = np.random.default_rng(2026)
+    x = np.linspace(0.0, 1.0, 3000, dtype=np.float64)
+    base = np.sin(2 * np.pi * 5.0 * x)
+    residual = np.empty_like(base)
+    residual[:1500] = 0.02 * rng.normal(size=1500)
+    residual[1500:] = 0.15 * rng.normal(size=1500)
+    signal = base + residual
+    series = TimeSeries(x=x, y=signal, source="manual:hetero-noise")
+    fourier = compress_fourier(series, terms=64)
+    diff = series.y - fourier.reconstructed_y
+    result = adaptive_residual_threshold(
+        x=x,
+        residual=diff,
+        window=128,
+        adaptive_factor=2.5,
+    )
+
+    first_half_th = float(np.mean(result["threshold"][:1500]))
+    second_half_th = float(np.mean(result["threshold"][1500:]))
+    assert second_half_th > first_half_th
+    assert 0 < result["keep_count"] <= x.size

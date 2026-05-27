@@ -33,11 +33,29 @@
         "rmse": 0.04435449842919513,
         "max_abs": 0.32306258815358674
       },
+      "detrended_fourier": {
+        "r2": 0.9828256862809198,
+        "rmse": 0.04424684972980484,
+        "leakage_ratio": 0.4219496452912082,
+        "r2_delta_vs_global": 8.366884969279731e-05,
+        "trend_slope": -0.0752056723146571,
+        "trend_intercept": 0.16460283615732862,
+        "adaptive_keep_ratio": 0.03825,
+        "adaptive_threshold_ratio": 0.08207563660333647,
+        "adaptive_threshold_min": 0.07862309125705465,
+        "adaptive_threshold_max": 0.08552818194961831
+      },
       "haar_threshold": {
         "r2": -1.5295770342146997,
         "rmse": 0.5369905145542169,
         "max_abs": 1.0725615114759777,
         "residual_payload_ratio": 0.37109375
+      },
+      "gates": {
+        "r2_gate": false,
+        "leakage_gate": false,
+        "residual_gate": true,
+        "defensible": false
       }
     },
     {
@@ -68,11 +86,29 @@
         "rmse": 0.03150588477947639,
         "max_abs": 0.3279920580040715
       },
+      "detrended_fourier": {
+        "r2": 0.9911829835529979,
+        "rmse": 0.031703228068811644,
+        "leakage_ratio": 0.4008564117767003,
+        "r2_delta_vs_global": -0.00010942504622191151,
+        "trend_slope": -0.0752056723146571,
+        "trend_intercept": 0.16460283615732862,
+        "adaptive_keep_ratio": 0.0205,
+        "adaptive_threshold_ratio": 0.06672928491294111,
+        "adaptive_threshold_min": 0.06279562560906654,
+        "adaptive_threshold_max": 0.0706629442168157
+      },
       "haar_threshold": {
         "r2": -1.5295770342146997,
         "rmse": 0.5369905145542169,
         "max_abs": 1.0725615114759777,
         "residual_payload_ratio": 0.37109375
+      },
+      "gates": {
+        "r2_gate": true,
+        "leakage_gate": false,
+        "residual_gate": true,
+        "defensible": false
       }
     },
     {
@@ -103,11 +139,29 @@
         "rmse": 0.02238528632415272,
         "max_abs": 0.313300188641325
       },
+      "detrended_fourier": {
+        "r2": 0.9955959942436782,
+        "rmse": 0.022406116950898284,
+        "leakage_ratio": 0.4178532594020779,
+        "r2_delta_vs_global": -8.184868131366763e-06,
+        "trend_slope": -0.0752056723146571,
+        "trend_intercept": 0.16460283615732862,
+        "adaptive_keep_ratio": 0.0155,
+        "adaptive_threshold_ratio": 0.05148388268529756,
+        "adaptive_threshold_min": 0.04890182527892274,
+        "adaptive_threshold_max": 0.05406594009167239
+      },
       "haar_threshold": {
         "r2": -1.5295770342146997,
         "rmse": 0.5369905145542169,
         "max_abs": 1.0725615114759777,
         "residual_payload_ratio": 0.37109375
+      },
+      "gates": {
+        "r2_gate": true,
+        "leakage_gate": false,
+        "residual_gate": true,
+        "defensible": false
       }
     },
     {
@@ -138,11 +192,29 @@
         "rmse": 0.09432316322759218,
         "max_abs": 0.947029158443412
       },
+      "detrended_fourier": {
+        "r2": 0.9470254861305224,
+        "rmse": 0.09624229511753378,
+        "leakage_ratio": 0.8457134713384785,
+        "r2_delta_vs_global": -0.0020916260567872547,
+        "trend_slope": -0.11333815480892277,
+        "trend_intercept": 0.07547160929956674,
+        "adaptive_keep_ratio": 0.021,
+        "adaptive_threshold_ratio": 0.2739272556981856,
+        "adaptive_threshold_min": 0.2508910777324213,
+        "adaptive_threshold_max": 0.29696343366394984
+      },
       "haar_threshold": {
         "r2": -1.0472517152195788,
         "rmse": 0.5982987603650181,
         "max_abs": 1.5964954313335111,
         "residual_payload_ratio": 0.3310546875
+      },
+      "gates": {
+        "r2_gate": false,
+        "leakage_gate": false,
+        "residual_gate": true,
+        "defensible": false
       }
     },
     {
@@ -173,11 +245,29 @@
         "rmse": 0.07462271633169769,
         "max_abs": 0.8149536029294236
       },
+      "detrended_fourier": {
+        "r2": 0.9673195362904735,
+        "rmse": 0.07559213059634051,
+        "leakage_ratio": 0.8109563447886089,
+        "r2_delta_vs_global": -0.0008328318070098817,
+        "trend_slope": -0.11333815480892277,
+        "trend_intercept": 0.07547160929956674,
+        "adaptive_keep_ratio": 0.01425,
+        "adaptive_threshold_ratio": 0.22395024131358482,
+        "adaptive_threshold_min": 0.22027944382963588,
+        "adaptive_threshold_max": 0.22762103879753373
+      },
       "haar_threshold": {
         "r2": -1.0472517152195788,
         "rmse": 0.5982987603650181,
         "max_abs": 1.5964954313335111,
         "residual_payload_ratio": 0.3310546875
+      },
+      "gates": {
+        "r2_gate": false,
+        "leakage_gate": false,
+        "residual_gate": true,
+        "defensible": false
       }
     },
     {
@@ -208,11 +298,29 @@
         "rmse": 0.04743711160960014,
         "max_abs": 0.5004758184474432
       },
+      "detrended_fourier": {
+        "r2": 0.9870296208420477,
+        "rmse": 0.04762213009513478,
+        "leakage_ratio": 0.7706099670974903,
+        "r2_delta_vs_global": -0.00010058761362330415,
+        "trend_slope": -0.11333815480892277,
+        "trend_intercept": 0.07547160929956674,
+        "adaptive_keep_ratio": 0.018,
+        "adaptive_threshold_ratio": 0.1411649537746454,
+        "adaptive_threshold_min": 0.14089414517891363,
+        "adaptive_threshold_max": 0.14143576237037722
+      },
       "haar_threshold": {
         "r2": -1.0472517152195788,
         "rmse": 0.5982987603650181,
         "max_abs": 1.5964954313335111,
         "residual_payload_ratio": 0.3310546875
+      },
+      "gates": {
+        "r2_gate": false,
+        "leakage_gate": false,
+        "residual_gate": true,
+        "defensible": false
       }
     },
     {
@@ -243,11 +351,29 @@
         "rmse": 0.006060535795986297,
         "max_abs": 0.04678719730874137
       },
+      "detrended_fourier": {
+        "r2": 0.9991831542562458,
+        "rmse": 0.011222328942154134,
+        "leakage_ratio": 0.7793910194197279,
+        "r2_delta_vs_global": -0.0005786159344061126,
+        "trend_slope": -0.10508309949452638,
+        "trend_intercept": 0.07496487720664805,
+        "adaptive_keep_ratio": 0.03,
+        "adaptive_threshold_ratio": 0.0207779275012025,
+        "adaptive_threshold_min": 0.019685066681302592,
+        "adaptive_threshold_max": 0.02187078832110241
+      },
       "haar_threshold": {
         "r2": -0.9932093580119985,
         "rmse": 0.5543568621539945,
         "max_abs": 1.4291931796795385,
         "residual_payload_ratio": 0.33544921875
+      },
+      "gates": {
+        "r2_gate": true,
+        "leakage_gate": false,
+        "residual_gate": true,
+        "defensible": false
       }
     },
     {
@@ -278,11 +404,29 @@
         "rmse": 0.003982850227330032,
         "max_abs": 0.0465709071031678
       },
+      "detrended_fourier": {
+        "r2": 0.9995572165085782,
+        "rmse": 0.00826244685970808,
+        "leakage_ratio": 0.7747082728434,
+        "r2_delta_vs_global": -0.000339896134094575,
+        "trend_slope": -0.10508309949452638,
+        "trend_intercept": 0.07496487720664805,
+        "adaptive_keep_ratio": 0.029,
+        "adaptive_threshold_ratio": 0.014382938374236869,
+        "adaptive_threshold_min": 0.013665531027643906,
+        "adaptive_threshold_max": 0.015100345720829828
+      },
       "haar_threshold": {
         "r2": -0.9932093580119985,
         "rmse": 0.5543568621539945,
         "max_abs": 1.4291931796795385,
         "residual_payload_ratio": 0.33544921875
+      },
+      "gates": {
+        "r2_gate": true,
+        "leakage_gate": false,
+        "residual_gate": true,
+        "defensible": false
       }
     },
     {
@@ -313,11 +457,29 @@
         "rmse": 0.0027903382892737693,
         "max_abs": 0.047037445505140774
       },
+      "detrended_fourier": {
+        "r2": 0.9997869566887249,
+        "rmse": 0.005731217904309669,
+        "leakage_ratio": 0.7514852078062367,
+        "r2_delta_vs_global": -0.0001625437297900767,
+        "trend_slope": -0.10508309949452638,
+        "trend_intercept": 0.07496487720664805,
+        "adaptive_keep_ratio": 0.024,
+        "adaptive_threshold_ratio": 0.008665264941124384,
+        "adaptive_threshold_min": 0.007964940538139377,
+        "adaptive_threshold_max": 0.009365589344109394
+      },
       "haar_threshold": {
         "r2": -0.9932093580119985,
         "rmse": 0.5543568621539945,
         "max_abs": 1.4291931796795385,
         "residual_payload_ratio": 0.33544921875
+      },
+      "gates": {
+        "r2_gate": true,
+        "leakage_gate": false,
+        "residual_gate": true,
+        "defensible": false
       }
     },
     {
@@ -348,11 +510,29 @@
         "rmse": 0.0055176166565342015,
         "max_abs": 0.03852211308784566
       },
+      "detrended_fourier": {
+        "r2": 0.9957796516400628,
+        "rmse": 0.020209958457799767,
+        "leakage_ratio": 1.0609288075716377,
+        "r2_delta_vs_global": -0.0039057760388521157,
+        "trend_slope": -0.2641972203073943,
+        "trend_intercept": 0.1321579000646324,
+        "adaptive_keep_ratio": 0.04025,
+        "adaptive_threshold_ratio": 0.040945980952351343,
+        "adaptive_threshold_min": 0.04051128160780855,
+        "adaptive_threshold_max": 0.04138068029689414
+      },
       "haar_threshold": {
         "r2": -0.9244866228041957,
         "rmse": 0.43156748713877996,
         "max_abs": 1.171542018015635,
         "residual_payload_ratio": 0.41064453125
+      },
+      "gates": {
+        "r2_gate": true,
+        "leakage_gate": false,
+        "residual_gate": true,
+        "defensible": false
       }
     },
     {
@@ -383,11 +563,29 @@
         "rmse": 0.0038853441206999416,
         "max_abs": 0.0385900482527468
       },
+      "detrended_fourier": {
+        "r2": 0.9978792346623713,
+        "rmse": 0.014326416698190755,
+        "leakage_ratio": 1.0750699686243028,
+        "r2_delta_vs_global": -0.001964782635875184,
+        "trend_slope": -0.2641972203073943,
+        "trend_intercept": 0.1321579000646324,
+        "adaptive_keep_ratio": 0.0365,
+        "adaptive_threshold_ratio": 0.02631869710943701,
+        "adaptive_threshold_min": 0.02578350873739302,
+        "adaptive_threshold_max": 0.026853885481481002
+      },
       "haar_threshold": {
         "r2": -0.9244866228041957,
         "rmse": 0.43156748713877996,
         "max_abs": 1.171542018015635,
         "residual_payload_ratio": 0.41064453125
+      },
+      "gates": {
+        "r2_gate": true,
+        "leakage_gate": false,
+        "residual_gate": true,
+        "defensible": false
       }
     },
     {
@@ -418,11 +616,188 @@
         "rmse": 0.002734397502854213,
         "max_abs": 0.038046684213518846
       },
+      "detrended_fourier": {
+        "r2": 0.9989367960294783,
+        "rmse": 0.010143774019076483,
+        "leakage_ratio": 1.0774609058370337,
+        "r2_delta_vs_global": -0.0009859464517137928,
+        "trend_slope": -0.2641972203073943,
+        "trend_intercept": 0.1321579000646324,
+        "adaptive_keep_ratio": 0.03425,
+        "adaptive_threshold_ratio": 0.016378065364199286,
+        "adaptive_threshold_min": 0.016156779370177853,
+        "adaptive_threshold_max": 0.016599351358220726
+      },
       "haar_threshold": {
         "r2": -0.9244866228041957,
         "rmse": 0.43156748713877996,
         "max_abs": 1.171542018015635,
         "residual_payload_ratio": 0.41064453125
+      },
+      "gates": {
+        "r2_gate": true,
+        "leakage_gate": false,
+        "residual_gate": true,
+        "defensible": false
+      }
+    },
+    {
+      "dataset": "smooth",
+      "samples": 4000,
+      "terms": 16,
+      "global": {
+        "r2": 0.9997796594567661,
+        "rmse": 0.005828340964808275,
+        "leakage_ratio": 0.8261723956690687,
+        "max_abs": 0.047284849826913
+      },
+      "piecewise_fourier": {
+        "r2": 0.9411274932125738,
+        "rmse": 0.09526952653425716,
+        "leakage_ratio": 0.991276952611319,
+        "segment_count": 3
+      },
+      "piecewise_polynomial": {
+        "r2": 0.20667083460165525,
+        "rmse": 0.34972320760112124,
+        "leakage_ratio": 1.0089557499702704,
+        "segment_count": 3,
+        "approx_parameter_count": 14
+      },
+      "uniform_param_fourier": {
+        "r2": 0.9997796594567661,
+        "rmse": 0.005828340964808275,
+        "max_abs": 0.047284849826913
+      },
+      "detrended_fourier": {
+        "r2": 0.9991782421121169,
+        "rmse": 0.011255626762054938,
+        "leakage_ratio": 0.784063549084213,
+        "r2_delta_vs_global": -0.0006014173446491355,
+        "trend_slope": -0.10577403435742934,
+        "trend_intercept": 0.07530445097820333,
+        "adaptive_keep_ratio": 0.032,
+        "adaptive_threshold_ratio": 0.018959526452956062,
+        "adaptive_threshold_min": 0.017770572101515364,
+        "adaptive_threshold_max": 0.020148480804396754
+      },
+      "haar_threshold": {
+        "r2": -0.9937162919967553,
+        "rmse": 0.5544079146389882,
+        "max_abs": 1.4299363505686122,
+        "residual_payload_ratio": 0.3359375
+      },
+      "gates": {
+        "r2_gate": true,
+        "leakage_gate": false,
+        "residual_gate": true,
+        "defensible": false
+      }
+    },
+    {
+      "dataset": "smooth",
+      "samples": 4000,
+      "terms": 32,
+      "global": {
+        "r2": 0.9999002893927597,
+        "rmse": 0.003920743428674171,
+        "leakage_ratio": 0.7759674283990483,
+        "max_abs": 0.04608798532028807
+      },
+      "piecewise_fourier": {
+        "r2": 0.9868138990442887,
+        "rmse": 0.04508747773950116,
+        "leakage_ratio": 0.98012393716992,
+        "segment_count": 3
+      },
+      "piecewise_polynomial": {
+        "r2": 0.20667083460165525,
+        "rmse": 0.34972320760112124,
+        "leakage_ratio": 1.0089557499702704,
+        "segment_count": 3,
+        "approx_parameter_count": 14
+      },
+      "uniform_param_fourier": {
+        "r2": 0.9999002893927597,
+        "rmse": 0.003920743428674171,
+        "max_abs": 0.04608798532028807
+      },
+      "detrended_fourier": {
+        "r2": 0.9995667543005001,
+        "rmse": 0.008172687120819585,
+        "leakage_ratio": 0.7798660637299647,
+        "r2_delta_vs_global": -0.00033353509225952926,
+        "trend_slope": -0.10577403435742934,
+        "trend_intercept": 0.07530445097820333,
+        "adaptive_keep_ratio": 0.0365,
+        "adaptive_threshold_ratio": 0.0120162214058951,
+        "adaptive_threshold_min": 0.010969443590981896,
+        "adaptive_threshold_max": 0.013062999220808301
+      },
+      "haar_threshold": {
+        "r2": -0.9937162919967553,
+        "rmse": 0.5544079146389882,
+        "max_abs": 1.4299363505686122,
+        "residual_payload_ratio": 0.3359375
+      },
+      "gates": {
+        "r2_gate": true,
+        "leakage_gate": false,
+        "residual_gate": true,
+        "defensible": false
+      }
+    },
+    {
+      "dataset": "smooth",
+      "samples": 4000,
+      "terms": 64,
+      "global": {
+        "r2": 0.9999501300877904,
+        "rmse": 0.0027727904176512133,
+        "leakage_ratio": 0.7756159106182066,
+        "max_abs": 0.047259773007230776
+      },
+      "piecewise_fourier": {
+        "r2": 0.9974176476242105,
+        "rmse": 0.019952875585682046,
+        "leakage_ratio": 0.9346958481475808,
+        "segment_count": 3
+      },
+      "piecewise_polynomial": {
+        "r2": 0.20667083460165525,
+        "rmse": 0.34972320760112124,
+        "leakage_ratio": 1.0089557499702704,
+        "segment_count": 3,
+        "approx_parameter_count": 14
+      },
+      "uniform_param_fourier": {
+        "r2": 0.9999501300877904,
+        "rmse": 0.0027727904176512133,
+        "max_abs": 0.047259773007230776
+      },
+      "detrended_fourier": {
+        "r2": 0.999786715840345,
+        "rmse": 0.005734255551944502,
+        "leakage_ratio": 0.7625324673558003,
+        "r2_delta_vs_global": -0.0001634142474454814,
+        "trend_slope": -0.10577403435742934,
+        "trend_intercept": 0.07530445097820333,
+        "adaptive_keep_ratio": 0.0335,
+        "adaptive_threshold_ratio": 0.007627126881660113,
+        "adaptive_threshold_min": 0.007025667063356068,
+        "adaptive_threshold_max": 0.008228586699964159
+      },
+      "haar_threshold": {
+        "r2": -0.9937162919967553,
+        "rmse": 0.5544079146389882,
+        "max_abs": 1.4299363505686122,
+        "residual_payload_ratio": 0.3359375
+      },
+      "gates": {
+        "r2_gate": true,
+        "leakage_gate": false,
+        "residual_gate": true,
+        "defensible": false
       }
     },
     {
@@ -434,13 +809,27 @@
         "mae": 0.038772715052623176,
         "max_abs": 0.11002354587585872,
         "parameter_count": 73.0
+      },
+      "gates": {
+        "r2_gate": false,
+        "leakage_gate": false,
+        "residual_gate": false,
+        "defensible": false
       }
     }
   ],
   "summary": {
-    "best_global_r2": 0.9999495004185149,
+    "gate_config": {
+      "r2_gate": 0.99,
+      "leakage_gate": 0.25,
+      "max_adaptive_keep_ratio": 0.45
+    },
+    "best_global_r2": 0.9999501300877904,
     "best_piecewise_leakage": 0.6874348031328114,
     "best_poly_leakage": 1.004557174491441,
+    "best_detrended_delta_r2": 8.366884969279731e-05,
+    "defensible_rows": 0,
+    "rows_with_gate_fields": 16,
     "multichannel_rmse": 0.052811494062675345
   }
 }

@@ -16,8 +16,10 @@ if str(PROJECT_SRC) not in sys.path:
 from vizcompress.data import make_synthetic_dataset
 from vizcompress.metrics import regression_metrics
 from vizcompress.research import (
+    adaptive_residual_threshold,
     compress_fourier_piecewise,
     compress_fourier_with_uniform_param,
+    compress_fourier_with_linear_detrend,
     compress_haar_threshold,
     compress_piecewise_polynomial,
     compress_multichannel_fourier_pca,
@@ -32,14 +34,35 @@ def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 
     piecewise = compress_fourier_piecewise(series, terms=terms, max_breaks=max_breaks)
     polynomial = compress_piecewise_polynomial(series, degree=3, max_breaks=max_breaks)
     uniform = compress_fourier_with_uniform_param(series, terms=terms, reparametrize_to_uniform=True)
+    detrended = compress_fourier_with_linear_detrend(series, terms=terms)
     haar_level = max(1, int(np.floor(np.log2(series.sample_count))) - 1)
     haar = compress_haar_threshold(series, level=min(3, haar_level))
+
+    residual = series.y - detrended.reconstructed_y
+    adaptive = adaptive_residual_threshold(
+        x=series.x,
+        residual=residual,
+        window=128,
+        adaptive_factor=2.8,
+        min_threshold=1e-10,
+    )
 
     g_metrics = regression_metrics(series.y, global_model.reconstructed_y)
     p_metrics = regression_metrics(series.y, piecewise.reconstructed_y)
     poly_metrics = regression_metrics(series.y, polynomial.reconstructed_y)
     u_metrics = regression_metrics(series.y, uniform.reconstructed_y)
+    d_metrics = regression_metrics(series.y, detrended.reconstructed_y)
     h_metrics = regression_metrics(series.y, haar.reconstructed_y)
+
+    global_leak = locality_leakage_metric(series, global_model.reconstructed_y, window=64)["leakage_ratio"]
+    piecewise_leak = locality_leakage_metric(series, piecewise.reconstructed_y, window=64)["leakage_ratio"]
+    poly_leak = locality_leakage_metric(series, polynomial.reconstructed_y, window=64)["leakage_ratio"]
+    detrended_leak = locality_leakage_metric(series, detrended.reconstructed_y, window=64)["leakage_ratio"]
+
+    adaptive_threshold_ratio = float(np.mean(adaptive["threshold"]))
+    adaptive_keep_ratio = float(adaptive["keep_count"]) / float(series.sample_count)
+    threshold_floor = float(np.min(adaptive["threshold"]))
+    threshold_ceiling = float(np.max(adaptive["threshold"]))
 
     return {
         "dataset": name,
@@ -48,19 +71,19 @@ def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 
         "global": {
             "r2": float(g_metrics["r2"]),
             "rmse": float(g_metrics["rmse"]),
-            "leakage_ratio": locality_leakage_metric(series, global_model.reconstructed_y, window=64)["leakage_ratio"],
+            "leakage_ratio": global_leak,
             "max_abs": float(g_metrics["max_abs"]),
         },
         "piecewise_fourier": {
             "r2": float(p_metrics["r2"]),
             "rmse": float(p_metrics["rmse"]),
-            "leakage_ratio": locality_leakage_metric(series, piecewise.reconstructed_y, window=64)["leakage_ratio"],
+            "leakage_ratio": piecewise_leak,
             "segment_count": int(piecewise.metrics["segment_count"]),
         },
         "piecewise_polynomial": {
             "r2": float(poly_metrics["r2"]),
             "rmse": float(poly_metrics["rmse"]),
-            "leakage_ratio": locality_leakage_metric(series, polynomial.reconstructed_y, window=64)["leakage_ratio"],
+            "leakage_ratio": poly_leak,
             "segment_count": int(polynomial.metrics["segment_count"]),
             "approx_parameter_count": int(polynomial.metrics["approx_parameter_count"]),
         },
@@ -68,6 +91,18 @@ def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 
             "r2": float(u_metrics["r2"]),
             "rmse": float(u_metrics["rmse"]),
             "max_abs": float(u_metrics["max_abs"]),
+        },
+        "detrended_fourier": {
+            "r2": float(d_metrics["r2"]),
+            "rmse": float(d_metrics["rmse"]),
+            "leakage_ratio": detrended_leak,
+            "r2_delta_vs_global": float(d_metrics["r2"] - g_metrics["r2"]),
+            "trend_slope": float(detrended.metrics["trend_slope"]),
+            "trend_intercept": float(detrended.metrics["trend_intercept"]),
+            "adaptive_keep_ratio": adaptive_keep_ratio,
+            "adaptive_threshold_ratio": adaptive_threshold_ratio,
+            "adaptive_threshold_min": threshold_floor,
+            "adaptive_threshold_max": threshold_ceiling,
         },
         "haar_threshold": {
             "r2": float(h_metrics["r2"]),
@@ -83,6 +118,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--terms", default="16,32,64")
     parser.add_argument("--out-json", default="docs/benchmarks/defensible_hardening_report.json")
     parser.add_argument("--out-md", default="docs/benchmarks/defensible_hardening_report.md")
+    parser.add_argument("--r2-gate", type=float, default=0.99)
+    parser.add_argument("--leakage-gate", type=float, default=0.25)
+    parser.add_argument("--max-adaptive-keep-ratio", type=float, default=0.45)
     return parser.parse_args()
 
 
@@ -90,6 +128,31 @@ def _format_float(v: Any) -> str:
     if isinstance(v, (int, float)):
         return f"{float(v):.6g}"
     return str(v)
+
+
+def _gate_row(row: dict[str, Any], *, r2_gate: float, leakage_gate: float, max_keep_ratio: float) -> dict[str, bool]:
+    if "global" not in row:
+        return {
+            "r2_gate": False,
+            "leakage_gate": False,
+            "residual_gate": False,
+            "defensible": False,
+        }
+
+    r2_gate_ok = row["detrended_fourier"]["r2"] >= r2_gate
+    leakage_gate_ok = (
+        row["piecewise_fourier"]["leakage_ratio"] <= leakage_gate
+        and row["detrended_fourier"]["leakage_ratio"] <= leakage_gate
+        and row["piecewise_polynomial"]["leakage_ratio"] <= leakage_gate
+    )
+    residual_gate_ok = row["detrended_fourier"]["adaptive_keep_ratio"] <= max_keep_ratio
+
+    return {
+        "r2_gate": bool(r2_gate_ok),
+        "leakage_gate": bool(leakage_gate_ok),
+        "residual_gate": bool(residual_gate_ok),
+        "defensible": bool(r2_gate_ok and leakage_gate_ok and residual_gate_ok),
+    }
 
 
 def main() -> int:
@@ -100,7 +163,9 @@ def main() -> int:
         ("spikes", make_synthetic_dataset(4000, kind="spikes")),
         ("irregular", make_synthetic_dataset(4000, kind="irregular")),
         ("multiscale", make_synthetic_dataset(4000, kind="multiscale")),
+        ("smooth", make_synthetic_dataset(4000, kind="smooth")),
     ]
+
     rows = [_benchmark_row(name, series, term) for name, series in datasets for term in terms]
 
     x = np.linspace(0.0, 1.0, 1500, dtype=np.float64)
@@ -125,11 +190,20 @@ def main() -> int:
             },
         }
     )
+    rows = [
+        {**row, "gates": _gate_row(row, r2_gate=args.r2_gate, leakage_gate=args.leakage_gate, max_keep_ratio=args.max_adaptive_keep_ratio)}
+        for row in rows
+    ]
 
     payload = {
         "terms": terms,
         "rows": rows,
         "summary": {
+            "gate_config": {
+                "r2_gate": args.r2_gate,
+                "leakage_gate": args.leakage_gate,
+                "max_adaptive_keep_ratio": args.max_adaptive_keep_ratio,
+            },
             "best_global_r2": max(row["global"]["r2"] for row in rows if "global" in row),
             "best_piecewise_leakage": min(
                 row["piecewise_fourier"]["leakage_ratio"] for row in rows if "piecewise_fourier" in row
@@ -137,6 +211,11 @@ def main() -> int:
             "best_poly_leakage": min(
                 row["piecewise_polynomial"]["leakage_ratio"] for row in rows if "piecewise_polynomial" in row
             ),
+            "best_detrended_delta_r2": max(
+                row["detrended_fourier"]["r2_delta_vs_global"] for row in rows if "detrended_fourier" in row
+            ),
+            "defensible_rows": sum(1 for row in rows if row["gates"]["defensible"]),
+            "rows_with_gate_fields": sum(1 for row in rows if "gates" in row),
             "multichannel_rmse": mc["metrics"]["rmse"],
         },
     }
@@ -151,9 +230,10 @@ def main() -> int:
         "",
         f"- Terms: `{terms}`",
         f"- Rows: `{len(rows)}`",
+        f"- Gate config: `R2 >= {args.r2_gate}` `leakage <= {args.leakage_gate}` `adaptive_keep <= {args.max_adaptive_keep_ratio}`",
         "",
-        "| dataset | terms | global R2 | piecewise R2 | poly R2 | global leak | piecewise leak | poly leak |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| dataset | terms | global R2 | detrended R2 | piecewise R2 | poly R2 | global leak | detrended leak | piecewise leak | poly leak | r2-delta | adaptive keep | adaptive th mean | defensible |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in rows:
         if "global" not in row:
@@ -165,16 +245,32 @@ def main() -> int:
                     str(row["dataset"]),
                     _format_float(row["terms"]),
                     _format_float(row["global"]["r2"]),
+                    _format_float(row["detrended_fourier"]["r2"]),
                     _format_float(row["piecewise_fourier"]["r2"]),
                     _format_float(row["piecewise_polynomial"]["r2"]),
                     _format_float(row["global"]["leakage_ratio"]),
+                    _format_float(row["detrended_fourier"]["leakage_ratio"]),
                     _format_float(row["piecewise_fourier"]["leakage_ratio"]),
                     _format_float(row["piecewise_polynomial"]["leakage_ratio"]),
+                    _format_float(row["detrended_fourier"]["r2_delta_vs_global"]),
+                    _format_float(row["detrended_fourier"]["adaptive_keep_ratio"]),
+                    _format_float(row["detrended_fourier"]["adaptive_threshold_ratio"]),
+                    "pass" if row["gates"]["defensible"] else "fail",
                 ]
             )
             + " |"
         )
-    lines.extend(["", "## Multichannel summary", "", f"- rank = {mc['rank']}", f"- rmse = {mc['metrics']['rmse']:.6g}"])
+
+    lines.extend(
+        [
+            "",
+            "## Multichannel summary",
+            "",
+            f"- rank = {mc['rank']}",
+            f"- rmse = {mc['metrics']['rmse']:.6g}",
+            f"- defensible rows = {payload['summary']['defensible_rows']} / {payload['summary']['rows_with_gate_fields']}",
+        ]
+    )
     out_md.write_text("\n".join(lines), encoding="utf-8")
 
     print(f"wrote {out_json}")

@@ -1,4 +1,4 @@
-# Research Notes: Defensible Compression Directions (RRKAL Visual Compressor)
+﻿# Research Notes: Defensible Compression Directions (RRKAL Visual Compressor)
 
 Date: 2026-05-27  
 Project: `rrkal-visual-compressor`
@@ -9,19 +9,19 @@ This repo is now focused on making the compression path defensible, not on provi
 We only keep methods that pass measurable constraints:
 
 - same input series, same evaluation sample count;
-- explicit reconstruction metrics (R²/RMSE/Max-AE) under same tolerance targets;
-- explicit payload/complexity metrics (coeff count, kept residual ratio, metadata size signal);
+- explicit reconstruction metrics (R2/RMSE/Max-AE) under the same tolerance targets;
+- explicit payload/complexity metrics (coefficient count, kept residual ratio, metadata size);
 - separate reporting for fidelity and compression ratio.
 
 ## 2) Current risk model (hard constraints)
 
 ### Risk A: Global locality diffusion
-Global Fourier tends to smear local events across the full signal (classic Gibbs / global-basis issue).
+Global Fourier tends to smear sharp local changes across the whole signal (classic Gibbs / global-basis issue).
 
 - We use `locality_leakage_metric` in `src/vizcompress/research.py` as a guard.
-- Step-like series are used as stress cases.
+- Step-like synthetic cases are included to stress this behavior.
 
-Current reading: the piecewise baselines reduce local artifact severity on discontinuities for the tested datasets, but this is not a proof of dominance.
+Current reading: piecewise baselines reduce local artifact severity on discontinuities in tested datasets, but this is not dominance proof.
 
 ### Risk B: Irregular x-domain
 Irregular timestamps can silently break reconstruction assumptions.
@@ -30,14 +30,14 @@ Irregular timestamps can silently break reconstruction assumptions.
 - `packages.py` validation was fixed for linear-plus-compressed x arrays (`x_delta_t`, `x_delta_values`).
 
 ### Risk C: Channel coupling
-Per-channel independent Fourier ignores structure across channels.
+Per-channel independent Fourier ignores cross-channel structure.
 
 - `compress_multichannel_fourier_pca` adds a PCA/SVD shared-latent stage before Fourier.
 
 ### Risk D: Residual payload blow-up
-Residual layers may carry most of the entropy and wipe out compression gains.
+Residual layers may carry most of the entropy and remove compression gains.
 
-- We track payload through `metrics` and now include `residual_payload_ratio` in wavelet baseline experiments.
+- We track payload through `metrics` and include `residual_payload_ratio` in wavelet baseline experiments.
 
 ## 3) Implemented research baselines
 
@@ -49,6 +49,8 @@ Residual layers may carry most of the entropy and wipe out compression gains.
 - `compress_multichannel_fourier_pca`
 - `compress_haar_threshold` (Haar basis + hard threshold)
 - `locality_leakage_metric`
+- `compress_fourier_with_linear_detrend` (linear de-trend + Fourier)
+- `adaptive_residual_threshold` (volatility-driven residual masking)
 
 `tests/test_research.py` now covers:
 
@@ -57,36 +59,58 @@ Residual layers may carry most of the entropy and wipe out compression gains.
 - irregular sampling diagnostics
 - multichannel PCA baseline
 - Haar threshold baseline
+- linear de-trend + Fourier baseline
+- adaptive residual threshold baseline
 
-## 4) New insight: polyline simplification as rendering-aware sampling
+## 4) Polyline simplification as rendering-aware sampling
 
-Your "polyline simplification" idea is conceptually consistent and important.
+Your polyline simplification idea is conceptually consistent and important.
 In rendering terms, it is not a different compression philosophy; it is the **sampling budget policy** that should come before geometric evaluation:
 
-- If the target raster is `W×H` and the visible span width is `P` pixels, sampling above Nyquist (roughly `2P` points) is redundant.
-- A simplification layer (Ramer-Douglas-Peucker, angle/curvature pruning, or adaptive knot removal) can cut point count before any function fit.
+- If the target raster is `W×H` and visible span in pixels is `P`, sampling above Nyquist (roughly `2P` points) is redundant.
+- A simplification layer (RDP, angle/curvature pruning, or adaptive knot removal) can reduce point count before any function fitting.
 - The function layer (Fourier/polynomial/wavelet) then approximates the already-thinned signal.
 
-This gives a stable workflow:
-1. decide target display resolution / viewport uncertainty band,
-2. perform simplification under tolerance ε related to screen pixel pitch,
-3. compress simplified sequence with a local basis.
-
-So yes, this concept is stable as an engineering principle. It is also testable:
-- stability over scale levels,
-- monotonic error vs ε,
+This is testable:
+- stability across scale levels,
+- monotonic error vs epsilon,
 - reduction in residual payload.
 
-## 5) Execution checklist
+## 5) Why this is scientifically stable (and where it is not)
+
+The current claim is intentionally narrow:
+
+- we are not claiming universal compression;
+- we claim measurable advantage only for a constrained data family with explicit budgets.
+
+This is enforced by three conditions:
+
+1. Scope condition
+   - Signal class is predeclared (e.g., smooth, periodic, piecewise-regular, bounded-noise).
+   - x-domain contract is recorded and replayed at decode time.
+2. Quality condition
+   - Same error metric and tolerance are evaluated against the same sample domain.
+   - Reproducible seeds and fixtures are used when synthetic data is involved.
+3. Complexity condition
+   - Compression is measured in total bytes, including coefficients, residuals, metadata, and optional extra compression envelope.
+
+Research outputs are only advanced when all three are satisfied, otherwise methods are marked exploratory.
+
+### Current checkpoint status
+
+Latest sweep (`--terms 16,32,64 --r2-gate 0.99 --leakage-gate 0.25 --max-adaptive-keep-ratio 0.45`) produced `0 / 16` defensible rows.
+This is valid science: the claim is not yet supported under this strict contract on the current synthetic set.
+Next iterations should relax one axis at a time (dataset class, metrics, or gate), then re-run.
+
+## 6) Execution checklist
 
 ```bash
 python -m pytest tests/test_research.py -q
 py scripts/run_defensible_research_sweep.py --terms 16,32,64 --out-json docs/benchmarks/defensible_hardening_report.json --out-md docs/benchmarks/defensible_hardening_report.md
 ```
 
-## 6) Interpreting outcomes
+## 7) Interpreting outcomes
 
-- If R² rises but payload ratio rises similarly, not a net win.
-- If locality improves but fidelity regresses severely on spikes/steps, not production-ready.
-- If both fidelity and payload improve under the same ε/terms budget, we can graduate a baseline to roadmap.
-
+- If R2 rises but payload rises similarly, this is not a net win.
+- If locality improves but fidelity regresses severely on spikes/steps, do not ship.
+- If both fidelity and payload improve under the same epsilon/term budget, we can promote a baseline to roadmap.

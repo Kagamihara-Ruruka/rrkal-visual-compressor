@@ -5,7 +5,7 @@ from typing import Any
 
 import numpy as np
 
-from vizcompress.compressors import compress_fourier
+from vizcompress.compressors import compress_fourier, rolling_std
 from vizcompress.core import TimeSeries, FourierModel
 
 
@@ -30,6 +30,97 @@ class PiecewisePolynomialModel:
     segment_intervals: list[tuple[float, float]]
     reconstructed_y: np.ndarray
     metrics: dict[str, float]
+
+
+@dataclass(frozen=True)
+class DetrendedFourierModel:
+    """Fourier model with explicit linear trend removed and re-added."""
+
+    reconstructed_y: np.ndarray
+    trend_coeffs: tuple[float, float]
+    metrics: dict[str, float]
+    raw_fourier: FourierModel
+
+
+def _fit_linear_trend(x: np.ndarray, y: np.ndarray) -> tuple[float, float]:
+    """Return coefficients (slope, intercept) for y ~= a*x + b."""
+    x = np.asarray(x, dtype=np.float64)
+    y = np.asarray(y, dtype=np.float64)
+    if x.size < 2:
+        raise ValueError("linear trend requires at least 2 samples")
+    x0 = float(np.mean(x))
+    x_n = x - x0
+    A = np.column_stack([x_n, np.ones_like(x_n)])
+    coeffs, *_ = np.linalg.lstsq(A, y, rcond=None)
+    a, b = coeffs
+    return float(a), float(b + np.mean(y) - a * x0)
+
+
+def compress_fourier_with_linear_detrend(
+    series: TimeSeries,
+    terms: int,
+) -> DetrendedFourierModel:
+    """Remove linear trend then fit Fourier, then re-add trend."""
+    if terms <= 0:
+        raise ValueError("terms must be positive")
+    a, b = _fit_linear_trend(series.x, series.y)
+    trend = a * series.x + b
+    residual = series.y - trend
+    de_trended_series = TimeSeries(x=series.x, y=residual, source=series.source)
+    core = compress_fourier(de_trended_series, terms=terms)
+    reconstructed = core.reconstructed_y + trend
+    metrics = dict(core.metrics)
+    metrics.update(
+        {
+            "trend_slope": a,
+            "trend_intercept": b,
+            "trend_rmse": float(np.sqrt(np.mean((series.y - trend) ** 2))),
+            "trend_removed_rmse": metrics["rmse"],
+        }
+    )
+    return DetrendedFourierModel(
+        reconstructed_y=reconstructed,
+        trend_coeffs=(a, b),
+        metrics=metrics,
+        raw_fourier=core,
+    )
+
+
+def adaptive_residual_threshold(
+    x: np.ndarray,
+    residual: np.ndarray,
+    *,
+    window: int = 128,
+    adaptive_factor: float = 3.0,
+    min_threshold: float = 1e-8,
+) -> dict[str, Any]:
+    """Build a per-sample threshold by fitting a trend on rolling residual volatility."""
+    if len(x) != len(residual):
+        raise ValueError("x and residual must have same length")
+    if len(x) < 3:
+        raise ValueError("at least 3 samples required")
+    if adaptive_factor <= 0:
+        raise ValueError("adaptive_factor must be > 0")
+    if window < 2:
+        raise ValueError("window must be >= 2")
+
+    x = np.asarray(x, dtype=np.float64)
+    residual = np.asarray(residual, dtype=np.float64)
+    volatility = rolling_std(np.abs(residual), window=window)
+    a, b = _fit_linear_trend(x, volatility)
+    trend_volatility = a * x + b
+    trend_volatility = np.maximum(trend_volatility, np.min(volatility))
+    threshold = np.maximum(min_threshold, adaptive_factor * trend_volatility)
+    keep_mask = np.abs(residual) > threshold
+    return {
+        "trend_coeffs": (float(a), float(b)),
+        "volatility": volatility,
+        "trend_volatility": trend_volatility,
+        "threshold": threshold,
+        "keep_indices": np.flatnonzero(keep_mask),
+        "keep_count": int(keep_mask.sum()),
+        "coverage_ratio": float(1.0 - keep_mask.mean()),
+    }
 
 
 def detect_jump_breakpoints(y: np.ndarray, *, jump_fraction: float = 0.05, max_breaks: int = 4) -> np.ndarray:
