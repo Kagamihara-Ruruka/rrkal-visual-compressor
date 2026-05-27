@@ -9,6 +9,7 @@ from scripts.run_defensible_research_sweep import (
     _parse_gate_list,
     _parse_float_list,
     _parse_string_list,
+    _recommend_noise_frontier_strategy,
     _summarize_frontier_by_key,
     _summarize_frontier_tiers_by_key,
     _summarize_frontier_tier_matrix,
@@ -229,6 +230,23 @@ def test_frontier_tier_summary_groups_by_key():
     assert summary["smooth"]["tier_counts"]["demo_pass"] == 1
     assert summary["smooth"]["best_r2"] == 0.96
     assert summary["spikes"]["tier_counts"]["reject"] == 1
+
+
+def test_noise_frontier_recommendation_promotes_local_strategy_for_high_noise():
+    tier_by_sigma = {
+        "0.0": {"total": 4, "tier_counts": {"reject": 0, "payload_reject": 0}},
+        "0.1": {"total": 4, "tier_counts": {"reject": 2, "payload_reject": 0}},
+    }
+    tier_by_kind = {
+        "smooth": {"total": 4, "tier_counts": {"reject": 0, "payload_reject": 0}},
+        "spikes": {"total": 4, "tier_counts": {"reject": 2, "payload_reject": 0}},
+    }
+
+    result = _recommend_noise_frontier_strategy(tier_by_sigma, tier_by_kind)
+
+    assert result["recommended_strategy"] == "localized_basis_or_residual_layer"
+    assert result["worst_kind"] == "spikes"
+    assert result["high_sigma_reject_ratio"] == 0.5
 
 
 def test_frontier_tier_matrix_rescores_existing_sweeps():

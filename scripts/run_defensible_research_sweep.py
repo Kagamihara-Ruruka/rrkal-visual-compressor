@@ -769,6 +769,54 @@ def _summarize_frontier_tiers_by_key(rows: list[dict[str, Any]], key: str) -> di
     return grouped
 
 
+def _recommend_noise_frontier_strategy(
+    tier_by_sigma: dict[str, dict[str, Any]],
+    tier_by_kind: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    # Convert tier breakdowns into a concrete next research move.
+    # This is intentionally conservative: it recommends where to investigate,
+    # not that the current method is solved.
+    high_sigma_rejects = 0
+    high_sigma_total = 0
+    for sigma_label, item in tier_by_sigma.items():
+        sigma = float(sigma_label)
+        if sigma < 0.05:
+            continue
+        counts = item.get("tier_counts", {})
+        high_sigma_total += int(item.get("total", 0))
+        high_sigma_rejects += int(counts.get("reject", 0)) + int(counts.get("payload_reject", 0))
+
+    kind_rejects: dict[str, int] = {}
+    for kind, item in tier_by_kind.items():
+        counts = item.get("tier_counts", {})
+        kind_rejects[str(kind)] = int(counts.get("reject", 0)) + int(counts.get("payload_reject", 0))
+
+    worst_kind = max(kind_rejects, key=kind_rejects.get) if kind_rejects else "unknown"
+    high_noise_reject_ratio = (
+        float(high_sigma_rejects) / float(high_sigma_total) if high_sigma_total else 0.0
+    )
+
+    if high_noise_reject_ratio >= 0.25:
+        strategy = "localized_basis_or_residual_layer"
+        rationale = "high-sigma rows contain enough rejects that global/RDP fitting alone is not robust"
+    elif kind_rejects.get("spikes", 0) > 0:
+        strategy = "sparse_residual_layer"
+        rationale = "spike-like data fails before smooth data, so sparse residual handling should be promoted"
+    else:
+        strategy = "gate_tuning_only"
+        rationale = "current frontier has no strong reject cluster; tune tiers before adding model complexity"
+
+    return {
+        "recommended_strategy": strategy,
+        "rationale": rationale,
+        "worst_kind": worst_kind,
+        "high_sigma_reject_ratio": high_noise_reject_ratio,
+        "high_sigma_rejects": high_sigma_rejects,
+        "high_sigma_total": high_sigma_total,
+        "kind_rejects": kind_rejects,
+    }
+
+
 def main() -> int:
     args = parse_args()
     # Build a small synthetic stress test set:
@@ -957,6 +1005,10 @@ def main() -> int:
             noise_frontier["summary"]["best_point_tier_counts"][key] = (
                 noise_frontier["summary"]["best_point_tier_counts"][key] + 1
             )
+        noise_frontier["summary"]["recommended_next_strategy"] = _recommend_noise_frontier_strategy(
+            noise_frontier["summary"]["tier_by_sigma"],
+            noise_frontier["summary"]["tier_by_kind"],
+        )
 
     payload = {
         "terms": terms,
@@ -1167,6 +1219,19 @@ def main() -> int:
             noise_frontier["summary"]["best_point_tier_counts"].items()
         ):
             lines.append(f"  - {tier_name}: {tier_count}")
+        recommendation = noise_frontier["summary"].get("recommended_next_strategy", {})
+        if recommendation:
+            lines.extend(
+                [
+                    "",
+                    "### Noise frontier recommendation",
+                    "",
+                    f"- recommended strategy: `{recommendation['recommended_strategy']}`",
+                    f"- rationale: {recommendation['rationale']}",
+                    f"- worst kind: `{recommendation['worst_kind']}`",
+                    f"- high-sigma reject ratio: `{_format_float(recommendation['high_sigma_reject_ratio'])}`",
+                ]
+            )
         if noise_frontier["summary"]["tier_matrix"]:
             lines.extend(
                 [

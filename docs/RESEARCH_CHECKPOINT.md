@@ -72,6 +72,7 @@ This adds:
 - tier histogram in both JSON summary and Markdown output
 - optional tier matrix via `--run-frontier-tier-matrix`, which re-scores the same frontier sweeps across `frontier_exploratory_r2_gates` and `frontier_demo_r2_gates`
 - noise frontier tier summaries grouped by `sigma` and `base_kind`
+- noise frontier recommendation, which converts tier failures into a next experiment label rather than a success claim
 
 ## 5) Advance / rollback rules
 
@@ -96,4 +97,5 @@ Regress immediately if:
 - use the tier matrix to decide which exploratory/demo gate pair is stable enough for reporting
 - compare noise frontier behavior across `smooth`, `spikes`, and `multiscale`
 - use tier-by-sigma and tier-by-kind summaries to decide whether residual, wavelet, or adaptive segmentation should be promoted next
+- treat `recommended_next_strategy` as an experiment queue item, not as proof that the chosen method will pass the strict gate
 - prepare renderer-side benchmark: decode cost vs raster budget coupling

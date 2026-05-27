@@ -81,6 +81,13 @@
   - reject: 5
   - strict_pass: 0
 
+### Noise frontier recommendation
+
+- recommended strategy: `localized_basis_or_residual_layer`
+- rationale: high-sigma rows contain enough rejects that global/RDP fitting alone is not robust
+- worst kind: `spikes`
+- high-sigma reject ratio: `0.333333`
+
 ### Noise frontier tier matrix
 
 | exploratory gate | demo gate | strict | exploratory | demo | reject | payload reject | best R2 | best payload ratio |
