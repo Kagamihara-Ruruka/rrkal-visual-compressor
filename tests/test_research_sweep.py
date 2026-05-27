@@ -4,6 +4,7 @@ import pytest
 
 from scripts.run_defensible_research_sweep import (
     _benchmark_rdp_frontier,
+    _benchmark_sparse_residual_frontier,
     _frontier_gate_reason,
     _frontier_tier,
     _local_strategy_probe,
@@ -15,6 +16,7 @@ from scripts.run_defensible_research_sweep import (
     _summarize_frontier_tiers_by_key,
     _summarize_frontier_tier_matrix,
     _summarize_local_strategy_probes,
+    _summarize_sparse_residual_frontiers,
     _with_gaussian_noise,
 )
 from vizcompress.data import make_synthetic_dataset
@@ -287,6 +289,47 @@ def test_local_strategy_summary_counts_probe_recommendations():
     assert summary["probe_counts"]["sparse_residual_layer"] == 1
     assert summary["best_haar_r2_delta_vs_rdp"] == 0.1
     assert summary["best_adaptive_payload_ratio"] == 10.0
+
+
+def test_sparse_residual_frontier_improves_base_reconstruction():
+    original = [0.0, 1.0, 0.0, 1.0]
+    base = [0.0, 0.0, 0.0, 1.0]
+
+    frontier = _benchmark_sparse_residual_frontier(
+        original_y=original,
+        base_y=base,
+        raw_payload=64.0,
+        keep_ratios=[0.25],
+    )
+
+    best = frontier["best_point"]
+    assert best["keep_count"] == 1
+    assert best["r2_delta_vs_base"] > 0.0
+    assert best["payload_ratio"] == 4.0
+
+
+def test_sparse_residual_frontier_summary_keeps_best_delta():
+    rows = [
+        {
+            "dataset": "smooth",
+            "terms": 16,
+            "sparse_residual_frontier": {
+                "best_point": {"r2_delta_vs_base": 0.01, "payload_ratio": 5.0}
+            },
+        },
+        {
+            "dataset": "spikes",
+            "terms": 32,
+            "sparse_residual_frontier": {
+                "best_point": {"r2_delta_vs_base": 0.2, "payload_ratio": 3.0}
+            },
+        },
+    ]
+
+    summary = _summarize_sparse_residual_frontiers(rows)
+
+    assert summary["best_r2_delta_vs_base"] == 0.2
+    assert summary["best_row"]["dataset"] == "spikes"
 
 
 def test_noise_frontier_recommendation_promotes_local_strategy_for_high_noise():

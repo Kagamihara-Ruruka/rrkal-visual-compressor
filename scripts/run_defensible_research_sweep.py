@@ -100,6 +100,12 @@ def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 
     adaptive_payload = _estimate_sparse_residual_payload_bytes(adaptive["keep_indices"])
     adaptive_payload_ratio = _safe_ratio(raw_payload, adaptive_payload)
     adaptive_keep_ratio = float(adaptive["keep_count"]) / float(series.sample_count)
+    sparse_residual_frontier = _benchmark_sparse_residual_frontier(
+        original_y=series.y,
+        base_y=detrended.reconstructed_y,
+        raw_payload=raw_payload,
+        keep_ratios=[0.005, 0.01, 0.02, 0.05],
+    )
 
     return {
         "dataset": name,
@@ -176,6 +182,7 @@ def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 
             "payload_bytes": adaptive_payload,
             "payload_ratio": adaptive_payload_ratio,
         },
+        "sparse_residual_frontier": sparse_residual_frontier,
         "local_strategy_probe": _local_strategy_probe(
             samples=int(series.sample_count),
             rdp_r2=float(rdp_metrics["r2"]),
@@ -185,6 +192,46 @@ def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 
             adaptive_keep_ratio=adaptive_keep_ratio,
             adaptive_payload_ratio=adaptive_payload_ratio,
         ),
+    }
+
+
+def _benchmark_sparse_residual_frontier(
+    *,
+    original_y: np.ndarray,
+    base_y: np.ndarray,
+    raw_payload: float,
+    keep_ratios: list[float],
+) -> dict[str, Any]:
+    # Keep the largest absolute residual corrections and apply them exactly.
+    # This models a sparse residual layer without changing the main function.
+    original = np.asarray(original_y, dtype=np.float64)
+    base = np.asarray(base_y, dtype=np.float64)
+    residual = original - base
+    base_metrics = regression_metrics(original, base)
+    rows: list[dict[str, Any]] = []
+    n = int(residual.size)
+    for keep_ratio in keep_ratios:
+        keep_count = max(1, min(n, int(round(float(keep_ratio) * n))))
+        indices = np.argpartition(np.abs(residual), -keep_count)[-keep_count:]
+        corrected = base.copy()
+        corrected[indices] = corrected[indices] + residual[indices]
+        metrics = regression_metrics(original, corrected)
+        payload_bytes = float(keep_count * (INT64_BYTES + FLOAT64_BYTES))
+        rows.append(
+            {
+                "keep_ratio": float(keep_ratio),
+                "keep_count": int(keep_count),
+                "r2": float(metrics["r2"]),
+                "r2_delta_vs_base": float(metrics["r2"] - base_metrics["r2"]),
+                "payload_bytes": payload_bytes,
+                "payload_ratio": _safe_ratio(raw_payload, payload_bytes),
+            }
+        )
+    best = max(rows, key=lambda item: (item["r2_delta_vs_base"], item["payload_ratio"]))
+    return {
+        "base_r2": float(base_metrics["r2"]),
+        "rows": rows,
+        "best_point": best,
     }
 
 
@@ -780,6 +827,34 @@ def _summarize_local_strategy_probes(rows: list[dict[str, Any]]) -> dict[str, An
     }
 
 
+def _summarize_sparse_residual_frontiers(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    best_delta = 0.0
+    best_payload_ratio = 0.0
+    best_row: dict[str, Any] | None = None
+    for row in rows:
+        frontier = row.get("sparse_residual_frontier")
+        if not frontier:
+            continue
+        best = frontier.get("best_point")
+        if not best:
+            continue
+        delta = float(best["r2_delta_vs_base"])
+        payload_ratio = float(best["payload_ratio"])
+        if best_row is None or (delta, payload_ratio) > (best_delta, best_payload_ratio):
+            best_delta = delta
+            best_payload_ratio = payload_ratio
+            best_row = {
+                "dataset": row.get("dataset"),
+                "terms": row.get("terms"),
+                **best,
+            }
+    return {
+        "best_r2_delta_vs_base": best_delta,
+        "best_payload_ratio": best_payload_ratio,
+        "best_row": best_row,
+    }
+
+
 def _summarize_frontier_by_key(rows: list[dict[str, Any]], key: str) -> dict[str, dict[str, Any]]:
     # Small report helper: group frontier rows by one metadata field, such as
     # noise sigma, and count which rows met the R2 gate.
@@ -938,6 +1013,7 @@ def main() -> int:
 
     per_dataset = _grouped_pass_rows(rows)
     local_strategy_summary = _summarize_local_strategy_probes(rows)
+    sparse_residual_summary = _summarize_sparse_residual_frontiers(rows)
     locality_mode_desc = f"{args.locality_mode}({ 'piecewise_polynomial' if args.include_piecewise_polynomial else 'piecewise_fourier+detrended'})"
 
     frontier = None
@@ -1113,6 +1189,7 @@ def main() -> int:
             "dataset_passes": per_dataset,
             "locality_mode_desc": locality_mode_desc,
             "local_strategy_probe": local_strategy_summary,
+            "sparse_residual_frontier": sparse_residual_summary,
         },
         "run_rdp_frontier": bool(args.run_rdp_frontier),
         "best_global_r2": max(row["global"]["r2"] for row in rows if "global" in row),
@@ -1134,6 +1211,7 @@ def main() -> int:
         "dataset_passes": per_dataset,
         "locality_mode_desc": locality_mode_desc,
         "local_strategy_probe": local_strategy_summary,
+        "sparse_residual_frontier": sparse_residual_summary,
         "rdp_frontier": frontier,
         "noise_frontier": noise_frontier,
     }
@@ -1229,6 +1307,38 @@ def main() -> int:
                     _format_float(probe["haar_payload_delta_vs_rdp"]),
                     _format_float(probe["adaptive_keep_ratio"]),
                     _format_float(probe["adaptive_payload_ratio"]),
+                ]
+            )
+            + " |"
+        )
+    lines.extend(
+        [
+            "",
+            "### Sparse residual frontier",
+            "",
+            f"- best R2 delta vs base = `{_format_float(sparse_residual_summary['best_r2_delta_vs_base'])}`",
+            f"- best payload ratio = `{_format_float(sparse_residual_summary['best_payload_ratio'])}`",
+            "",
+            "| dataset | terms | keep ratio | keep count | R2 | R2 delta vs base | payload ratio |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    for row in rows:
+        frontier_item = row.get("sparse_residual_frontier")
+        if not frontier_item:
+            continue
+        best = frontier_item["best_point"]
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    str(row["dataset"]),
+                    _format_float(row.get("terms", "")),
+                    _format_float(best["keep_ratio"]),
+                    _format_float(best["keep_count"]),
+                    _format_float(best["r2"]),
+                    _format_float(best["r2_delta_vs_base"]),
+                    _format_float(best["payload_ratio"]),
                 ]
             )
             + " |"

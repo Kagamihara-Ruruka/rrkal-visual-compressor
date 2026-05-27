@@ -50,6 +50,24 @@
 | smooth | 16 | sparse_residual_layer | -1.94357 | 0.452142 | 0.032 | 31.25 |
 | smooth | 32 | sparse_residual_layer | -1.96348 | 3.24347 | 0.0365 | 27.3973 |
 
+### Sparse residual frontier
+
+- best R2 delta vs base = `0.0367638`
+- best payload ratio = `20`
+
+| dataset | terms | keep ratio | keep count | R2 | R2 delta vs base | payload ratio |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| steps | 16 | 0.05 | 200 | 0.997107 | 0.0142818 | 20 |
+| steps | 32 | 0.05 | 200 | 0.998648 | 0.00746486 | 20 |
+| spikes | 16 | 0.05 | 200 | 0.983789 | 0.0367638 | 20 |
+| spikes | 32 | 0.05 | 200 | 0.988748 | 0.0214286 | 20 |
+| irregular | 16 | 0.05 | 200 | 0.99986 | 0.000677002 | 20 |
+| irregular | 32 | 0.05 | 200 | 0.999942 | 0.000385108 | 20 |
+| multiscale | 16 | 0.05 | 200 | 0.999014 | 0.00323392 | 20 |
+| multiscale | 32 | 0.05 | 200 | 0.999665 | 0.00178578 | 20 |
+| smooth | 16 | 0.05 | 200 | 0.999879 | 0.000700919 | 20 |
+| smooth | 32 | 0.05 | 200 | 0.999961 | 0.000393916 | 20 |
+
 - frontier strict gate = 0.99
 - frontier exploratory gate = 0.95
 - frontier demo gate = 0.9
