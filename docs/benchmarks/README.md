@@ -185,6 +185,25 @@ py scripts/run_terms_channel_kind_threshold_sweep.py \
   --out-md docs/benchmarks/terms_channel_kind_threshold_grid.md
 ```
 
+### Contract validation
+
+Use the benchmark contract validator to enforce measurable assumptions before
+claiming cross-model comparability:
+
+```bash
+py scripts/validate_benchmark_contracts.py \
+  docs/benchmarks/terms_channel_kind_threshold_grid_10k_gate.json \
+  --out docs/benchmarks/terms_channel_kind_threshold_grid_10k_gate_contract.json
+```
+
+Contract checks include:
+
+- `fourier_r2` non-decrease as Fourier terms increase for fixed
+  `(synthetic_kind, samples, channel_k)`.
+- Coverage ratio is bounded in `[0,1]` when provided.
+- Compression ratios are finite and positive.
+- Summary counters are consistent with row-level recomputation.
+
 ### Hard-signal behavior note
 
 In `5k_hard`, `noisy` and `spikes` rows show little or no high-fidelity coverage (`R²>=0.99`) at this scale, while `steps` remains stable and yields the best ratio.
