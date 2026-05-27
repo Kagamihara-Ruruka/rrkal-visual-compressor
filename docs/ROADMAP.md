@@ -203,6 +203,8 @@ Current status:
   linear-plus-delta encoding.
 - Package verification exists for manifest/files/hash/model-array/reconstruction
   self-consistency.
+- `video-bench` CLI and synthetic video sweep outputs are in progress for
+  separable spatiotemporal function compression research.
 
 Next package work:
 

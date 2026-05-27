@@ -107,6 +107,7 @@ Video prototype:
   - SVD + per-mode Fourier encoding
   - Arbitrary output sample reconstruction
   - size_ratio and reconstruction metric evidence
+  - `video-bench` CLI benchmark with rank/temporal-term sweeps
 ```
 
 See [docs/DEVELOPMENT_GOVERNANCE.md](docs/DEVELOPMENT_GOVERNANCE.md) for the
@@ -233,6 +234,13 @@ the whole sweep can be scanned without reading every row. They also include win
 counts against direct SVG.gz and source CSV.gz baselines.
 When `--report-md` is set, the same evidence is written as a compact Markdown
 report for review notes and handoff discussions.
+
+Run a video benchmark on the new functional-video path:
+
+```powershell
+py -m vizcompress.cli video-bench --frame-counts 120,240,480 --height 32 --width 32 --rank-values 2,4 --temporal-terms-values 8,16 --out benchmark_outputs/video.json --report-md benchmark_outputs/video.md
+```
+
 For CI or agent checkpoints, add `--require-svg-gzip-win`,
 `--require-csv-gzip-win`, `--min-fourier-r2 0.99`, or
 `--min-channel-coverage 0.9` to make weak benchmark runs fail instead of only

@@ -1,82 +1,96 @@
-# Functional Video Compression Prototype
+# Functional Compression for Video-like Data
 
-## Core hypothesis
+## 1. Core Hypothesis
 
-For an animation sequence, a raw tensor is:
-
-$$
-V = \{I_t\}_{t=1}^{T}, \quad I_t \in \mathbb{R}^{H\times W}
-$$
-
-This project treats the whole sequence as a function over time plus space:
+For a frame sequence,
 
 $$
-V(t, x, y) \approx \sum_{k=1}^{r} c_k(t)\,\phi_k(x,y) + \bar{I}(x,y)
+V = \{I_t\}_{t=1}^{T},\quad I_t\in\mathbb{R}^{H\times W}
 $$
 
-where:
-
-- $\phi_k$ are spatial modes (SVD/POD),
-- $c_k(t)$ are temporal trajectories,
-- $\bar{I}$ is the temporal mean frame.
-
-We model each $c_k(t)$ with a separable Fourier model.  
-That yields a two-layer compressor:
-
-1. encode spatial basis once,
-2. encode each temporal mode with a small frequency set,
-3. reconstruct frames only where the viewport asks for them.
-
-## Why this is useful for your “rendering-as-function” plan
-
-This gives a concrete implementation of:
+We treat the sequence as a **low-rank spatial basis** plus **Fourier temporal coefficients**:
 
 $$
-O = \mathrm{render}(E, v, b, s)
+I_t(x,y)\approx \bar I(x,y)+\sum_{k=1}^{r} c_k(t)\,\phi_k(x,y),
 $$
 
-where:
-
-- $E$ is encoded assets (`spatial_modes`, Fourier coeffs),
-- $v$ is viewport/LOD policy,
-- $b$ is budget (frame budget / error budget),
-- $s$ is style/shader policy.
-
-The result is not “draw every point first.”  
-It decodes directly into render-ready numeric buffers for the required frame count.
-
-## What to validate first (strictly testable)
-
-- Temporal reconstruction error:
-  - RMSE, MAE, max-abs in pixel space.
-- Parametric footprint:
-  - size of mean + spatial basis + Fourier params.
-- Break-even:
-  - `size_ratio = raw_bytes / model_bytes`.
-- Throughput:
-  - reconstruction time for target output FPS at chosen output frame count.
-
-We should only claim win when evidence beats a baseline:
+where
 
 $$
-|C_{video}| + |M_{meta}| < |B_{baseline}|
+c_k(t)\approx \sum_{m=1}^{M} a_{k,m}\exp\left(j\omega_m t\right).
 $$
 
-## Experimental baseline path for this repo
+The model stores:
 
-Current prototype includes:
+- `mean_frame` : spatial mean $\bar I$
+- `spatial_modes` : compact basis matrix $\phi_k$
+- `temporal_models` : per-mode Fourier coefficients for $c_k(t)$
 
-- `VideoCube`: structured frame sequence input.
-- `compress_video`: low-rank spatial decomposition + Fourier temporal models.
-- `reconstruct_video_at_samples`: rendering at arbitrary output frame count.
-- `estimate_video_model_ratio`: feasibility evidence with raw/model size + RMSE/R2.
+The decoded representation is a functional model; rendering becomes an evaluation step at the requested output rate.
 
-## Risk notes
+## 2. Why this matches your "render function" direction
 
-- Constant or noisy videos are not uniformly compressible by this route.
-- SVD is expensive for huge videos if done naively; practical systems should add:
-  - downsample-before-SVD,
-  - randomized SVD,
-  - blocked updates per time chunk.
-- This is a valid phase-0 research path for “function-first video rendering,” not a
-  universal claim.
+For any downstream renderer, we can define:
+
+$$
+O = \mathrm{render}(E,\;N,\;P,\;B),
+$$
+
+- $E$: encoded model (not all raw pixels),
+- $N$: requested output sample count / target FPS,
+- $P$: viewport/LOD policy,
+- $B$: output budget (error budget / memory budget).
+
+This lets a UI request only the needed frames at the requested fidelity.
+
+## 3. Current prototype
+
+Current prototype module: `src/vizcompress/video.py`.
+
+It supports:
+
+- `VideoCube` : synthetic / structured frame input,
+- `compress_video` : SVD-like spatial decomposition + per-mode Fourier temporal fitting,
+- `reconstruct_video_at_samples` : frame-rate agnostic reconstruction,
+- `estimate_video_model_ratio` : size and fidelity evidence in one report,
+- `src/vizcompress/video_benchmarks.py` : parameter sweeps over frame count / rank / Fourier terms,
+- `vizcompress video-bench` CLI entrypoint for reproducible benchmark jobs.
+
+## 4. Evidence that is already defensible
+
+The benchmark output includes:
+
+- compression ratio,
+- RMSE / MAE / max error,
+- $R^2$,
+- model bytes vs raw bytes,
+- and row summaries (`best_row`, high-ratio row, high-fidelity row).
+
+These are not only demonstrative numbers; they are machine-checkable.
+
+## 5. What this is *not* claiming
+
+- Not universal compression replacement for all data.
+- Not a production `.vizasset` schema for 3D yet.
+- Not a direct substitute for raster/mesh renderers in all pipelines.
+
+It is a research-grade path for "compressed functional assets" in a constrained domain.
+
+## 6. Next checkpoint plan
+
+1. Lock deterministic synthetic dataset contract used by `video-bench`.
+2. Add a CLI contract test: JSON output schema + recommendation summary.
+3. Add a simple 2D-path benchmark row (shape-aware benchmark) once contour tooling is added in later phases.
+4. Compare with classical baselines:
+   - raw NumPy stack,
+   - frame-rate-resolved direct serialization,
+   - first-order JPEG/PNG sequences (external reference in future work).
+
+## 7. Related commands
+
+Run a minimal video benchmark:
+
+```powershell
+py -m vizcompress.cli video-bench --frame-counts 120,240 --height 32 --width 32 --rank-values 2,4 --temporal-terms-values 8,16 --out benchmark_outputs/video.json --report-md benchmark_outputs/video.md
+```
+

@@ -35,6 +35,12 @@ from vizcompress.packages import (
 )
 from vizcompress.residuals import analyze_residual, compress_sparse_residual
 from vizcompress.reviews import baseline_size_summary, write_review_packet
+from vizcompress.video_benchmarks import (
+    benchmark_video_sweep,
+    parse_int_list,
+    write_video_benchmark,
+    write_video_benchmark_markdown,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -175,6 +181,37 @@ def main(argv: list[str] | None = None) -> int:
     compare.add_argument("package", type=Path, help=".vizasset/.vizretain/.vizclean package directory.")
     compare.add_argument("--baseline", action="append", default=[], help="Baseline as name=path. Can be repeated.")
 
+    video_bench = subparsers.add_parser(
+        "video-bench",
+        help="Benchmark separable spatiotemporal Fourier compression on synthetic video.",
+    )
+    video_bench.add_argument(
+        "--frame-counts",
+        required=True,
+        help="Comma-separated frame counts, e.g. 120,240,480.",
+    )
+    video_bench.add_argument("--height", type=int, default=32, help="Frame height.")
+    video_bench.add_argument("--width", type=int, default=32, help="Frame width.")
+    video_bench.add_argument(
+        "--rank-values",
+        default="2,4,8",
+        help="Comma-separated spatial rank values.",
+    )
+    video_bench.add_argument(
+        "--temporal-terms-values",
+        default="8,16,24",
+        help="Comma-separated temporal Fourier term values.",
+    )
+    video_bench.add_argument("--noise-sigma", type=float, default=0.0, help="Noise level of synthetic data.")
+    video_bench.add_argument(
+        "--baseline-noise-std",
+        type=float,
+        default=0.0,
+        help="Optional noise level for baseline-noise reference.",
+    )
+    video_bench.add_argument("--out", type=Path, default=Path("benchmark_outputs/video.json"), help="Benchmark JSON path.")
+    video_bench.add_argument("--report-md", type=Path, default=None, help="Optional Markdown report path.")
+
     args = parser.parse_args(argv)
     if args.version:
         from vizcompress import __version__
@@ -193,6 +230,8 @@ def main(argv: list[str] | None = None) -> int:
         return _recommend(args)
     if args.command == "compare":
         return _compare(args)
+    if args.command == "video-bench":
+        return _video_bench(args)
     parser.print_help()
     return 0
 
@@ -555,6 +594,32 @@ def _compare(args: argparse.Namespace) -> int:
         "baseline_evidence": baseline_size_summary(args.package, baselines),
     }
     print(json.dumps(summary, indent=2))
+    return 0
+
+
+def _video_bench(args: argparse.Namespace) -> int:
+    frame_counts = parse_int_list(args.frame_counts, minimum=2)
+    rank_values = parse_int_list(args.rank_values, minimum=1)
+    temporal_terms_values = parse_int_list(args.temporal_terms_values, minimum=1)
+    if args.height < 1:
+        raise ValueError("height must be >= 1")
+    if args.width < 1:
+        raise ValueError("width must be >= 1")
+
+    data = benchmark_video_sweep(
+        frame_counts,
+        height=args.height,
+        width=args.width,
+        rank_values=rank_values,
+        temporal_terms_values=temporal_terms_values,
+        noise_sigma=args.noise_sigma,
+        baseline_noise_std=args.baseline_noise_std,
+    )
+    output = write_video_benchmark(args.out, data)
+    data["output"] = str(output)
+    if args.report_md is not None:
+        data["markdown_report"] = str(write_video_benchmark_markdown(args.report_md, data))
+    print(json.dumps(data, indent=2))
     return 0
 
 
