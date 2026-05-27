@@ -63,6 +63,13 @@ Residuals can erase compression gains if they are too large.
 - Haar and adaptive-threshold residual behavior,
 - RDP budget constraints and frontier monotonic sanity.
 
+`tests/test_research_sweep.py` now covers:
+
+- CLI ratio parsing for frontier runs,
+- invalid ratio rejection,
+- RDP frontier monotonic keep behavior,
+- best-point selection under an `r2_gate`.
+
 ## 4) Rendering-aware simplification = sampling budget control
 
 Your simplification idea is valid:
@@ -116,7 +123,7 @@ All outputs also include model-level `payload_ratio = raw_payload_bytes / payloa
 ## 7) How to run
 
 ```bash
-python -m pytest tests/test_research.py -q
+py -m pytest tests/test_research.py tests/test_research_sweep.py -q
 py scripts/run_defensible_research_sweep.py --terms 16,32 --include-piecewise-polynomial --run-rdp-frontier --rdp-frontier-ratios 0.02,0.05,0.10,0.20,0.30
 ```
 

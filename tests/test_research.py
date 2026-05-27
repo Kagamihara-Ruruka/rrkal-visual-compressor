@@ -164,6 +164,8 @@ def test_rdp_budget_honors_min_and_max_bounds():
         max_keep=50,
     )
     assert budget_small.prefilter.parameter_count <= 50
+
+
 def test_multichannel_pca_shared_fourier_beats_independent_budget_on_correlated_channels():
     # Correlated channels should be compressible as shared latent factors.
     # We verify the PCA rank=1 path returns lower-entropy latent reconstruction.

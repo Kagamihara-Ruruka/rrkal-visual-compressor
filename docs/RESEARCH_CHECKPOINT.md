@@ -79,6 +79,8 @@ Advance when:
 - at least one non-trivial gate pass exists in fixed dataset set:
   `steps`, `spikes`, `irregular`, `multiscale`, `smooth`
 - frontier sweep monotonic flag is stable (`>= 80%` of rows true)
+- `tests/test_research_sweep.py` passes, so the frontier parser and best-point
+  selection are guarded by unit tests
 
 Regress immediately if:
 

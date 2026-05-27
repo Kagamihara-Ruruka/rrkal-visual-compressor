@@ -78,6 +78,8 @@ py scripts/run_defensible_research_sweep.py \
 - 固定資料集 `steps / spikes / irregular / multiscale / smooth` 至少有一筆
   非平凡通過（`defensible`） 
 - frontier 掃描主要指標穩定（同一命令多次結果一致）
+- `tests/test_research_sweep.py` 通過，代表 frontier ratio 解析、單調性、
+  最佳點選擇有單元測試守住
 
 連續兩個 checkpoint 持續發生硬失敗或結果漂移時，需回退與重設參數。
 

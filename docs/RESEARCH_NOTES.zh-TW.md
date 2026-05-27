@@ -63,6 +63,13 @@
 - Haar 與自適應殘差行為，
 - RDP 預簡化的約束與單調性。
 
+`tests/test_research_sweep.py` 已覆蓋：
+
+- frontier CLI ratio 解析，
+- 無效 ratio 拒絕，
+- RDP frontier 保留點數單調性，
+- 在 `r2_gate` 下的最佳點選擇。
+
 ## 4) 視覺化前的簡化（取樣預算）
 
 你的想法正確：簡化不是另一種壓縮理論，而是**放在擬合前的取樣預算控制**。
@@ -112,7 +119,7 @@ frontier 輸出會記錄每個 ratio 的：
 ## 7) 這樣跑
 
 ```bash
-python -m pytest tests/test_research.py -q
+py -m pytest tests/test_research.py tests/test_research_sweep.py -q
 py scripts/run_defensible_research_sweep.py --terms 16,32 --include-piecewise-polynomial --run-rdp-frontier --rdp-frontier-ratios 0.02,0.05,0.10,0.20,0.30
 ```
 
