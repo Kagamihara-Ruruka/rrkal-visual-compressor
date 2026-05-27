@@ -107,6 +107,7 @@ The frontier output (JSON + Markdown) records:
 - actual retained points and R2,
 - payload ratio and kept point count,
 - `r2_gate_pass` and `gate_reason` for each candidate,
+- `payload_gate_pass` using `--frontier-min-payload-ratio`,
 - best candidate under `r2_gate`.
 
 This gives a direct way to find "sweet spots" instead of guessing one fixed ratio.
@@ -147,7 +148,7 @@ All outputs also include model-level `payload_ratio = raw_payload_bytes / payloa
 
 ```bash
 py -m pytest tests/test_research.py tests/test_research_sweep.py -q
-py scripts/run_defensible_research_sweep.py --terms 16,32 --include-piecewise-polynomial --run-rdp-frontier --run-noise-frontier --rdp-frontier-ratios 0.02,0.05,0.10,0.20,0.30 --noise-frontier-sigmas 0,0.02,0.05,0.10
+py scripts/run_defensible_research_sweep.py --terms 16,32 --include-piecewise-polynomial --run-rdp-frontier --run-noise-frontier --frontier-min-payload-ratio 1.0 --rdp-frontier-ratios 0.02,0.05,0.10,0.20,0.30 --noise-frontier-sigmas 0,0.02,0.05,0.10
 ```
 
 ## 8) Interpretation rule

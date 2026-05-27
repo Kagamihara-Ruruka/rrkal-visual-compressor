@@ -4,6 +4,7 @@ import pytest
 
 from scripts.run_defensible_research_sweep import (
     _benchmark_rdp_frontier,
+    _frontier_gate_reason,
     _parse_float_list,
     _summarize_frontier_by_key,
     _with_gaussian_noise,
@@ -25,6 +26,16 @@ def test_parse_float_list_deduplicates_and_rejects_invalid_ratios():
     assert _parse_float_list("0,0.05", allow_zero=True) == [0.0, 0.05]
 
 
+def test_frontier_gate_reason_combines_fidelity_and_payload():
+    assert _frontier_gate_reason(r2_pass=True, payload_pass=True) == "pass"
+    assert _frontier_gate_reason(r2_pass=False, payload_pass=True) == "r2_below_gate"
+    assert _frontier_gate_reason(r2_pass=True, payload_pass=False) == "payload_below_gate"
+    assert (
+        _frontier_gate_reason(r2_pass=False, payload_pass=False)
+        == "r2_and_payload_below_gate"
+    )
+
+
 def test_rdp_frontier_reports_monotonic_keep_and_best_point():
     # Larger keep ratios should not produce fewer retained points.
     # The best point gives us a reproducible "sweet spot" candidate.
@@ -43,7 +54,9 @@ def test_rdp_frontier_reports_monotonic_keep_and_best_point():
     assert result["monotonic_keep"] is True
     assert result["best_point"] is not None
     assert result["best_point_r2_gate_passes"] is True
+    assert result["best_point_gate_passes"] is True
     assert result["best_point"]["r2_gate_pass"] is True
+    assert result["best_point"]["payload_gate_pass"] is True
     assert result["best_point"]["gate_reason"] == "pass"
     assert len(result["sweep"]) == 4
 

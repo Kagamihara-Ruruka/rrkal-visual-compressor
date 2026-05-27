@@ -82,6 +82,8 @@ py scripts/run_defensible_research_sweep.py \
   最佳點選擇有單元測試守住
 - noise frontier 在固定 seed 下可重現，並能記錄高 sigma 時是否發生
   `r2_below_gate`
+- frontier 候選點必須同時通過 fidelity（`r2_gate`）與儲存效益
+  （`frontier_min_payload_ratio`）門檻
 
 連續兩個 checkpoint 持續發生硬失敗或結果漂移時，需回退與重設參數。
 

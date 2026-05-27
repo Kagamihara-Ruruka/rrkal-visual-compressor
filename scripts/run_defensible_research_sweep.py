@@ -186,6 +186,7 @@ def _benchmark_rdp_frontier(
     min_keep: int = 128,
     max_keep: int | None = None,
     r2_gate: float | None = None,
+    min_payload_ratio: float = 1.0,
 ) -> dict[str, Any]:
     # Try several RDP budgets and report where each one lands.
     # This is a "sweet-spot" table: too many points no longer saves much,
@@ -205,7 +206,10 @@ def _benchmark_rdp_frontier(
         )
         metrics = regression_metrics(series.y, model.reconstructed_y)
         payload_bytes = _estimate_rdp_prefilter_payload_bytes(model)
+        payload_ratio = _safe_ratio(raw_payload, payload_bytes)
         r2_pass = r2_gate is None or float(metrics["r2"]) >= float(r2_gate)
+        payload_pass = payload_ratio >= float(min_payload_ratio)
+        gate_reason = _frontier_gate_reason(r2_pass=r2_pass, payload_pass=payload_pass)
         sweep.append(
             {
                 "target_keep_ratio": float(target_keep_ratio),
@@ -215,9 +219,10 @@ def _benchmark_rdp_frontier(
                 "max_abs": float(metrics["max_abs"]),
                 "kept_points": int(model.prefilter.parameter_count),
                 "payload_bytes": float(payload_bytes),
-                "payload_ratio": _safe_ratio(raw_payload, payload_bytes),
+                "payload_ratio": payload_ratio,
                 "r2_gate_pass": bool(r2_pass),
-                "gate_reason": "pass" if r2_pass else "r2_below_gate",
+                "payload_gate_pass": bool(payload_pass),
+                "gate_reason": gate_reason,
             }
         )
 
@@ -233,7 +238,7 @@ def _benchmark_rdp_frontier(
     sweep = sorted(sweep, key=lambda item: item["target_keep_ratio"])
     # "best" here means highest payload compression among points with enough fidelity.
     best_candidates = [
-        item for item in sweep if item["r2_gate_pass"]
+        item for item in sweep if item["r2_gate_pass"] and item["payload_gate_pass"]
     ]
     if best_candidates:
         best_point = max(
@@ -259,8 +264,21 @@ def _benchmark_rdp_frontier(
         "sweep": sweep,
         "monotonic_keep": bool(monotonic_keep),
         "best_point": best_point,
-        "best_point_r2_gate_passes": bool(r2_gate is None) or bool(best_candidates),
+        "best_point_gate_passes": bool(best_candidates),
+        "best_point_r2_gate_passes": bool(best_candidates),
+        "min_payload_ratio": float(min_payload_ratio),
     }
+
+
+def _frontier_gate_reason(*, r2_pass: bool, payload_pass: bool) -> str:
+    # Keep frontier JSON self-explanatory for later agents and reports.
+    if r2_pass and payload_pass:
+        return "pass"
+    if not r2_pass and not payload_pass:
+        return "r2_and_payload_below_gate"
+    if not r2_pass:
+        return "r2_below_gate"
+    return "payload_below_gate"
 
 
 def _with_gaussian_noise(series: TimeSeries, *, sigma: float, seed: int) -> TimeSeries:
@@ -390,6 +408,12 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=0,
         help="Optional maximum RDP keep count (0 means no max limit)",
+    )
+    parser.add_argument(
+        "--frontier-min-payload-ratio",
+        type=float,
+        default=1.0,
+        help="Minimum raw/model payload ratio required for a frontier candidate",
     )
     parser.add_argument(
         "--run-noise-frontier",
@@ -591,6 +615,7 @@ def main() -> int:
                         min_keep=args.rdp_frontier_min_keep,
                         max_keep=args.rdp_frontier_max_keep or None,
                         r2_gate=args.r2_gate,
+                        min_payload_ratio=args.frontier_min_payload_ratio,
                     )
                 )
         frontier = {
@@ -598,6 +623,7 @@ def main() -> int:
             "min_keep": int(args.rdp_frontier_min_keep),
             "max_keep": None if args.rdp_frontier_max_keep <= 0 else int(args.rdp_frontier_max_keep),
             "r2_gate": args.r2_gate,
+            "min_payload_ratio": args.frontier_min_payload_ratio,
             "rows": frontier_rows,
             "summary": {
                 "frontier_rows": len(frontier_rows),
@@ -631,6 +657,7 @@ def main() -> int:
                     min_keep=args.rdp_frontier_min_keep,
                     max_keep=args.rdp_frontier_max_keep or None,
                     r2_gate=args.r2_gate,
+                    min_payload_ratio=args.frontier_min_payload_ratio,
                 )
                 row["noise_sigma"] = float(sigma)
                 row["base_kind"] = args.noise_frontier_kind
@@ -641,6 +668,7 @@ def main() -> int:
             "sigmas": noise_sigmas,
             "seed": int(args.noise_frontier_seed),
             "keep_ratios": keep_ratios,
+            "min_payload_ratio": args.frontier_min_payload_ratio,
             "rows": noise_rows,
             "summary": {
                 "noise_rows": len(noise_rows),

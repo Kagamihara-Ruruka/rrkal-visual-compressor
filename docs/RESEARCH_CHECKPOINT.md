@@ -83,6 +83,8 @@ Advance when:
   selection are guarded by unit tests
 - noise frontier is reproducible with fixed seed and records when higher sigma
   causes `r2_below_gate`
+- frontier candidates must satisfy both fidelity (`r2_gate`) and storage
+  (`frontier_min_payload_ratio`) gates
 
 Regress immediately if:
 

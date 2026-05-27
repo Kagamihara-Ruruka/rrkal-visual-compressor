@@ -103,6 +103,7 @@ frontier 輸出會記錄每個 ratio 的：
 - 實際保留比例與保留點數
 - R2、RMSE、payload ratio
 - 每個候選點的 `r2_gate_pass` 與 `gate_reason`
+- 每個候選點的 `payload_gate_pass`，由 `--frontier-min-payload-ratio` 控制
 - 在 `r2_gate` 下的最佳點
 
 這樣可以直接找出每種資料型態的「甜蜜區」而非拍腦袋挑一個固定比率。
@@ -141,7 +142,7 @@ sigma 接近零時有效，它應保留在 demo/research 路徑，不應直接�
 
 ```bash
 py -m pytest tests/test_research.py tests/test_research_sweep.py -q
-py scripts/run_defensible_research_sweep.py --terms 16,32 --include-piecewise-polynomial --run-rdp-frontier --run-noise-frontier --rdp-frontier-ratios 0.02,0.05,0.10,0.20,0.30 --noise-frontier-sigmas 0,0.02,0.05,0.10
+py scripts/run_defensible_research_sweep.py --terms 16,32 --include-piecewise-polynomial --run-rdp-frontier --run-noise-frontier --frontier-min-payload-ratio 1.0 --rdp-frontier-ratios 0.02,0.05,0.10,0.20,0.30 --noise-frontier-sigmas 0,0.02,0.05,0.10
 ```
 
 ## 8) 判讀原則
