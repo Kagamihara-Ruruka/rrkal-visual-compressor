@@ -30,63 +30,78 @@
   - spikes: 0 / 2
   - steps: 0 / 2
 
+- frontier strict gate = 0.99
+- frontier exploratory gate = 0.95
+- frontier demo gate = 0.9
+- frontier best-point tiers:
+  - demo_pass: 3
+  - exploratory_pass: 6
+  - strict_pass: 1
+
 ## RDP frontier scan
 
-| dataset | terms | target keep ratio | actual keep | r2 | payload ratio | kept points | best gate reason | best under R2 gate? |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: |
-| steps | 16 | 0.05 | 0.05 | 0.975534 | 12.3267 | 200 | r2_below_gate | no |
-| steps | 32 | 0.02 | 0.032 | 0.99335 | 16.632 | 128 | pass | yes |
-| spikes | 16 | 0.2 | 0.2 | 0.920398 | 3.26664 | 800 | r2_below_gate | no |
-| spikes | 32 | 0.3 | 0.3 | 0.949603 | 2.16392 | 1200 | r2_below_gate | no |
-| irregular | 16 | 0.3 | 0.3 | 0.981385 | 2.19238 | 1200 | r2_below_gate | no |
-| irregular | 32 | 0.3 | 0.3 | 0.987559 | 2.16392 | 1200 | r2_below_gate | no |
-| multiscale | 16 | 0.3 | 0.29925 | 0.947113 | 2.1978 | 1197 | r2_below_gate | no |
-| multiscale | 32 | 0.2 | 0.1995 | 0.967025 | 3.21156 | 798 | r2_below_gate | no |
-| smooth | 16 | 0.3 | 0.3 | 0.980079 | 2.19238 | 1200 | r2_below_gate | no |
-| smooth | 32 | 0.3 | 0.3 | 0.98728 | 2.16392 | 1200 | r2_below_gate | no |
+| dataset | terms | target keep ratio | actual keep | r2 | payload ratio | kept points | best gate reason | frontier tier | best under R2 gate? |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | ---: |
+| steps | 16 | 0.02 | 0.032 | 0.974827 | 18.4758 | 128 | r2_below_gate | exploratory_pass | no |
+| steps | 32 | 0.02 | 0.032 | 0.99335 | 16.632 | 128 | pass | strict_pass | yes |
+| spikes | 16 | 0.05 | 0.05 | 0.913016 | 12.3267 | 200 | r2_below_gate | demo_pass | no |
+| spikes | 32 | 0.02 | 0.03125 | 0.942901 | 16.9492 | 125 | r2_below_gate | demo_pass | no |
+| irregular | 16 | 0.05 | 0.05 | 0.959122 | 12.3267 | 200 | r2_below_gate | exploratory_pass | no |
+| irregular | 32 | 0.02 | 0.032 | 0.968719 | 16.632 | 128 | r2_below_gate | exploratory_pass | no |
+| multiscale | 16 | 0.02 | 0.032 | 0.901833 | 18.4758 | 128 | r2_below_gate | demo_pass | no |
+| multiscale | 32 | 0.1 | 0.09925 | 0.962806 | 6.21118 | 397 | r2_below_gate | exploratory_pass | no |
+| smooth | 16 | 0.05 | 0.05 | 0.96087 | 12.3267 | 200 | r2_below_gate | exploratory_pass | no |
+| smooth | 32 | 0.02 | 0.032 | 0.968669 | 16.632 | 128 | r2_below_gate | exploratory_pass | no |
+
+- noise frontier best-point tiers:
+  - demo_pass: 13
+  - exploratory_pass: 6
+  - payload_reject: 0
+  - reject: 5
+  - strict_pass: 0
 
 ## Noise frontier scan
 
-| base kind | sigma | terms | target keep ratio | actual keep | r2 | payload ratio | gate reason |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| smooth | 0 | 16 | 0.3 | 0.3 | 0.980079 | 2.19238 | r2_below_gate |
-| smooth | 0 | 32 | 0.3 | 0.3 | 0.98728 | 2.16392 | r2_below_gate |
-| smooth | 0.02 | 16 | 0.3 | 0.3 | 0.939403 | 2.19238 | r2_below_gate |
-| smooth | 0.02 | 32 | 0.05 | 0.05 | 0.968311 | 11.4778 | r2_below_gate |
-| smooth | 0.05 | 16 | 0.3 | 0.29975 | 0.942361 | 2.19419 | r2_below_gate |
-| smooth | 0.05 | 32 | 0.3 | 0.29975 | 0.959659 | 2.16567 | r2_below_gate |
-| smooth | 0.1 | 16 | 0.3 | 0.29975 | 0.907266 | 2.19419 | r2_below_gate |
-| smooth | 0.1 | 32 | 0.3 | 0.29975 | 0.932821 | 2.16567 | r2_below_gate |
-| spikes | 0 | 16 | 0.2 | 0.2 | 0.920398 | 3.26664 | r2_below_gate |
-| spikes | 0 | 32 | 0.3 | 0.3 | 0.949603 | 2.16392 | r2_below_gate |
-| spikes | 0.02 | 16 | 0.02 | 0.03175 | 0.883919 | 18.6047 | r2_below_gate |
-| spikes | 0.02 | 32 | 0.02 | 0.03175 | 0.944776 | 16.7364 | r2_below_gate |
-| spikes | 0.05 | 16 | 0.3 | 0.3 | 0.878726 | 2.19238 | r2_below_gate |
-| spikes | 0.05 | 32 | 0.05 | 0.05 | 0.918518 | 11.4778 | r2_below_gate |
-| spikes | 0.1 | 16 | 0.1 | 0.1 | 0.854023 | 6.40512 | r2_below_gate |
-| spikes | 0.1 | 32 | 0.1 | 0.1 | 0.883492 | 6.16808 | r2_below_gate |
-| multiscale | 0 | 16 | 0.3 | 0.29925 | 0.947113 | 2.1978 | r2_below_gate |
-| multiscale | 0 | 32 | 0.2 | 0.1995 | 0.967025 | 3.21156 | r2_below_gate |
-| multiscale | 0.02 | 16 | 0.1 | 0.09975 | 0.948845 | 6.42055 | r2_below_gate |
-| multiscale | 0.02 | 32 | 0.1 | 0.09975 | 0.960457 | 6.18238 | r2_below_gate |
-| multiscale | 0.05 | 16 | 0.3 | 0.29975 | 0.925074 | 2.19419 | r2_below_gate |
-| multiscale | 0.05 | 32 | 0.3 | 0.29975 | 0.946052 | 2.16567 | r2_below_gate |
-| multiscale | 0.1 | 16 | 0.3 | 0.29975 | 0.876113 | 2.19419 | r2_below_gate |
-| multiscale | 0.1 | 32 | 0.3 | 0.29975 | 0.901202 | 2.16567 | r2_below_gate |
+| base kind | sigma | terms | target keep ratio | actual keep | r2 | payload ratio | gate reason | frontier tier |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| smooth | 0 | 16 | 0.05 | 0.05 | 0.96087 | 12.3267 | r2_below_gate | exploratory_pass |
+| smooth | 0 | 32 | 0.02 | 0.032 | 0.968669 | 16.632 | r2_below_gate | exploratory_pass |
+| smooth | 0.02 | 16 | 0.02 | 0.03175 | 0.920406 | 18.6047 | r2_below_gate | demo_pass |
+| smooth | 0.02 | 32 | 0.02 | 0.03175 | 0.96626 | 16.7364 | r2_below_gate | exploratory_pass |
+| smooth | 0.05 | 16 | 0.2 | 0.2 | 0.921343 | 3.26664 | r2_below_gate | demo_pass |
+| smooth | 0.05 | 32 | 0.2 | 0.2 | 0.951585 | 3.20384 | r2_below_gate | exploratory_pass |
+| smooth | 0.1 | 16 | 0.3 | 0.29975 | 0.907266 | 2.19419 | r2_below_gate | demo_pass |
+| smooth | 0.1 | 32 | 0.2 | 0.2 | 0.916234 | 3.20384 | r2_below_gate | demo_pass |
+| spikes | 0 | 16 | 0.05 | 0.05 | 0.913016 | 12.3267 | r2_below_gate | demo_pass |
+| spikes | 0 | 32 | 0.02 | 0.03125 | 0.942901 | 16.9492 | r2_below_gate | demo_pass |
+| spikes | 0.02 | 16 | 0.02 | 0.03175 | 0.883919 | 18.6047 | r2_below_gate | reject |
+| spikes | 0.02 | 32 | 0.02 | 0.03175 | 0.944776 | 16.7364 | r2_below_gate | demo_pass |
+| spikes | 0.05 | 16 | 0.02 | 0.032 | 0.820639 | 18.4758 | r2_below_gate | reject |
+| spikes | 0.05 | 32 | 0.02 | 0.032 | 0.914274 | 16.632 | r2_below_gate | demo_pass |
+| spikes | 0.1 | 16 | 0.02 | 0.032 | 0.813989 | 18.4758 | r2_below_gate | reject |
+| spikes | 0.1 | 32 | 0.02 | 0.032 | 0.831033 | 16.632 | r2_below_gate | reject |
+| multiscale | 0 | 16 | 0.02 | 0.032 | 0.901833 | 18.4758 | r2_below_gate | demo_pass |
+| multiscale | 0 | 32 | 0.1 | 0.09925 | 0.962806 | 6.21118 | r2_below_gate | exploratory_pass |
+| multiscale | 0.02 | 16 | 0.1 | 0.09975 | 0.948845 | 6.42055 | r2_below_gate | demo_pass |
+| multiscale | 0.02 | 32 | 0.1 | 0.09975 | 0.960457 | 6.18238 | r2_below_gate | exploratory_pass |
+| multiscale | 0.05 | 16 | 0.1 | 0.1 | 0.924311 | 6.40512 | r2_below_gate | demo_pass |
+| multiscale | 0.05 | 32 | 0.1 | 0.1 | 0.932809 | 6.16808 | r2_below_gate | demo_pass |
+| multiscale | 0.1 | 16 | 0.02 | 0.032 | 0.708772 | 18.4758 | r2_below_gate | reject |
+| multiscale | 0.1 | 32 | 0.3 | 0.29975 | 0.901202 | 2.16567 | r2_below_gate | demo_pass |
 
 ### Noise frontier by sigma
 
 | sigma | rows | gate passes | monotonic rows | best R2 | best payload ratio |
 | ---: | ---: | ---: | ---: | ---: | ---: |
-| 0.0 | 6 | 0 | 6 | 0.98728 | 3.26664 |
-| 0.02 | 6 | 0 | 6 | 0.968311 | 18.6047 |
-| 0.05 | 6 | 0 | 6 | 0.959659 | 11.4778 |
-| 0.1 | 6 | 0 | 6 | 0.932821 | 6.40512 |
+| 0.0 | 6 | 0 | 6 | 0.968669 | 18.4758 |
+| 0.02 | 6 | 0 | 6 | 0.96626 | 18.6047 |
+| 0.05 | 6 | 0 | 6 | 0.951585 | 18.4758 |
+| 0.1 | 6 | 0 | 6 | 0.916234 | 18.4758 |
 
 ### Noise frontier by kind
 
 | kind | rows | gate passes | monotonic rows | best R2 | best payload ratio |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| multiscale | 8 | 0 | 8 | 0.967025 | 6.42055 |
-| smooth | 8 | 0 | 8 | 0.98728 | 11.4778 |
-| spikes | 8 | 0 | 8 | 0.949603 | 18.6047 |
+| multiscale | 8 | 0 | 8 | 0.962806 | 18.4758 |
+| smooth | 8 | 0 | 8 | 0.968669 | 18.6047 |
+| spikes | 8 | 0 | 8 | 0.944776 | 18.6047 |

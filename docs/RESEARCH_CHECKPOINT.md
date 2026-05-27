@@ -69,7 +69,9 @@ This adds:
 - per-dataset/per-term sweep rows at each target keep ratio
 - actual kept ratio and payload ratio for each sweep point
 - best point under `r2_gate` for quick sweet-spot review
+- best point frontier tier (`strict_pass`, `exploratory_pass`, `demo_pass`, `reject`, `payload_reject`)
 - monotonic sanity flag (`actual_keep_ratio` should be non-decreasing as target increases)
+- tier histogram in both JSON summary and markdown text output
 
 ## 5) How to advance / rollback
 
@@ -95,5 +97,6 @@ Regress immediately if:
 
 - tighten gates in small increments
 - introduce deterministic `noise_budget` splits (low/medium/high noise) before model expansion
+- add the next level: fixed `frontier_demo_r2_gate` and `frontier_exploratory_r2_gate` tuning matrix
 - compare noise frontier results across `smooth`, `spikes`, and `multiscale`
 - prepare renderer-side benchmark: decode cost vs raster budget coupling

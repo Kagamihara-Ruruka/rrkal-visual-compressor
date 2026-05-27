@@ -186,6 +186,8 @@ def _benchmark_rdp_frontier(
     min_keep: int = 128,
     max_keep: int | None = None,
     r2_gate: float | None = None,
+    exploratory_r2_gate: float | None = None,
+    demo_r2_gate: float | None = None,
     min_payload_ratio: float = 1.0,
 ) -> dict[str, Any]:
     # Try several RDP budgets and report where each one lands.
@@ -210,6 +212,14 @@ def _benchmark_rdp_frontier(
         r2_pass = r2_gate is None or float(metrics["r2"]) >= float(r2_gate)
         payload_pass = payload_ratio >= float(min_payload_ratio)
         gate_reason = _frontier_gate_reason(r2_pass=r2_pass, payload_pass=payload_pass)
+        tier = _frontier_tier(
+            r2=float(metrics["r2"]),
+            payload_ratio=payload_ratio,
+            strict_gate=0.99 if r2_gate is None else float(r2_gate),
+            exploratory_gate=0.95 if exploratory_r2_gate is None else float(exploratory_r2_gate),
+            demo_gate=0.90 if demo_r2_gate is None else float(demo_r2_gate),
+            min_payload_ratio=min_payload_ratio,
+        )
         sweep.append(
             {
                 "target_keep_ratio": float(target_keep_ratio),
@@ -223,6 +233,7 @@ def _benchmark_rdp_frontier(
                 "r2_gate_pass": bool(r2_pass),
                 "payload_gate_pass": bool(payload_pass),
                 "gate_reason": gate_reason,
+                "frontier_tier": tier,
             }
         )
 
@@ -236,14 +247,17 @@ def _benchmark_rdp_frontier(
         }
 
     sweep = sorted(sweep, key=lambda item: item["target_keep_ratio"])
-    # "best" here means highest payload compression among points with enough fidelity.
-    best_candidates = [
-        item for item in sweep if item["r2_gate_pass"] and item["payload_gate_pass"]
-    ]
+    # "best" here means highest quality tier with payload-efficient points.
+    best_candidates = [item for item in sweep if item["payload_gate_pass"]]
     if best_candidates:
         best_point = max(
             best_candidates,
-            key=lambda item: (item["payload_ratio"], item["r2"], -item["actual_keep_ratio"]),
+            key=lambda item: (
+                _frontier_tier_score(item["frontier_tier"]),
+                item["payload_ratio"],
+                item["r2"],
+                -item["actual_keep_ratio"],
+            ),
         )
     else:
         best_point = max(sweep, key=lambda item: item["r2"])
@@ -264,8 +278,12 @@ def _benchmark_rdp_frontier(
         "sweep": sweep,
         "monotonic_keep": bool(monotonic_keep),
         "best_point": best_point,
-        "best_point_gate_passes": bool(best_candidates),
-        "best_point_r2_gate_passes": bool(best_candidates),
+        "best_point_gate_passes": bool(
+            best_point is not None
+            and best_point["frontier_tier"] in {"strict_pass", "exploratory_pass", "demo_pass"}
+        ),
+        "best_point_r2_gate_passes": bool(best_candidates and best_point["r2_gate_pass"]),
+        "best_point_tier": best_point["frontier_tier"] if best_point else "reject",
         "min_payload_ratio": float(min_payload_ratio),
     }
 
@@ -279,6 +297,38 @@ def _frontier_gate_reason(*, r2_pass: bool, payload_pass: bool) -> str:
     if not r2_pass:
         return "r2_below_gate"
     return "payload_below_gate"
+
+
+def _frontier_tier(
+    r2: float,
+    payload_ratio: float,
+    strict_gate: float,
+    exploratory_gate: float,
+    demo_gate: float,
+    min_payload_ratio: float,
+) -> str:
+    # Give each frontier point one of five buckets for reporting.
+    # strict_pass -> exploratory -> demo -> reject.
+    if payload_ratio < float(min_payload_ratio):
+        return "payload_reject"
+    if r2 >= float(strict_gate):
+        return "strict_pass"
+    if r2 >= float(exploratory_gate):
+        return "exploratory_pass"
+    if r2 >= float(demo_gate):
+        return "demo_pass"
+    return "reject"
+
+
+def _frontier_tier_score(tier: str) -> int:
+    # Stronger tiers have larger score for best-point selection.
+    return {
+        "strict_pass": 4,
+        "exploratory_pass": 3,
+        "demo_pass": 2,
+        "reject": 1,
+        "payload_reject": 0,
+    }.get(tier, 0)
 
 
 def _with_gaussian_noise(series: TimeSeries, *, sigma: float, seed: int) -> TimeSeries:
@@ -426,6 +476,18 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=1.0,
         help="Minimum raw/model payload ratio required for a frontier candidate",
+    )
+    parser.add_argument(
+        "--frontier-exploratory-r2-gate",
+        type=float,
+        default=0.95,
+        help="R2 threshold for exploratory frontier tier",
+    )
+    parser.add_argument(
+        "--frontier-demo-r2-gate",
+        type=float,
+        default=0.90,
+        help="R2 threshold for demo-only frontier tier",
     )
     parser.add_argument(
         "--run-noise-frontier",
@@ -632,20 +694,29 @@ def main() -> int:
                         min_keep=args.rdp_frontier_min_keep,
                         max_keep=args.rdp_frontier_max_keep or None,
                         r2_gate=args.r2_gate,
+                        exploratory_r2_gate=args.frontier_exploratory_r2_gate,
+                        demo_r2_gate=args.frontier_demo_r2_gate,
                         min_payload_ratio=args.frontier_min_payload_ratio,
                     )
                 )
+        frontier_tier_counts: dict[str, int] = {}
+        for item in frontier_rows:
+            key = str(item["best_point_tier"])
+            frontier_tier_counts[key] = frontier_tier_counts.get(key, 0) + 1
         frontier = {
             "keep_ratios": keep_ratios,
             "min_keep": int(args.rdp_frontier_min_keep),
             "max_keep": None if args.rdp_frontier_max_keep <= 0 else int(args.rdp_frontier_max_keep),
             "r2_gate": args.r2_gate,
+            "exploratory_r2_gate": args.frontier_exploratory_r2_gate,
+            "demo_r2_gate": args.frontier_demo_r2_gate,
             "min_payload_ratio": args.frontier_min_payload_ratio,
             "rows": frontier_rows,
             "summary": {
                 "frontier_rows": len(frontier_rows),
                 "monotonic_count": sum(1 for row in frontier_rows if row["monotonic_keep"]),
                 "best_points_with_gate": sum(1 for row in frontier_rows if row["best_point_r2_gate_passes"]),
+                "best_point_tier_counts": frontier_tier_counts,
             },
         }
 
@@ -681,6 +752,8 @@ def main() -> int:
                         min_keep=args.rdp_frontier_min_keep,
                         max_keep=args.rdp_frontier_max_keep or None,
                         r2_gate=args.r2_gate,
+                        exploratory_r2_gate=args.frontier_exploratory_r2_gate,
+                        demo_r2_gate=args.frontier_demo_r2_gate,
                         min_payload_ratio=args.frontier_min_payload_ratio,
                     )
                     row["noise_sigma"] = float(sigma)
@@ -698,10 +771,22 @@ def main() -> int:
                 "noise_rows": len(noise_rows),
                 "best_points_with_gate": sum(1 for row in noise_rows if row["best_point_r2_gate_passes"]),
                 "monotonic_count": sum(1 for row in noise_rows if row["monotonic_keep"]),
+                "best_point_tier_counts": {
+                    "strict_pass": 0,
+                    "exploratory_pass": 0,
+                    "demo_pass": 0,
+                    "reject": 0,
+                    "payload_reject": 0,
+                },
                 "by_sigma": _summarize_frontier_by_key(noise_rows, "noise_sigma"),
                 "by_kind": _summarize_frontier_by_key(noise_rows, "base_kind"),
             },
         }
+        for item in noise_rows:
+            key = str(item["best_point_tier"])
+            noise_frontier["summary"]["best_point_tier_counts"][key] = (
+                noise_frontier["summary"]["best_point_tier_counts"][key] + 1
+            )
 
     payload = {
         "terms": terms,
@@ -709,13 +794,14 @@ def main() -> int:
         "summary": {
             "gate_config": {
                 "r2_gate": args.r2_gate,
+                "frontier_exploratory_r2_gate": args.frontier_exploratory_r2_gate,
+                "frontier_demo_r2_gate": args.frontier_demo_r2_gate,
                 "leakage_gate": args.leakage_gate,
-            "max_adaptive_keep_ratio": args.max_adaptive_keep_ratio,
-            "locality_mode": args.locality_mode,
-            "include_piecewise_polynomial": args.include_piecewise_polynomial,
-        },
-        "run_rdp_frontier": bool(args.run_rdp_frontier),
-        "best_global_r2": max(row["global"]["r2"] for row in rows if "global" in row),
+                "max_adaptive_keep_ratio": args.max_adaptive_keep_ratio,
+                "locality_mode": args.locality_mode,
+                "include_piecewise_polynomial": args.include_piecewise_polynomial,
+            },
+            "best_global_r2": max(row["global"]["r2"] for row in rows if "global" in row),
             "best_piecewise_leakage": min(
                 row["piecewise_fourier"]["leakage_ratio"] for row in rows if "piecewise_fourier" in row
             ),
@@ -734,6 +820,25 @@ def main() -> int:
             "dataset_passes": per_dataset,
             "locality_mode_desc": locality_mode_desc,
         },
+        "run_rdp_frontier": bool(args.run_rdp_frontier),
+        "best_global_r2": max(row["global"]["r2"] for row in rows if "global" in row),
+        "best_piecewise_leakage": min(
+            row["piecewise_fourier"]["leakage_ratio"] for row in rows if "piecewise_fourier" in row
+        ),
+        "best_poly_leakage": min(
+            row["piecewise_polynomial"]["leakage_ratio"] for row in rows if "piecewise_polynomial" in row
+        ),
+        "best_detrended_delta_r2": max(
+            row["detrended_fourier"]["r2_delta_vs_global"] for row in rows if "detrended_fourier" in row
+        ),
+        "defensible_rows": sum(1 for row in rows if row["gates"]["defensible"]),
+        "defensible_rdp_rows": sum(
+            1 for row in rows if row.get("rdp_prefilter_fourier", {}).get("r2", 0.0) > args.r2_gate
+        ),
+        "rows_with_gate_fields": sum(1 for row in rows if "gates" in row),
+        "multichannel_rmse": mc["metrics"]["rmse"],
+        "dataset_passes": per_dataset,
+        "locality_mode_desc": locality_mode_desc,
         "rdp_frontier": frontier,
         "noise_frontier": noise_frontier,
     }
@@ -805,10 +910,21 @@ def main() -> int:
         lines.extend(
             [
                 "",
+                f"- frontier strict gate = {frontier['r2_gate']}",
+                f"- frontier exploratory gate = {frontier['exploratory_r2_gate']}",
+                f"- frontier demo gate = {frontier['demo_r2_gate']}",
+                "- frontier best-point tiers:",
+            ]
+        )
+        for tier_name, tier_count in sorted(frontier["summary"]["best_point_tier_counts"].items()):
+            lines.append(f"  - {tier_name}: {tier_count}")
+        lines.extend(
+            [
+                "",
                 "## RDP frontier scan",
                 "",
-                "| dataset | terms | target keep ratio | actual keep | r2 | payload ratio | kept points | best gate reason | best under R2 gate? |",
-                "| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: |",
+                "| dataset | terms | target keep ratio | actual keep | r2 | payload ratio | kept points | best gate reason | frontier tier | best under R2 gate? |",
+                "| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | ---: |",
             ]
         )
         for item in frontier["rows"]:
@@ -831,6 +947,7 @@ def main() -> int:
                         _format_float(best_payload),
                         _format_float(best_points),
                         best_reason,
+                        str(best["frontier_tier"]) if best else "no_candidate",
                         "yes" if item["best_point_r2_gate_passes"] else "no",
                     ]
                 )
@@ -841,10 +958,20 @@ def main() -> int:
         lines.extend(
             [
                 "",
+                "- noise frontier best-point tiers:",
+            ]
+        )
+        for tier_name, tier_count in sorted(
+            noise_frontier["summary"]["best_point_tier_counts"].items()
+        ):
+            lines.append(f"  - {tier_name}: {tier_count}")
+        lines.extend(
+            [
+                "",
                 "## Noise frontier scan",
                 "",
-                "| base kind | sigma | terms | target keep ratio | actual keep | r2 | payload ratio | gate reason |",
-                "| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+                "| base kind | sigma | terms | target keep ratio | actual keep | r2 | payload ratio | gate reason | frontier tier |",
+                "| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |",
             ]
         )
         for item in noise_frontier["rows"]:
@@ -866,6 +993,7 @@ def main() -> int:
                         _format_float(best_r2),
                         _format_float(best_payload),
                         best_reason,
+                        str(best["frontier_tier"]) if best else "no_candidate",
                     ]
                 )
                 + " |"

@@ -5,6 +5,7 @@ import pytest
 from scripts.run_defensible_research_sweep import (
     _benchmark_rdp_frontier,
     _frontier_gate_reason,
+    _frontier_tier,
     _parse_float_list,
     _parse_string_list,
     _summarize_frontier_by_key,
@@ -34,6 +35,64 @@ def test_frontier_gate_reason_combines_fidelity_and_payload():
     assert (
         _frontier_gate_reason(r2_pass=False, payload_pass=False)
         == "r2_and_payload_below_gate"
+    )
+
+
+def test_frontier_tier_classifies_quality_and_payload():
+    assert (
+        _frontier_tier(
+            r2=0.995,
+            payload_ratio=2.0,
+            strict_gate=0.99,
+            exploratory_gate=0.95,
+            demo_gate=0.9,
+            min_payload_ratio=1.0,
+        )
+        == "strict_pass"
+    )
+    assert (
+        _frontier_tier(
+            r2=0.965,
+            payload_ratio=2.0,
+            strict_gate=0.99,
+            exploratory_gate=0.95,
+            demo_gate=0.9,
+            min_payload_ratio=1.0,
+        )
+        == "exploratory_pass"
+    )
+    assert (
+        _frontier_tier(
+            r2=0.925,
+            payload_ratio=2.0,
+            strict_gate=0.99,
+            exploratory_gate=0.95,
+            demo_gate=0.9,
+            min_payload_ratio=1.0,
+        )
+        == "demo_pass"
+    )
+    assert (
+        _frontier_tier(
+            r2=0.85,
+            payload_ratio=2.0,
+            strict_gate=0.99,
+            exploratory_gate=0.95,
+            demo_gate=0.9,
+            min_payload_ratio=1.0,
+        )
+        == "reject"
+    )
+    assert (
+        _frontier_tier(
+            r2=0.995,
+            payload_ratio=0.5,
+            strict_gate=0.99,
+            exploratory_gate=0.95,
+            demo_gate=0.9,
+            min_payload_ratio=1.0,
+        )
+        == "payload_reject"
     )
 
 
