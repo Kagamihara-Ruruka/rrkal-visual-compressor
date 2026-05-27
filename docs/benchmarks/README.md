@@ -27,6 +27,8 @@ for validating compression claims.
 - `terms_channel_k_threshold_grid.md`: human-readable report for threshold-vs-frontier behavior.
 - `terms_channel_kind_threshold_grid.json`: term-K frontiers across kinds and defensible thresholds.
 - `terms_channel_kind_threshold_grid.md`: human-readable report for kind-level stability.
+- `terms_channel_kind_threshold_grid_10k.json` / `_10k.md`: sample run with gate-ready kind sweep dataset.
+- `terms_channel_kind_threshold_grid_10k_gate.json` / `_10k_gate.md`: gate-enabled kind sweep with defensible constraints.
 
 ## Current Reading
 
@@ -156,6 +158,25 @@ py scripts/run_terms_channel_kind_threshold_sweep.py \
   --rdp-epsilon 0.6 \
   --thresholds 0.90,0.92,0.95,0.98 \
   --svg-samples 240 \
+  --out-json docs/benchmarks/terms_channel_kind_threshold_grid.json \
+  --out-md docs/benchmarks/terms_channel_kind_threshold_grid.md
+```
+
+Add quality gates for automatic feasibility checks:
+
+```bash
+py scripts/run_terms_channel_kind_threshold_sweep.py \
+  --sample-sizes 10000 \
+  --synthetic-kinds all \
+  --fourier-terms 16,32,64 \
+  --channel-k 2,3,4 \
+  --channel-window 16 \
+  --channel-band-epsilon 0.04 \
+  --rdp-epsilon 0.6 \
+  --thresholds 0.90,0.92,0.95,0.98 \
+  --svg-samples 240 \
+  --require-svg-gzip-win \
+  --min-defensible-ratio 0.2 \
   --out-json docs/benchmarks/terms_channel_kind_threshold_grid.json \
   --out-md docs/benchmarks/terms_channel_kind_threshold_grid.md
 ```

@@ -123,3 +123,22 @@ py scripts/run_terms_channel_kind_threshold_sweep.py \
   --out-json docs/benchmarks/terms_channel_kind_threshold_grid.json \
   --out-md docs/benchmarks/terms_channel_kind_threshold_grid.md
 ```
+
+加入「可用門檻」自動判斷（建議做法）：
+
+```bash
+py scripts/run_terms_channel_kind_threshold_sweep.py \
+  --sample-sizes 10000 \
+  --synthetic-kinds all \
+  --fourier-terms 16,32,64 \
+  --channel-k 2,3,4 \
+  --channel-window 16 \
+  --channel-band-epsilon 0.04 \
+  --rdp-epsilon 0.6 \
+  --thresholds 0.90,0.92,0.95,0.98 \
+  --svg-samples 240 \
+  --require-svg-gzip-win \
+  --min-defensible-ratio 0.2 \
+  --out-json docs/benchmarks/terms_channel_kind_threshold_grid.json \
+  --out-md docs/benchmarks/terms_channel_kind_threshold_grid.md
+```

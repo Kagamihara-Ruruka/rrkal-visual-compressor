@@ -440,6 +440,8 @@ def evaluate_benchmark_gate(
     require_csv_gzip_win: bool = False,
     min_fourier_r2: float | None = None,
     min_channel_coverage: float | None = None,
+    min_defensible_rows_ratio: float | None = None,
+    min_high_fidelity_rows: int | None = None,
 ) -> dict[str, Any]:
     rows = data.get("rows", [])
     summary = data.get("summary", {})
@@ -470,6 +472,18 @@ def evaluate_benchmark_gate(
         ]
         if weak_channel_rows:
             errors.append(f"{len(weak_channel_rows)} row(s) below min channel coverage {min_channel_coverage}")
+    if min_defensible_rows_ratio is not None:
+        defensible_ratio = float(summary.get("defensible_rows_ratio", 0.0))
+        if defensible_ratio < min_defensible_rows_ratio:
+            errors.append(
+                f"defensible ratio {defensible_ratio:.4f} below minimum {min_defensible_rows_ratio:.4f}"
+            )
+    if min_high_fidelity_rows is not None:
+        high_fidelity_rows_count = int(summary.get("high_fidelity_rows_count", 0))
+        if high_fidelity_rows_count < min_high_fidelity_rows:
+            errors.append(
+                f"high-fidelity row count {high_fidelity_rows_count} below minimum {min_high_fidelity_rows}"
+            )
     return {
         "ok": not errors,
         "errors": errors,
@@ -478,6 +492,8 @@ def evaluate_benchmark_gate(
             "require_csv_gzip_win": require_csv_gzip_win,
             "min_fourier_r2": min_fourier_r2,
             "min_channel_coverage": min_channel_coverage,
+            "min_defensible_rows_ratio": min_defensible_rows_ratio,
+            "min_high_fidelity_rows": min_high_fidelity_rows,
         },
     }
 

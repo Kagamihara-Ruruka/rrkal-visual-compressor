@@ -13,6 +13,7 @@ if str(PROJECT_SRC) not in sys.path:
 
 from vizcompress.benchmarks import (
     benchmark_synthetic_terms_channel_k_sweep,
+    evaluate_benchmark_gate,
     parse_float_values,
     parse_fourier_terms,
     parse_sample_sizes,
@@ -80,6 +81,12 @@ def run_kind_threshold_sweep(
     x_domain_policy: str,
     x_domain_epsilon: float,
     x_domain_max_error: float,
+    require_svg_gzip_win: bool = False,
+    require_csv_gzip_win: bool = False,
+    min_fourier_r2: float | None = None,
+    min_channel_coverage: float | None = None,
+    min_defensible_rows_ratio: float | None = None,
+    min_high_fidelity_rows: int | None = None,
 ) -> dict[str, Any]:
     if not synthetic_kinds:
         raise ValueError("synthetic_kinds must not be empty")
@@ -119,6 +126,15 @@ def run_kind_threshold_sweep(
         }
 
         all_best = summary.get("best_rows", {}).get("direct_svg_gzip", {})
+        gate = evaluate_benchmark_gate(
+            {"rows": rows, "summary": summary},
+            require_svg_gzip_win=require_svg_gzip_win,
+            require_csv_gzip_win=require_csv_gzip_win,
+            min_fourier_r2=min_fourier_r2,
+            min_channel_coverage=min_channel_coverage,
+            min_defensible_rows_ratio=min_defensible_rows_ratio,
+            min_high_fidelity_rows=min_high_fidelity_rows,
+        )
 
         sweep.append(
             {
@@ -136,6 +152,7 @@ def run_kind_threshold_sweep(
                 "rows_by_terms_k": by_terms_k,
                 "term_k_best_rows": best_cells,
                 "global_best_row": all_best,
+                "benchmark_gate": gate,
             }
         )
 
@@ -159,6 +176,14 @@ def run_kind_threshold_sweep(
             "x_domain_max_error": x_domain_max_error,
             "thresholds": thresholds,
             "kind_union": sorted(kind_union),
+            "gate_policy": {
+                "require_svg_gzip_win": require_svg_gzip_win,
+                "require_csv_gzip_win": require_csv_gzip_win,
+                "min_fourier_r2": min_fourier_r2,
+                "min_channel_coverage": min_channel_coverage,
+                "min_defensible_rows_ratio": min_defensible_rows_ratio,
+                "min_high_fidelity_rows": min_high_fidelity_rows,
+            },
         },
         "sweep": sweep,
     }
@@ -281,11 +306,12 @@ def format_markdown(result: dict[str, Any]) -> str:
         f"- SVG samples: `{params.get('svg_samples')}`",
         "",
         "## Global sweep",
-        "| threshold | high-fidelity | defensible | defensible ratio | best gzip ratio | best defensible ratio |",
-        "| ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| threshold | high-fidelity | defensible | defensible ratio | best gzip ratio | best defensible ratio | gate ok |",
+        "| ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
 
     for point in result["sweep"]:
+        gate_ok = "yes" if bool(point.get("benchmark_gate", {}).get("ok", False)) else "no"
         lines.append(
             "| "
             + " | ".join(
@@ -296,6 +322,7 @@ def format_markdown(result: dict[str, Any]) -> str:
                     f"{_format_float(point['defensible_rows_ratio'] * 100)}%",
                     _format_float(point["best_ratio"]),
                     _format_float(point["best_defensible_ratio"]),
+                    gate_ok,
                 ]
             )
             + " |"
@@ -366,6 +393,28 @@ def format_markdown(result: dict[str, Any]) -> str:
             )
             + " |"
         )
+
+    lines.extend(
+        [
+            "",
+            "## Gate outcomes",
+            "| threshold | ok | errors |",
+            "| ---: | ---: | --- |",
+        ]
+    )
+    for point in result["sweep"]:
+        gate = point.get("benchmark_gate", {})
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    str(point["threshold"]),
+                    _format_bool(gate.get("ok")),
+                    "; ".join(gate.get("errors", [])) or "pass",
+                ]
+            )
+            + " |"
+        )
     return "\n".join(lines)
 
 
@@ -389,6 +438,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--x-domain-policy", default="preserve")
     parser.add_argument("--x-domain-epsilon", type=float, default=0.002)
     parser.add_argument("--x-domain-max-error", type=float, default=1e-4)
+    parser.add_argument("--require-svg-gzip-win", action="store_true")
+    parser.add_argument("--require-csv-gzip-win", action="store_true")
+    parser.add_argument("--min-fourier-r2", type=float, default=None)
+    parser.add_argument("--min-channel-coverage", type=float, default=None)
+    parser.add_argument("--min-defensible-ratio", type=float, default=None)
+    parser.add_argument("--min-high-fidelity-rows", type=int, default=None)
     return parser.parse_args()
 
 
@@ -422,6 +477,12 @@ def main() -> int:
         x_domain_policy=args.x_domain_policy,
         x_domain_epsilon=args.x_domain_epsilon,
         x_domain_max_error=args.x_domain_max_error,
+        require_svg_gzip_win=args.require_svg_gzip_win,
+        require_csv_gzip_win=args.require_csv_gzip_win,
+        min_fourier_r2=args.min_fourier_r2,
+        min_channel_coverage=args.min_channel_coverage,
+        min_defensible_rows_ratio=args.min_defensible_ratio,
+        min_high_fidelity_rows=args.min_high_fidelity_rows,
     )
 
     out_json = Path(args.out_json)

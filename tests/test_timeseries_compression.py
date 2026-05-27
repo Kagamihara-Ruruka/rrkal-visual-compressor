@@ -1497,3 +1497,67 @@ def test_cli_inspect_reports_sparse_residual_details(tmp_path):
     assert summary["contains_sparse_residual_layer"] is True
     assert summary["sparse_residual"]["points"] > 0
     assert summary["retained"]["samples"] == 1200
+
+
+def test_benchmark_gate_supports_defensible_ratio_and_high_fidelity_floor():
+    result = benchmark_synthetic_terms_channel_k_sweep(
+        [1200],
+        fourier_terms_values=[16],
+        channel_k_values=[2.0],
+        synthetic_kind="smooth",
+        rdp_epsilon=0.6,
+        svg_samples=200,
+        channel_window=16,
+        channel_band_epsilon=0.04,
+        smooth_window=1,
+        sigma_clip=None,
+        noise_layer_terms=0,
+        auto_noise_layer=False,
+        x_domain_policy="preserve",
+        x_domain_epsilon=0.002,
+        x_domain_max_error=1e-4,
+    )
+
+    high_fidelity_rows = result["summary"]["high_fidelity_rows_count"]
+    pass_gate = evaluate_benchmark_gate(
+        result,
+        min_high_fidelity_rows=high_fidelity_rows,
+        min_defensible_rows_ratio=0.0,
+    )
+    assert pass_gate["ok"] is True
+    assert pass_gate["errors"] == []
+
+    strict_gate = evaluate_benchmark_gate(
+        result,
+        min_high_fidelity_rows=high_fidelity_rows + 1,
+        min_defensible_rows_ratio=0.0,
+    )
+    assert strict_gate["ok"] is False
+    assert any("below minimum" in error for error in strict_gate["errors"])
+
+
+def test_benchmark_gate_formats_channels_and_ratios():
+    result = benchmark_synthetic_terms_channel_k_sweep(
+        [800],
+        fourier_terms_values=[16],
+        channel_k_values=[2.0],
+        synthetic_kind="smooth",
+        rdp_epsilon=0.6,
+        svg_samples=200,
+        channel_window=16,
+        channel_band_epsilon=0.04,
+        smooth_window=1,
+        sigma_clip=None,
+        noise_layer_terms=0,
+        auto_noise_layer=False,
+        x_domain_policy="preserve",
+        x_domain_epsilon=0.002,
+        x_domain_max_error=1e-4,
+    )
+
+    gate = evaluate_benchmark_gate(
+        result,
+        min_defensible_rows_ratio=1.0,
+    )
+    assert gate["ok"] is False
+    assert any("defensible ratio" in error for error in gate["errors"])
