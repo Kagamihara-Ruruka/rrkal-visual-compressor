@@ -1,78 +1,88 @@
-# 研究檢核點 v1：可驗證視覺編碼器
+# 研究檢核點 v1.1：可辯護壓縮路線
 
-日期：2026-05-27  
-專案：RRKAL Visual Compressor  
-範圍：時間序列與 2D 曲線預覽層（尚未進入完整 3D 流程）
+日期：2026-05-28  
+負責：RRKAL Visual Compressor  
+範圍：時間序列 / 2D 預覽層（尚未進入完整 3D 管線）
 
-## 1) 核心研究主張
+## 1) 目前測試中的核心命題
 
-本階段只驗證一個主張：
+本專案不嘗試證明「萬用數學定理」。  
+我們正在驗證的是：
 
-> 一個高規模且有結構的視覺訊號，可以用「主模型 `F`」加上可控的「殘差層 `R`」表示，
-> 並在可度量條件下得到更低的傳輸/互動成本。
+> 對於有明確結構的資料（平穩趨勢 + 區域細節 + 適度雜訊），
+> 「可壓縮的函數表示」加上「受控殘差層」，在可量測條件下可優於原始逐點輸入。
 
-這是「可證明」取向，不是萬用保證。
+這是**可執行的工程命題**，非萬用真理聲明。
 
-## 2) 現行假設
+## 2) 當前風險假設（已轉成檢測項）
 
-1. 單獨使用全域 Fourier 在跳躍訊號上不足夠。
-2. 分段方法（piecewise Fourier、多項式、Haar）可降低局部外洩。
-3. 非均勻 x 軸必須明確記錄與編碼，否則會出現時間軸漂移。
-4. 多通道壓縮要先做通道關聯降維（例如 PCA baseline）。
-5. 透過自適應殘差閾值可抑制雜訊下的 payload 膨脹。
+1. **全域 Fourier 的局部漏洩**  
+   尖變點可能產生非局部波紋。  
+   ✅ 已用 `locality_leakage_metric` 量測。
 
-## 3) 檢核規則
+2. **不規則時間軸處理**  
+   時間戳不規則時必須明確編解碼策略。  
+   ✅ `domains.py` 已有多種 `x` 編碼路徑並保留驗證。
 
-每筆 `scripts/run_defensible_research_sweep.py` 的報表列都要通過：
+3. **多通道耦合**  
+   通道通常不是彼此獨立。  
+   ✅ 已加入 PCA/SVD 的多通道 baseline。
 
-- `R2 >= r2_gate`（建議值 `0.99`）
-- 局部外洩門檻依 `locality-mode` 決定：
-  - `strict`（預設）：detrended 與 piecewise Fourier 兩者都要低於門檻。
-  - `any`：兩者其中一個低於門檻即可。
-- 可選：`--include-piecewise-polynomial` 時可加入 polynomial 作為第三候選。
-- `adaptive_keep_ratio <= max_adaptive_keep_ratio`（建議值 `0.45`）
+4. **殘差預算失控**  
+   第二層 correction 可能吃掉壓縮效果。  
+   ✅ 已追蹤殘差比例與 payload。
 
-同時符合者才標記 `defensible = true`。
+5. **畫面像素預算驅動取樣**  
+   超過顯示解析度的點數是浪費。  
+   ✅ 已加入 RDP 預簡化路徑，並新增 frontier 掃描。
 
-我們另外追蹤 `defensible_rdp_rows` 作為輔助探索指標：
-`rdp_prefilter_fourier` 的 `r2 >= r2_gate` 次數。
+## 3) 本檢核點門檻規則
 
-## 4) 固定實驗集
+在 `scripts/run_defensible_research_sweep.py` 每一列結果中要求：
 
-資料集與參數固定如下：
+- `R2 >= r2_gate`（預設 `0.99`）
+- 局部方法是否過門檻：
+  - `strict`（預設）：piecewise Fourier 與 detrended Fourier 都要過
+  - `any`：兩者任一通過即可
+- 可選：`--include-piecewise-polynomial` 開啟 piecewise polynomial 候選
+- `adaptive_keep_ratio <= max_adaptive_keep_ratio`（預設 `0.45`）
 
-- `steps`
-- `spikes`
-- `irregular`
-- `multiscale`
-- `smooth`
+同時符合者標記為 `defensible = true`。
 
-參數：
+## 4) RDP frontier 掃描（新）
 
-- `--terms 16,32,64`
+指令範例：
 
-此組合會固定使用，直到連續兩次檢核皆穩定通過。
+```bash
+py scripts/run_defensible_research_sweep.py \
+  --terms 16,32 \
+  --include-piecewise-polynomial \
+  --run-rdp-frontier \
+  --rdp-frontier-ratios 0.02,0.05,0.10,0.20,0.30 \
+  --out-json docs/benchmarks/defensible_hardening_report_frontier.json \
+  --out-md docs/benchmarks/defensible_hardening_report_frontier.md
+```
 
-## 5) 前進 / 回退判準
+輸出會包含：
 
-符合以下條件才可進到下一輪：
+- 每個資料集/項數的 `target_keep_ratio` 掃描點
+- 每點的實際保留比例、R2、payload ratio、實際保留點數
+- 在 `r2_gate` 下的最佳甜蜜點
+- 單調性檢查（`target ratio` 越大時實際保留比例不應變小）
 
-- 可重複產生 JSON/MD 報表；
-- `steps`、`spikes`、`irregular` 各至少各有一筆可接受 pass；
-- 相同輸入下 `defensible_rows / rows_with_gate_fields` 重複執行保持穩定。
+## 5) 前進與回退條件
 
-若連續兩次未達標，回到前一版本修正。
+可前進條件：
+
+- JSON + MD 能重複產出且一致
+- 固定資料集 `steps / spikes / irregular / multiscale / smooth` 至少有一筆
+  非平凡通過（`defensible`） 
+- frontier 掃描主要指標穩定（同一命令多次結果一致）
+
+連續兩個 checkpoint 持續發生硬失敗或結果漂移時，需回退與重設參數。
 
 ## 6) 下一步
 
-檢核成功後，接著加入：
-
-- 收窄 gate 門檻；
-- 像素（DPI）視窗預算上限實驗；
-- decode 時間與雜訊下 payload 成長率量測。
-
-研究順序保持：
-
-1. 可量測正確性
-2. 可控 payload 與可驗證報表
-3. 視口級渲染效率研究
+- 逐步提升 gate 嚴格度
+- 加入低、中、高噪音層級的固定測試區
+- 加入「解碼與渲染時間」作為第二報表軸（目前優先做 payload 與 fidelity）

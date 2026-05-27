@@ -1,8 +1,7 @@
 {
   "terms": [
     16,
-    32,
-    64
+    32
   ],
   "rows": [
     {
@@ -86,10 +85,11 @@
         "residual_gate": true,
         "locality_candidates": [
           0.8331252293818598,
-          0.4219496452912082
+          0.4219496452912082,
+          1.0587898517039094
         ],
         "locality_mode": "strict",
-        "include_piecewise_polynomial": false,
+        "include_piecewise_polynomial": true,
         "defensible": false
       }
     },
@@ -174,98 +174,11 @@
         "residual_gate": true,
         "locality_candidates": [
           0.7740796637784185,
-          0.4008564117767003
+          0.4008564117767003,
+          1.0587898517039094
         ],
         "locality_mode": "strict",
-        "include_piecewise_polynomial": false,
-        "defensible": false
-      }
-    },
-    {
-      "dataset": "steps",
-      "samples": 4000,
-      "terms": 64,
-      "raw_payload_bytes": 64000.0,
-      "global": {
-        "r2": 0.9956041791118095,
-        "rmse": 0.02238528632415272,
-        "leakage_ratio": 0.392120410306652,
-        "max_abs": 0.313300188641325,
-        "payload_bytes": 1544,
-        "payload_ratio": 41.45077720207254
-      },
-      "piecewise_fourier": {
-        "r2": 0.9990550844842112,
-        "rmse": 0.01037860897249473,
-        "leakage_ratio": 0.7247229712535149,
-        "segment_count": 5,
-        "payload_bytes": 1472.0,
-        "payload_ratio": 43.47826086956522
-      },
-      "piecewise_polynomial": {
-        "r2": 0.8316372309027158,
-        "rmse": 0.13853697152260874,
-        "leakage_ratio": 1.0587898517039094,
-        "segment_count": 5,
-        "approx_parameter_count": 30,
-        "payload_bytes": 352.0,
-        "payload_ratio": 181.8181818181818
-      },
-      "uniform_param_fourier": {
-        "r2": 0.9956041791118095,
-        "rmse": 0.02238528632415272,
-        "max_abs": 0.313300188641325,
-        "payload_bytes": 1544,
-        "payload_ratio": 41.45077720207254
-      },
-      "rdp_prefilter_fourier": {
-        "r2": 0.9964676728047447,
-        "rmse": 0.020066568963446867,
-        "max_abs": 0.2196662445089873,
-        "target_keep_ratio": 0.10400000000000001,
-        "actual_keep_ratio": 0.104,
-        "rdp_kept": 416,
-        "rdp_epsilon": 8.732080459594727e-05,
-        "payload_bytes": 11528.0,
-        "payload_ratio": 5.551700208188758
-      },
-      "detrended_fourier": {
-        "r2": 0.9955959942436782,
-        "rmse": 0.022406116950898284,
-        "leakage_ratio": 0.4178532594020779,
-        "r2_delta_vs_global": -8.184868131366763e-06,
-        "trend_slope": -0.0752056723146571,
-        "trend_intercept": 0.16460283615732862,
-        "adaptive_keep_ratio": 0.0155,
-        "adaptive_threshold_ratio": 0.05148388268529756,
-        "adaptive_threshold_min": 0.04890182527892274,
-        "adaptive_threshold_max": 0.05406594009167239,
-        "payload_bytes": 1560,
-        "payload_ratio": 41.02564102564103
-      },
-      "haar_threshold": {
-        "r2": -1.5295770342146997,
-        "rmse": 0.5369905145542169,
-        "max_abs": 1.0725615114759777,
-        "residual_payload_ratio": 0.37109375,
-        "payload_bytes": 6096.0,
-        "payload_ratio": 10.498687664041995
-      },
-      "adaptive_residual": {
-        "keep_count": 62,
-        "payload_bytes": 992.0,
-        "payload_ratio": 64.51612903225806
-      },
-      "gates": {
-        "r2_gate": true,
-        "leakage_gate": false,
-        "residual_gate": true,
-        "locality_candidates": [
-          0.7247229712535149,
-          0.4178532594020779
-        ],
-        "locality_mode": "strict",
-        "include_piecewise_polynomial": false,
+        "include_piecewise_polynomial": true,
         "defensible": false
       }
     },
@@ -350,10 +263,11 @@
         "residual_gate": true,
         "locality_candidates": [
           0.8674827749955514,
-          0.8457134713384785
+          0.8457134713384785,
+          1.0085125559161265
         ],
         "locality_mode": "strict",
-        "include_piecewise_polynomial": false,
+        "include_piecewise_polynomial": true,
         "defensible": false
       }
     },
@@ -438,98 +352,11 @@
         "residual_gate": true,
         "locality_candidates": [
           0.8437993467101816,
-          0.8109563447886089
+          0.8109563447886089,
+          1.0085125559161265
         ],
         "locality_mode": "strict",
-        "include_piecewise_polynomial": false,
-        "defensible": false
-      }
-    },
-    {
-      "dataset": "spikes",
-      "samples": 4000,
-      "terms": 64,
-      "raw_payload_bytes": 64000.0,
-      "global": {
-        "r2": 0.987130208455671,
-        "rmse": 0.04743711160960014,
-        "leakage_ratio": 0.7591852274407426,
-        "max_abs": 0.5004758184474432,
-        "payload_bytes": 1544,
-        "payload_ratio": 41.45077720207254
-      },
-      "piecewise_fourier": {
-        "r2": 0.9719167692811733,
-        "rmse": 0.07007385580689954,
-        "leakage_ratio": 0.8236540624678217,
-        "segment_count": 3,
-        "payload_bytes": 1112.0,
-        "payload_ratio": 57.55395683453237
-      },
-      "piecewise_polynomial": {
-        "r2": 0.1846169892413999,
-        "rmse": 0.3775837630054123,
-        "leakage_ratio": 1.0085125559161265,
-        "segment_count": 3,
-        "approx_parameter_count": 14,
-        "payload_bytes": 192.0,
-        "payload_ratio": 333.3333333333333
-      },
-      "uniform_param_fourier": {
-        "r2": 0.987130208455671,
-        "rmse": 0.04743711160960014,
-        "max_abs": 0.5004758184474432,
-        "payload_bytes": 1544,
-        "payload_ratio": 41.45077720207254
-      },
-      "rdp_prefilter_fourier": {
-        "r2": 0.9664928413050595,
-        "rmse": 0.07654226023496588,
-        "max_abs": 0.5265802177454428,
-        "target_keep_ratio": 0.10400000000000001,
-        "actual_keep_ratio": 0.104,
-        "rdp_kept": 416,
-        "rdp_epsilon": 0.0007105842232704163,
-        "payload_bytes": 11528.0,
-        "payload_ratio": 5.551700208188758
-      },
-      "detrended_fourier": {
-        "r2": 0.9870296208420477,
-        "rmse": 0.04762213009513478,
-        "leakage_ratio": 0.7706099670974903,
-        "r2_delta_vs_global": -0.00010058761362330415,
-        "trend_slope": -0.11333815480892277,
-        "trend_intercept": 0.07547160929956674,
-        "adaptive_keep_ratio": 0.018,
-        "adaptive_threshold_ratio": 0.1411649537746454,
-        "adaptive_threshold_min": 0.14089414517891363,
-        "adaptive_threshold_max": 0.14143576237037722,
-        "payload_bytes": 1560,
-        "payload_ratio": 41.02564102564103
-      },
-      "haar_threshold": {
-        "r2": -1.0472517152195788,
-        "rmse": 0.5982987603650181,
-        "max_abs": 1.5964954313335111,
-        "residual_payload_ratio": 0.3310546875,
-        "payload_bytes": 5440.0,
-        "payload_ratio": 11.764705882352942
-      },
-      "adaptive_residual": {
-        "keep_count": 72,
-        "payload_bytes": 1152.0,
-        "payload_ratio": 55.55555555555556
-      },
-      "gates": {
-        "r2_gate": false,
-        "leakage_gate": false,
-        "residual_gate": true,
-        "locality_candidates": [
-          0.8236540624678217,
-          0.7706099670974903
-        ],
-        "locality_mode": "strict",
-        "include_piecewise_polynomial": false,
+        "include_piecewise_polynomial": true,
         "defensible": false
       }
     },
@@ -614,10 +441,11 @@
         "residual_gate": true,
         "locality_candidates": [
           0.9871746280497518,
-          0.7793910194197279
+          0.7793910194197279,
+          1.004557174491441
         ],
         "locality_mode": "strict",
-        "include_piecewise_polynomial": false,
+        "include_piecewise_polynomial": true,
         "defensible": false
       }
     },
@@ -702,98 +530,11 @@
         "residual_gate": true,
         "locality_candidates": [
           0.9670110234031813,
-          0.7747082728434
+          0.7747082728434,
+          1.004557174491441
         ],
         "locality_mode": "strict",
-        "include_piecewise_polynomial": false,
-        "defensible": false
-      }
-    },
-    {
-      "dataset": "irregular",
-      "samples": 4000,
-      "terms": 64,
-      "raw_payload_bytes": 64000.0,
-      "global": {
-        "r2": 0.9999495004185149,
-        "rmse": 0.0027903382892737693,
-        "leakage_ratio": 0.7603187734324705,
-        "max_abs": 0.047037445505140774,
-        "payload_bytes": 1544,
-        "payload_ratio": 41.45077720207254
-      },
-      "piecewise_fourier": {
-        "r2": 0.997392082726885,
-        "rmse": 0.020052100588342253,
-        "leakage_ratio": 0.921610598415807,
-        "segment_count": 3,
-        "payload_bytes": 1112.0,
-        "payload_ratio": 57.55395683453237
-      },
-      "piecewise_polynomial": {
-        "r2": 0.20655407558082095,
-        "rmse": 0.3497612045552999,
-        "leakage_ratio": 1.004557174491441,
-        "segment_count": 3,
-        "approx_parameter_count": 14,
-        "payload_bytes": 192.0,
-        "payload_ratio": 333.3333333333333
-      },
-      "uniform_param_fourier": {
-        "r2": 0.9999495004185149,
-        "rmse": 0.0027903382892737693,
-        "max_abs": 0.047037445505140774,
-        "payload_bytes": 1544,
-        "payload_ratio": 41.45077720207254
-      },
-      "rdp_prefilter_fourier": {
-        "r2": 0.9822079592404597,
-        "rmse": 0.05237521895071074,
-        "max_abs": 0.19962884131022196,
-        "target_keep_ratio": 0.10400000000000001,
-        "actual_keep_ratio": 0.104,
-        "rdp_kept": 416,
-        "rdp_epsilon": 0.0007069520652294159,
-        "payload_bytes": 11528.0,
-        "payload_ratio": 5.551700208188758
-      },
-      "detrended_fourier": {
-        "r2": 0.9997869566887249,
-        "rmse": 0.005731217904309669,
-        "leakage_ratio": 0.7514852078062367,
-        "r2_delta_vs_global": -0.0001625437297900767,
-        "trend_slope": -0.10508309949452638,
-        "trend_intercept": 0.07496487720664805,
-        "adaptive_keep_ratio": 0.024,
-        "adaptive_threshold_ratio": 0.008665264941124384,
-        "adaptive_threshold_min": 0.007964940538139377,
-        "adaptive_threshold_max": 0.009365589344109394,
-        "payload_bytes": 1560,
-        "payload_ratio": 41.02564102564103
-      },
-      "haar_threshold": {
-        "r2": -0.9932093580119985,
-        "rmse": 0.5543568621539945,
-        "max_abs": 1.4291931796795385,
-        "residual_payload_ratio": 0.33544921875,
-        "payload_bytes": 5512.0,
-        "payload_ratio": 11.611030478955007
-      },
-      "adaptive_residual": {
-        "keep_count": 96,
-        "payload_bytes": 1536.0,
-        "payload_ratio": 41.666666666666664
-      },
-      "gates": {
-        "r2_gate": true,
-        "leakage_gate": false,
-        "residual_gate": true,
-        "locality_candidates": [
-          0.921610598415807,
-          0.7514852078062367
-        ],
-        "locality_mode": "strict",
-        "include_piecewise_polynomial": false,
+        "include_piecewise_polynomial": true,
         "defensible": false
       }
     },
@@ -878,10 +619,11 @@
         "residual_gate": true,
         "locality_candidates": [
           0.9449891973109164,
-          1.0609288075716377
+          1.0609288075716377,
+          1.011880308617502
         ],
         "locality_mode": "strict",
-        "include_piecewise_polynomial": false,
+        "include_piecewise_polynomial": true,
         "defensible": false
       }
     },
@@ -966,98 +708,11 @@
         "residual_gate": true,
         "locality_candidates": [
           0.8386325107111976,
-          1.0750699686243028
+          1.0750699686243028,
+          1.011880308617502
         ],
         "locality_mode": "strict",
-        "include_piecewise_polynomial": false,
-        "defensible": false
-      }
-    },
-    {
-      "dataset": "multiscale",
-      "samples": 4000,
-      "terms": 64,
-      "raw_payload_bytes": 64000.0,
-      "global": {
-        "r2": 0.9999227424811921,
-        "rmse": 0.002734397502854213,
-        "leakage_ratio": 1.0756103242660513,
-        "max_abs": 0.038046684213518846,
-        "payload_bytes": 1544,
-        "payload_ratio": 41.45077720207254
-      },
-      "piecewise_fourier": {
-        "r2": 0.9953152364422541,
-        "rmse": 0.02129291443916718,
-        "leakage_ratio": 0.6874348031328114,
-        "segment_count": 5,
-        "payload_bytes": 1472.0,
-        "payload_ratio": 43.47826086956522
-      },
-      "piecewise_polynomial": {
-        "r2": 0.4293304028054057,
-        "rmse": 0.2350085368105053,
-        "leakage_ratio": 1.011880308617502,
-        "segment_count": 5,
-        "approx_parameter_count": 30,
-        "payload_bytes": 352.0,
-        "payload_ratio": 181.8181818181818
-      },
-      "uniform_param_fourier": {
-        "r2": 0.9999227424811921,
-        "rmse": 0.002734397502854213,
-        "max_abs": 0.038046684213518846,
-        "payload_bytes": 1544,
-        "payload_ratio": 41.45077720207254
-      },
-      "rdp_prefilter_fourier": {
-        "r2": 0.9728671528707875,
-        "rmse": 0.05124352001262661,
-        "max_abs": 0.2159596183143232,
-        "target_keep_ratio": 0.10400000000000001,
-        "actual_keep_ratio": 0.10375,
-        "rdp_kept": 415,
-        "rdp_epsilon": 0.0038061998784542084,
-        "payload_bytes": 11504.0,
-        "payload_ratio": 5.563282336578581
-      },
-      "detrended_fourier": {
-        "r2": 0.9989367960294783,
-        "rmse": 0.010143774019076483,
-        "leakage_ratio": 1.0774609058370337,
-        "r2_delta_vs_global": -0.0009859464517137928,
-        "trend_slope": -0.2641972203073943,
-        "trend_intercept": 0.1321579000646324,
-        "adaptive_keep_ratio": 0.03425,
-        "adaptive_threshold_ratio": 0.016378065364199286,
-        "adaptive_threshold_min": 0.016156779370177853,
-        "adaptive_threshold_max": 0.016599351358220726,
-        "payload_bytes": 1560,
-        "payload_ratio": 41.02564102564103
-      },
-      "haar_threshold": {
-        "r2": -0.9244866228041957,
-        "rmse": 0.43156748713877996,
-        "max_abs": 1.171542018015635,
-        "residual_payload_ratio": 0.41064453125,
-        "payload_bytes": 6744.0,
-        "payload_ratio": 9.489916963226571
-      },
-      "adaptive_residual": {
-        "keep_count": 137,
-        "payload_bytes": 2192.0,
-        "payload_ratio": 29.197080291970803
-      },
-      "gates": {
-        "r2_gate": true,
-        "leakage_gate": false,
-        "residual_gate": true,
-        "locality_candidates": [
-          0.6874348031328114,
-          1.0774609058370337
-        ],
-        "locality_mode": "strict",
-        "include_piecewise_polynomial": false,
+        "include_piecewise_polynomial": true,
         "defensible": false
       }
     },
@@ -1142,10 +797,11 @@
         "residual_gate": true,
         "locality_candidates": [
           0.991276952611319,
-          0.784063549084213
+          0.784063549084213,
+          1.0089557499702704
         ],
         "locality_mode": "strict",
-        "include_piecewise_polynomial": false,
+        "include_piecewise_polynomial": true,
         "defensible": false
       }
     },
@@ -1230,98 +886,11 @@
         "residual_gate": true,
         "locality_candidates": [
           0.98012393716992,
-          0.7798660637299647
+          0.7798660637299647,
+          1.0089557499702704
         ],
         "locality_mode": "strict",
-        "include_piecewise_polynomial": false,
-        "defensible": false
-      }
-    },
-    {
-      "dataset": "smooth",
-      "samples": 4000,
-      "terms": 64,
-      "raw_payload_bytes": 64000.0,
-      "global": {
-        "r2": 0.9999501300877904,
-        "rmse": 0.0027727904176512133,
-        "leakage_ratio": 0.7756159106182066,
-        "max_abs": 0.047259773007230776,
-        "payload_bytes": 1544,
-        "payload_ratio": 41.45077720207254
-      },
-      "piecewise_fourier": {
-        "r2": 0.9974176476242105,
-        "rmse": 0.019952875585682046,
-        "leakage_ratio": 0.9346958481475808,
-        "segment_count": 3,
-        "payload_bytes": 1112.0,
-        "payload_ratio": 57.55395683453237
-      },
-      "piecewise_polynomial": {
-        "r2": 0.20667083460165525,
-        "rmse": 0.34972320760112124,
-        "leakage_ratio": 1.0089557499702704,
-        "segment_count": 3,
-        "approx_parameter_count": 14,
-        "payload_bytes": 192.0,
-        "payload_ratio": 333.3333333333333
-      },
-      "uniform_param_fourier": {
-        "r2": 0.9999501300877904,
-        "rmse": 0.0027727904176512133,
-        "max_abs": 0.047259773007230776,
-        "payload_bytes": 1544,
-        "payload_ratio": 41.45077720207254
-      },
-      "rdp_prefilter_fourier": {
-        "r2": 0.9827808865437304,
-        "rmse": 0.05152323655683356,
-        "max_abs": 0.21115253103042358,
-        "target_keep_ratio": 0.10400000000000001,
-        "actual_keep_ratio": 0.104,
-        "rdp_kept": 416,
-        "rdp_epsilon": 0.0007224194705486298,
-        "payload_bytes": 11528.0,
-        "payload_ratio": 5.551700208188758
-      },
-      "detrended_fourier": {
-        "r2": 0.999786715840345,
-        "rmse": 0.005734255551944502,
-        "leakage_ratio": 0.7625324673558003,
-        "r2_delta_vs_global": -0.0001634142474454814,
-        "trend_slope": -0.10577403435742934,
-        "trend_intercept": 0.07530445097820333,
-        "adaptive_keep_ratio": 0.0335,
-        "adaptive_threshold_ratio": 0.007627126881660113,
-        "adaptive_threshold_min": 0.007025667063356068,
-        "adaptive_threshold_max": 0.008228586699964159,
-        "payload_bytes": 1560,
-        "payload_ratio": 41.02564102564103
-      },
-      "haar_threshold": {
-        "r2": -0.9937162919967553,
-        "rmse": 0.5544079146389882,
-        "max_abs": 1.4299363505686122,
-        "residual_payload_ratio": 0.3359375,
-        "payload_bytes": 5520.0,
-        "payload_ratio": 11.594202898550725
-      },
-      "adaptive_residual": {
-        "keep_count": 134,
-        "payload_bytes": 2144.0,
-        "payload_ratio": 29.850746268656717
-      },
-      "gates": {
-        "r2_gate": true,
-        "leakage_gate": false,
-        "residual_gate": true,
-        "locality_candidates": [
-          0.9346958481475808,
-          0.7625324673558003
-        ],
-        "locality_mode": "strict",
-        "include_piecewise_polynomial": false,
+        "include_piecewise_polynomial": true,
         "defensible": false
       }
     },
@@ -1342,7 +911,7 @@
         "locality_candidates": [],
         "locality_mode": "strict",
         "defensible": false,
-        "include_piecewise_polynomial": false
+        "include_piecewise_polynomial": true
       }
     }
   ],
@@ -1352,36 +921,36 @@
       "leakage_gate": 0.25,
       "max_adaptive_keep_ratio": 0.45,
       "locality_mode": "strict",
-      "include_piecewise_polynomial": false
+      "include_piecewise_polynomial": true
     },
-    "run_rdp_frontier": false,
-    "best_global_r2": 0.9999501300877904,
-    "best_piecewise_leakage": 0.6874348031328114,
+    "run_rdp_frontier": true,
+    "best_global_r2": 0.9999002893927597,
+    "best_piecewise_leakage": 0.7740796637784185,
     "best_poly_leakage": 1.004557174491441,
     "best_detrended_delta_r2": 8.366884969279731e-05,
     "defensible_rows": 0,
-    "defensible_rdp_rows": 1,
-    "rows_with_gate_fields": 16,
+    "defensible_rdp_rows": 0,
+    "rows_with_gate_fields": 11,
     "multichannel_rmse": 0.052811494062675345,
     "dataset_passes": {
       "steps": {
-        "total": 3,
+        "total": 2,
         "pass": 0
       },
       "spikes": {
-        "total": 3,
+        "total": 2,
         "pass": 0
       },
       "irregular": {
-        "total": 3,
+        "total": 2,
         "pass": 0
       },
       "multiscale": {
-        "total": 3,
+        "total": 2,
         "pass": 0
       },
       "smooth": {
-        "total": 3,
+        "total": 2,
         "pass": 0
       },
       "channels_multiaxis": {
@@ -1389,7 +958,785 @@
         "pass": 0
       }
     },
-    "locality_mode_desc": "strict(piecewise_fourier+detrended)"
+    "locality_mode_desc": "strict(piecewise_polynomial)"
   },
-  "rdp_frontier": null
+  "rdp_frontier": {
+    "keep_ratios": [
+      0.02,
+      0.05,
+      0.1,
+      0.2,
+      0.3
+    ],
+    "min_keep": 128,
+    "max_keep": null,
+    "r2_gate": 0.99,
+    "rows": [
+      {
+        "dataset": "steps",
+        "terms": 16,
+        "samples": 4000,
+        "target_keep_ratios": [
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.3
+        ],
+        "sweep": [
+          {
+            "target_keep_ratio": 0.02,
+            "actual_keep_ratio": 0.032,
+            "r2": 0.9748267730935716,
+            "rmse": 0.05356882305802638,
+            "max_abs": 0.2915542910750157,
+            "kept_points": 128,
+            "payload_bytes": 3464.0,
+            "payload_ratio": 18.475750577367204
+          },
+          {
+            "target_keep_ratio": 0.05,
+            "actual_keep_ratio": 0.05,
+            "r2": 0.9755339932616096,
+            "rmse": 0.052810977368291344,
+            "max_abs": 0.31854147461951227,
+            "kept_points": 200,
+            "payload_bytes": 5192.0,
+            "payload_ratio": 12.326656394453005
+          },
+          {
+            "target_keep_ratio": 0.1,
+            "actual_keep_ratio": 0.1,
+            "r2": 0.9724599598778876,
+            "rmse": 0.05603055751751338,
+            "max_abs": 0.35911806396065793,
+            "kept_points": 400,
+            "payload_bytes": 9992.0,
+            "payload_ratio": 6.405124099279424
+          },
+          {
+            "target_keep_ratio": 0.2,
+            "actual_keep_ratio": 0.2,
+            "r2": 0.9715023274043995,
+            "rmse": 0.056996390832271204,
+            "max_abs": 0.35428335684196177,
+            "kept_points": 800,
+            "payload_bytes": 19592.0,
+            "payload_ratio": 3.2666394446712945
+          },
+          {
+            "target_keep_ratio": 0.3,
+            "actual_keep_ratio": 0.3,
+            "r2": 0.9725033017438176,
+            "rmse": 0.05598645037169027,
+            "max_abs": 0.3442186791389586,
+            "kept_points": 1200,
+            "payload_bytes": 29192.0,
+            "payload_ratio": 2.1923814743765417
+          }
+        ],
+        "monotonic_keep": true,
+        "best_point": {
+          "target_keep_ratio": 0.05,
+          "actual_keep_ratio": 0.05,
+          "r2": 0.9755339932616096,
+          "rmse": 0.052810977368291344,
+          "max_abs": 0.31854147461951227,
+          "kept_points": 200,
+          "payload_bytes": 5192.0,
+          "payload_ratio": 12.326656394453005
+        },
+        "best_point_r2_gate_passes": false
+      },
+      {
+        "dataset": "steps",
+        "terms": 32,
+        "samples": 4000,
+        "target_keep_ratios": [
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.3
+        ],
+        "sweep": [
+          {
+            "target_keep_ratio": 0.02,
+            "actual_keep_ratio": 0.032,
+            "r2": 0.9933495611158721,
+            "rmse": 0.027533905205963556,
+            "max_abs": 0.1496989191963371,
+            "kept_points": 128,
+            "payload_bytes": 3848.0,
+            "payload_ratio": 16.632016632016633
+          },
+          {
+            "target_keep_ratio": 0.05,
+            "actual_keep_ratio": 0.05,
+            "r2": 0.9918463450290975,
+            "rmse": 0.030487290184139794,
+            "max_abs": 0.2242605466031185,
+            "kept_points": 200,
+            "payload_bytes": 5576.0,
+            "payload_ratio": 11.477761836441895
+          },
+          {
+            "target_keep_ratio": 0.1,
+            "actual_keep_ratio": 0.1,
+            "r2": 0.9881770388212697,
+            "rmse": 0.036711809515148235,
+            "max_abs": 0.31536928575068174,
+            "kept_points": 400,
+            "payload_bytes": 10376.0,
+            "payload_ratio": 6.168080185042405
+          },
+          {
+            "target_keep_ratio": 0.2,
+            "actual_keep_ratio": 0.2,
+            "r2": 0.9846614491962151,
+            "rmse": 0.04181526217366314,
+            "max_abs": 0.34604140854694543,
+            "kept_points": 800,
+            "payload_bytes": 19976.0,
+            "payload_ratio": 3.2038446135362433
+          },
+          {
+            "target_keep_ratio": 0.3,
+            "actual_keep_ratio": 0.3,
+            "r2": 0.9841812387119321,
+            "rmse": 0.042464781688054364,
+            "max_abs": 0.3456722509922433,
+            "kept_points": 1200,
+            "payload_bytes": 29576.0,
+            "payload_ratio": 2.1639166892074657
+          }
+        ],
+        "monotonic_keep": true,
+        "best_point": {
+          "target_keep_ratio": 0.02,
+          "actual_keep_ratio": 0.032,
+          "r2": 0.9933495611158721,
+          "rmse": 0.027533905205963556,
+          "max_abs": 0.1496989191963371,
+          "kept_points": 128,
+          "payload_bytes": 3848.0,
+          "payload_ratio": 16.632016632016633
+        },
+        "best_point_r2_gate_passes": true
+      },
+      {
+        "dataset": "spikes",
+        "terms": 16,
+        "samples": 4000,
+        "target_keep_ratios": [
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.3
+        ],
+        "sweep": [
+          {
+            "target_keep_ratio": 0.02,
+            "actual_keep_ratio": 0.03125,
+            "r2": 0.8631610518292843,
+            "rmse": 0.15468113311268086,
+            "max_abs": 0.6205903966968771,
+            "kept_points": 125,
+            "payload_bytes": 3392.0,
+            "payload_ratio": 18.867924528301888
+          },
+          {
+            "target_keep_ratio": 0.05,
+            "actual_keep_ratio": 0.05,
+            "r2": 0.9130164194340471,
+            "rmse": 0.1233249992871962,
+            "max_abs": 0.6288505121520819,
+            "kept_points": 200,
+            "payload_bytes": 5192.0,
+            "payload_ratio": 12.326656394453005
+          },
+          {
+            "target_keep_ratio": 0.1,
+            "actual_keep_ratio": 0.1,
+            "r2": 0.9066852185141028,
+            "rmse": 0.12773435016218748,
+            "max_abs": 0.841245154971109,
+            "kept_points": 400,
+            "payload_bytes": 9992.0,
+            "payload_ratio": 6.405124099279424
+          },
+          {
+            "target_keep_ratio": 0.2,
+            "actual_keep_ratio": 0.2,
+            "r2": 0.9203983490620753,
+            "rmse": 0.11797595965976458,
+            "max_abs": 0.7937935285277946,
+            "kept_points": 800,
+            "payload_bytes": 19592.0,
+            "payload_ratio": 3.2666394446712945
+          },
+          {
+            "target_keep_ratio": 0.3,
+            "actual_keep_ratio": 0.3,
+            "r2": 0.9152539185369759,
+            "rmse": 0.12172850667956404,
+            "max_abs": 0.7877083537567343,
+            "kept_points": 1200,
+            "payload_bytes": 29192.0,
+            "payload_ratio": 2.1923814743765417
+          }
+        ],
+        "monotonic_keep": true,
+        "best_point": {
+          "target_keep_ratio": 0.2,
+          "actual_keep_ratio": 0.2,
+          "r2": 0.9203983490620753,
+          "rmse": 0.11797595965976458,
+          "max_abs": 0.7937935285277946,
+          "kept_points": 800,
+          "payload_bytes": 19592.0,
+          "payload_ratio": 3.2666394446712945
+        },
+        "best_point_r2_gate_passes": false
+      },
+      {
+        "dataset": "spikes",
+        "terms": 32,
+        "samples": 4000,
+        "target_keep_ratios": [
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.3
+        ],
+        "sweep": [
+          {
+            "target_keep_ratio": 0.02,
+            "actual_keep_ratio": 0.03125,
+            "r2": 0.9429010595944953,
+            "rmse": 0.09991863804960585,
+            "max_abs": 0.39580495058034787,
+            "kept_points": 125,
+            "payload_bytes": 3776.0,
+            "payload_ratio": 16.949152542372882
+          },
+          {
+            "target_keep_ratio": 0.05,
+            "actual_keep_ratio": 0.05,
+            "r2": 0.9493993882849657,
+            "rmse": 0.0940611674508199,
+            "max_abs": 0.5274625145407695,
+            "kept_points": 200,
+            "payload_bytes": 5576.0,
+            "payload_ratio": 11.477761836441895
+          },
+          {
+            "target_keep_ratio": 0.1,
+            "actual_keep_ratio": 0.1,
+            "r2": 0.9433918771346437,
+            "rmse": 0.09948826521772158,
+            "max_abs": 0.675655656968345,
+            "kept_points": 400,
+            "payload_bytes": 10376.0,
+            "payload_ratio": 6.168080185042405
+          },
+          {
+            "target_keep_ratio": 0.2,
+            "actual_keep_ratio": 0.2,
+            "r2": 0.9485674755011891,
+            "rmse": 0.09483123402456331,
+            "max_abs": 0.5990103199636531,
+            "kept_points": 800,
+            "payload_bytes": 19976.0,
+            "payload_ratio": 3.2038446135362433
+          },
+          {
+            "target_keep_ratio": 0.3,
+            "actual_keep_ratio": 0.3,
+            "r2": 0.9496032770911705,
+            "rmse": 0.09387147234274326,
+            "max_abs": 0.571690424304279,
+            "kept_points": 1200,
+            "payload_bytes": 29576.0,
+            "payload_ratio": 2.1639166892074657
+          }
+        ],
+        "monotonic_keep": true,
+        "best_point": {
+          "target_keep_ratio": 0.3,
+          "actual_keep_ratio": 0.3,
+          "r2": 0.9496032770911705,
+          "rmse": 0.09387147234274326,
+          "max_abs": 0.571690424304279,
+          "kept_points": 1200,
+          "payload_bytes": 29576.0,
+          "payload_ratio": 2.1639166892074657
+        },
+        "best_point_r2_gate_passes": false
+      },
+      {
+        "dataset": "irregular",
+        "terms": 16,
+        "samples": 4000,
+        "target_keep_ratios": [
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.3
+        ],
+        "sweep": [
+          {
+            "target_keep_ratio": 0.02,
+            "actual_keep_ratio": 0.032,
+            "r2": 0.9169125373034308,
+            "rmse": 0.11318287398056026,
+            "max_abs": 0.339682999123545,
+            "kept_points": 128,
+            "payload_bytes": 3464.0,
+            "payload_ratio": 18.475750577367204
+          },
+          {
+            "target_keep_ratio": 0.05,
+            "actual_keep_ratio": 0.05,
+            "r2": 0.9591216278464477,
+            "rmse": 0.07938889656234513,
+            "max_abs": 0.24124624408920925,
+            "kept_points": 200,
+            "payload_bytes": 5192.0,
+            "payload_ratio": 12.326656394453005
+          },
+          {
+            "target_keep_ratio": 0.1,
+            "actual_keep_ratio": 0.1,
+            "r2": 0.9460149819983186,
+            "rmse": 0.09123250390273675,
+            "max_abs": 0.4273568886421277,
+            "kept_points": 400,
+            "payload_bytes": 9992.0,
+            "payload_ratio": 6.405124099279424
+          },
+          {
+            "target_keep_ratio": 0.2,
+            "actual_keep_ratio": 0.2,
+            "r2": 0.9663775086875929,
+            "rmse": 0.07199924032097782,
+            "max_abs": 0.23983280848986055,
+            "kept_points": 800,
+            "payload_bytes": 19592.0,
+            "payload_ratio": 3.2666394446712945
+          },
+          {
+            "target_keep_ratio": 0.3,
+            "actual_keep_ratio": 0.3,
+            "r2": 0.9813847236677833,
+            "rmse": 0.05357321537926517,
+            "max_abs": 0.2288016793937531,
+            "kept_points": 1200,
+            "payload_bytes": 29192.0,
+            "payload_ratio": 2.1923814743765417
+          }
+        ],
+        "monotonic_keep": true,
+        "best_point": {
+          "target_keep_ratio": 0.3,
+          "actual_keep_ratio": 0.3,
+          "r2": 0.9813847236677833,
+          "rmse": 0.05357321537926517,
+          "max_abs": 0.2288016793937531,
+          "kept_points": 1200,
+          "payload_bytes": 29192.0,
+          "payload_ratio": 2.1923814743765417
+        },
+        "best_point_r2_gate_passes": false
+      },
+      {
+        "dataset": "irregular",
+        "terms": 32,
+        "samples": 4000,
+        "target_keep_ratios": [
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.3
+        ],
+        "sweep": [
+          {
+            "target_keep_ratio": 0.02,
+            "actual_keep_ratio": 0.032,
+            "r2": 0.9687193347915516,
+            "rmse": 0.06944659535629019,
+            "max_abs": 0.21650415447834637,
+            "kept_points": 128,
+            "payload_bytes": 3848.0,
+            "payload_ratio": 16.632016632016633
+          },
+          {
+            "target_keep_ratio": 0.05,
+            "actual_keep_ratio": 0.05,
+            "r2": 0.9757552543733338,
+            "rmse": 0.061139486248488965,
+            "max_abs": 0.202371183760358,
+            "kept_points": 200,
+            "payload_bytes": 5576.0,
+            "payload_ratio": 11.477761836441895
+          },
+          {
+            "target_keep_ratio": 0.1,
+            "actual_keep_ratio": 0.1,
+            "r2": 0.9631793348137936,
+            "rmse": 0.07534575413910076,
+            "max_abs": 0.3214728105583605,
+            "kept_points": 400,
+            "payload_bytes": 10376.0,
+            "payload_ratio": 6.168080185042405
+          },
+          {
+            "target_keep_ratio": 0.2,
+            "actual_keep_ratio": 0.2,
+            "r2": 0.9830329717244194,
+            "rmse": 0.05114649305027332,
+            "max_abs": 0.20345569141625214,
+            "kept_points": 800,
+            "payload_bytes": 19976.0,
+            "payload_ratio": 3.2038446135362433
+          },
+          {
+            "target_keep_ratio": 0.3,
+            "actual_keep_ratio": 0.3,
+            "r2": 0.987558838735291,
+            "rmse": 0.04379690576717618,
+            "max_abs": 0.18958584233335182,
+            "kept_points": 1200,
+            "payload_bytes": 29576.0,
+            "payload_ratio": 2.1639166892074657
+          }
+        ],
+        "monotonic_keep": true,
+        "best_point": {
+          "target_keep_ratio": 0.3,
+          "actual_keep_ratio": 0.3,
+          "r2": 0.987558838735291,
+          "rmse": 0.04379690576717618,
+          "max_abs": 0.18958584233335182,
+          "kept_points": 1200,
+          "payload_bytes": 29576.0,
+          "payload_ratio": 2.1639166892074657
+        },
+        "best_point_r2_gate_passes": false
+      },
+      {
+        "dataset": "multiscale",
+        "terms": 16,
+        "samples": 4000,
+        "target_keep_ratios": [
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.3
+        ],
+        "sweep": [
+          {
+            "target_keep_ratio": 0.02,
+            "actual_keep_ratio": 0.032,
+            "r2": 0.9018334965503799,
+            "rmse": 0.09747044117240888,
+            "max_abs": 0.347641917641635,
+            "kept_points": 128,
+            "payload_bytes": 3464.0,
+            "payload_ratio": 18.475750577367204
+          },
+          {
+            "target_keep_ratio": 0.05,
+            "actual_keep_ratio": 0.05,
+            "r2": 0.8995438063176521,
+            "rmse": 0.09860061639406464,
+            "max_abs": 0.31675902542431505,
+            "kept_points": 200,
+            "payload_bytes": 5192.0,
+            "payload_ratio": 12.326656394453005
+          },
+          {
+            "target_keep_ratio": 0.1,
+            "actual_keep_ratio": 0.09925,
+            "r2": 0.9445619125590762,
+            "rmse": 0.07324793577293252,
+            "max_abs": 0.32741757010227013,
+            "kept_points": 397,
+            "payload_bytes": 9920.0,
+            "payload_ratio": 6.451612903225806
+          },
+          {
+            "target_keep_ratio": 0.2,
+            "actual_keep_ratio": 0.1995,
+            "r2": 0.9462319186685291,
+            "rmse": 0.07213624642753749,
+            "max_abs": 0.2613238732932306,
+            "kept_points": 798,
+            "payload_bytes": 19544.0,
+            "payload_ratio": 3.274662300450266
+          },
+          {
+            "target_keep_ratio": 0.3,
+            "actual_keep_ratio": 0.29925,
+            "r2": 0.9471125934864361,
+            "rmse": 0.07154304259363782,
+            "max_abs": 0.2636650221006604,
+            "kept_points": 1197,
+            "payload_bytes": 29120.0,
+            "payload_ratio": 2.197802197802198
+          }
+        ],
+        "monotonic_keep": true,
+        "best_point": {
+          "target_keep_ratio": 0.3,
+          "actual_keep_ratio": 0.29925,
+          "r2": 0.9471125934864361,
+          "rmse": 0.07154304259363782,
+          "max_abs": 0.2636650221006604,
+          "kept_points": 1197,
+          "payload_bytes": 29120.0,
+          "payload_ratio": 2.197802197802198
+        },
+        "best_point_r2_gate_passes": false
+      },
+      {
+        "dataset": "multiscale",
+        "terms": 32,
+        "samples": 4000,
+        "target_keep_ratios": [
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.3
+        ],
+        "sweep": [
+          {
+            "target_keep_ratio": 0.02,
+            "actual_keep_ratio": 0.032,
+            "r2": 0.932594945083832,
+            "rmse": 0.08076766062523405,
+            "max_abs": 0.26543937673559526,
+            "kept_points": 128,
+            "payload_bytes": 3848.0,
+            "payload_ratio": 16.632016632016633
+          },
+          {
+            "target_keep_ratio": 0.05,
+            "actual_keep_ratio": 0.05,
+            "r2": 0.9354806702528513,
+            "rmse": 0.07901984876868594,
+            "max_abs": 0.28741610845342447,
+            "kept_points": 200,
+            "payload_bytes": 5576.0,
+            "payload_ratio": 11.477761836441895
+          },
+          {
+            "target_keep_ratio": 0.1,
+            "actual_keep_ratio": 0.09925,
+            "r2": 0.9628056964320709,
+            "rmse": 0.0599969932533038,
+            "max_abs": 0.240066557894553,
+            "kept_points": 397,
+            "payload_bytes": 10304.0,
+            "payload_ratio": 6.211180124223603
+          },
+          {
+            "target_keep_ratio": 0.2,
+            "actual_keep_ratio": 0.1995,
+            "r2": 0.9670252163260826,
+            "rmse": 0.056491388343138375,
+            "max_abs": 0.2264740491926292,
+            "kept_points": 798,
+            "payload_bytes": 19928.0,
+            "payload_ratio": 3.211561621838619
+          },
+          {
+            "target_keep_ratio": 0.3,
+            "actual_keep_ratio": 0.29925,
+            "r2": 0.9578790974495878,
+            "rmse": 0.06384694253727367,
+            "max_abs": 0.2360991033672596,
+            "kept_points": 1197,
+            "payload_bytes": 29504.0,
+            "payload_ratio": 2.1691973969631237
+          }
+        ],
+        "monotonic_keep": true,
+        "best_point": {
+          "target_keep_ratio": 0.2,
+          "actual_keep_ratio": 0.1995,
+          "r2": 0.9670252163260826,
+          "rmse": 0.056491388343138375,
+          "max_abs": 0.2264740491926292,
+          "kept_points": 798,
+          "payload_bytes": 19928.0,
+          "payload_ratio": 3.211561621838619
+        },
+        "best_point_r2_gate_passes": false
+      },
+      {
+        "dataset": "smooth",
+        "terms": 16,
+        "samples": 4000,
+        "target_keep_ratios": [
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.3
+        ],
+        "sweep": [
+          {
+            "target_keep_ratio": 0.02,
+            "actual_keep_ratio": 0.032,
+            "r2": 0.9169985673410718,
+            "rmse": 0.11312029707520556,
+            "max_abs": 0.34355476183041594,
+            "kept_points": 128,
+            "payload_bytes": 3464.0,
+            "payload_ratio": 18.475750577367204
+          },
+          {
+            "target_keep_ratio": 0.05,
+            "actual_keep_ratio": 0.05,
+            "r2": 0.9608701161391731,
+            "rmse": 0.0776697705399462,
+            "max_abs": 0.23006516255266607,
+            "kept_points": 200,
+            "payload_bytes": 5192.0,
+            "payload_ratio": 12.326656394453005
+          },
+          {
+            "target_keep_ratio": 0.1,
+            "actual_keep_ratio": 0.1,
+            "r2": 0.9537713326961945,
+            "rmse": 0.08442157096270153,
+            "max_abs": 0.3773194961701245,
+            "kept_points": 400,
+            "payload_bytes": 9992.0,
+            "payload_ratio": 6.405124099279424
+          },
+          {
+            "target_keep_ratio": 0.2,
+            "actual_keep_ratio": 0.2,
+            "r2": 0.9708408305554928,
+            "rmse": 0.06704792123622925,
+            "max_abs": 0.2375043993763022,
+            "kept_points": 800,
+            "payload_bytes": 19592.0,
+            "payload_ratio": 3.2666394446712945
+          },
+          {
+            "target_keep_ratio": 0.3,
+            "actual_keep_ratio": 0.3,
+            "r2": 0.9800791420227642,
+            "rmse": 0.055418116627282826,
+            "max_abs": 0.24673458070712923,
+            "kept_points": 1200,
+            "payload_bytes": 29192.0,
+            "payload_ratio": 2.1923814743765417
+          }
+        ],
+        "monotonic_keep": true,
+        "best_point": {
+          "target_keep_ratio": 0.3,
+          "actual_keep_ratio": 0.3,
+          "r2": 0.9800791420227642,
+          "rmse": 0.055418116627282826,
+          "max_abs": 0.24673458070712923,
+          "kept_points": 1200,
+          "payload_bytes": 29192.0,
+          "payload_ratio": 2.1923814743765417
+        },
+        "best_point_r2_gate_passes": false
+      },
+      {
+        "dataset": "smooth",
+        "terms": 32,
+        "samples": 4000,
+        "target_keep_ratios": [
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.3
+        ],
+        "sweep": [
+          {
+            "target_keep_ratio": 0.02,
+            "actual_keep_ratio": 0.032,
+            "r2": 0.9686687114745337,
+            "rmse": 0.06950033063268043,
+            "max_abs": 0.21633040694017064,
+            "kept_points": 128,
+            "payload_bytes": 3848.0,
+            "payload_ratio": 16.632016632016633
+          },
+          {
+            "target_keep_ratio": 0.05,
+            "actual_keep_ratio": 0.05,
+            "r2": 0.9794611966023209,
+            "rmse": 0.05627108790155803,
+            "max_abs": 0.19172759567731323,
+            "kept_points": 200,
+            "payload_bytes": 5576.0,
+            "payload_ratio": 11.477761836441895
+          },
+          {
+            "target_keep_ratio": 0.1,
+            "actual_keep_ratio": 0.1,
+            "r2": 0.9722900663060847,
+            "rmse": 0.06536051807784632,
+            "max_abs": 0.2567624642756255,
+            "kept_points": 400,
+            "payload_bytes": 10376.0,
+            "payload_ratio": 6.168080185042405
+          },
+          {
+            "target_keep_ratio": 0.2,
+            "actual_keep_ratio": 0.2,
+            "r2": 0.9831904439626056,
+            "rmse": 0.05090680775544149,
+            "max_abs": 0.16062965648040795,
+            "kept_points": 800,
+            "payload_bytes": 19976.0,
+            "payload_ratio": 3.2038446135362433
+          },
+          {
+            "target_keep_ratio": 0.3,
+            "actual_keep_ratio": 0.3,
+            "r2": 0.987280019089193,
+            "rmse": 0.0442834014897365,
+            "max_abs": 0.192236403022771,
+            "kept_points": 1200,
+            "payload_bytes": 29576.0,
+            "payload_ratio": 2.1639166892074657
+          }
+        ],
+        "monotonic_keep": true,
+        "best_point": {
+          "target_keep_ratio": 0.3,
+          "actual_keep_ratio": 0.3,
+          "r2": 0.987280019089193,
+          "rmse": 0.0442834014897365,
+          "max_abs": 0.192236403022771,
+          "kept_points": 1200,
+          "payload_bytes": 29576.0,
+          "payload_ratio": 2.1639166892074657
+        },
+        "best_point_r2_gate_passes": false
+      }
+    ],
+    "summary": {
+      "frontier_rows": 10,
+      "monotonic_count": 10,
+      "best_points_with_gate": 1
+    }
+  }
 }

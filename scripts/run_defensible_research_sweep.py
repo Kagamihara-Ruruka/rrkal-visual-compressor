@@ -177,12 +177,115 @@ def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 
     }
 
 
+def _benchmark_rdp_frontier(
+    name: str,
+    series: TimeSeries,
+    terms: int,
+    keep_ratio_list: list[float],
+    *,
+    min_keep: int = 128,
+    max_keep: int | None = None,
+    r2_gate: float | None = None,
+) -> dict[str, Any]:
+    # Try several RDP budgets and report where each one lands.
+    # This is a "sweet-spot" table: too many points no longer saves much,
+    # too few points ruins accuracy.
+    raw_payload = float(series.sample_count) * 2.0 * FLOAT64_BYTES
+    sweep = []
+
+    for target_keep_ratio in keep_ratio_list:
+        if target_keep_ratio <= 0.0 or target_keep_ratio > 1.0:
+            continue
+        model = compress_fourier_with_rdp_budget(
+            series,
+            terms=terms,
+            target_keep_ratio=target_keep_ratio,
+            min_keep=min_keep,
+            max_keep=max_keep,
+        )
+        metrics = regression_metrics(series.y, model.reconstructed_y)
+        payload_bytes = _estimate_rdp_prefilter_payload_bytes(model)
+        sweep.append(
+            {
+                "target_keep_ratio": float(target_keep_ratio),
+                "actual_keep_ratio": float(model.metrics["keep_ratio_actual"]),
+                "r2": float(metrics["r2"]),
+                "rmse": float(metrics["rmse"]),
+                "max_abs": float(metrics["max_abs"]),
+                "kept_points": int(model.prefilter.parameter_count),
+                "payload_bytes": float(payload_bytes),
+                "payload_ratio": _safe_ratio(raw_payload, payload_bytes),
+            }
+        )
+
+    if not sweep:
+        return {
+            "dataset": name,
+            "terms": int(terms),
+            "samples": int(series.sample_count),
+            "sweep": [],
+            "best_point": None,
+        }
+
+    sweep = sorted(sweep, key=lambda item: item["target_keep_ratio"])
+    # "best" here means highest payload compression among points with enough fidelity.
+    best_candidates = [
+        item
+        for item in sweep
+        if r2_gate is None or item["r2"] >= float(r2_gate)
+    ]
+    if best_candidates:
+        best_point = max(
+            best_candidates,
+            key=lambda item: (item["payload_ratio"], item["r2"], -item["actual_keep_ratio"]),
+        )
+    else:
+        best_point = max(sweep, key=lambda item: item["r2"])
+
+    # Check that target budgets behave logically: larger target ratio should keep
+    # more points than smaller target ratio.
+    monotonic_keep = True
+    for left, right in zip(sweep[:-1], sweep[1:]):
+        if right["actual_keep_ratio"] + 1e-12 < left["actual_keep_ratio"]:
+            monotonic_keep = False
+            break
+
+    return {
+        "dataset": name,
+        "terms": int(terms),
+        "samples": int(series.sample_count),
+        "target_keep_ratios": [float(item["target_keep_ratio"]) for item in sweep],
+        "sweep": sweep,
+        "monotonic_keep": bool(monotonic_keep),
+        "best_point": best_point,
+        "best_point_r2_gate_passes": bool(r2_gate is None) or bool(best_candidates),
+    }
+
+
 def _safe_ratio(numerator: float, denominator: float, *, eps: float = 1e-12) -> float:
     # Avoid divide-by-zero noise in reports.
     # If denominator is near zero, return 0 to keep the table stable.
     if denominator <= eps:
         return 0.0
     return float(numerator / denominator)
+
+
+def _parse_float_list(raw: str) -> list[float]:
+    # Parse a user string like "0.02,0.05,0.1,0.2".
+    # Invalid tokens are ignored, then duplicates are removed.
+    values: list[float] = []
+    for item in raw.split(","):
+        token = item.strip()
+        if not token:
+            continue
+        value = float(token)
+        if value <= 0.0 or value > 1.0:
+            raise ValueError(f"ratio must be in (0,1], got {value}")
+        if value not in values:
+            values.append(value)
+    if not values:
+        raise ValueError(f"no valid ratio found in {raw!r}")
+    return values
 
 
 def _estimate_fourier_payload_bytes(model: FourierModel) -> int:
@@ -245,6 +348,29 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         default=False,
         help="Include piecewise polynomial locality in locality gate checks",
+    )
+    parser.add_argument(
+        "--run-rdp-frontier",
+        action="store_true",
+        default=False,
+        help="Run extra RDP frontier scan rows for multiple keep ratios",
+    )
+    parser.add_argument(
+        "--rdp-frontier-ratios",
+        default="0.02,0.04,0.08,0.12,0.16,0.2,0.3",
+        help="Comma-separated RDP target keep ratios for frontier scan",
+    )
+    parser.add_argument(
+        "--rdp-frontier-min-keep",
+        type=int,
+        default=128,
+        help="Minimum RDP points kept during frontier scan",
+    )
+    parser.add_argument(
+        "--rdp-frontier-max-keep",
+        type=int,
+        default=0,
+        help="Optional maximum RDP keep count (0 means no max limit)",
     )
     return parser.parse_args()
 
@@ -381,6 +507,36 @@ def main() -> int:
     per_dataset = _grouped_pass_rows(rows)
     locality_mode_desc = f"{args.locality_mode}({ 'piecewise_polynomial' if args.include_piecewise_polynomial else 'piecewise_fourier+detrended'})"
 
+    frontier = None
+    if args.run_rdp_frontier:
+        keep_ratios = _parse_float_list(args.rdp_frontier_ratios)
+        frontier_rows = []
+        for name, series in datasets:
+            for term in terms:
+                frontier_rows.append(
+                    _benchmark_rdp_frontier(
+                        name=name,
+                        series=series,
+                        terms=term,
+                        keep_ratio_list=keep_ratios,
+                        min_keep=args.rdp_frontier_min_keep,
+                        max_keep=args.rdp_frontier_max_keep or None,
+                        r2_gate=args.r2_gate,
+                    )
+                )
+        frontier = {
+            "keep_ratios": keep_ratios,
+            "min_keep": int(args.rdp_frontier_min_keep),
+            "max_keep": None if args.rdp_frontier_max_keep <= 0 else int(args.rdp_frontier_max_keep),
+            "r2_gate": args.r2_gate,
+            "rows": frontier_rows,
+            "summary": {
+                "frontier_rows": len(frontier_rows),
+                "monotonic_count": sum(1 for row in frontier_rows if row["monotonic_keep"]),
+                "best_points_with_gate": sum(1 for row in frontier_rows if row["best_point_r2_gate_passes"]),
+            },
+        }
+
     payload = {
         "terms": terms,
         "rows": rows,
@@ -388,11 +544,12 @@ def main() -> int:
             "gate_config": {
                 "r2_gate": args.r2_gate,
                 "leakage_gate": args.leakage_gate,
-                "max_adaptive_keep_ratio": args.max_adaptive_keep_ratio,
-                "locality_mode": args.locality_mode,
-                "include_piecewise_polynomial": args.include_piecewise_polynomial,
-            },
-            "best_global_r2": max(row["global"]["r2"] for row in rows if "global" in row),
+            "max_adaptive_keep_ratio": args.max_adaptive_keep_ratio,
+            "locality_mode": args.locality_mode,
+            "include_piecewise_polynomial": args.include_piecewise_polynomial,
+        },
+        "run_rdp_frontier": bool(args.run_rdp_frontier),
+        "best_global_r2": max(row["global"]["r2"] for row in rows if "global" in row),
             "best_piecewise_leakage": min(
                 row["piecewise_fourier"]["leakage_ratio"] for row in rows if "piecewise_fourier" in row
             ),
@@ -411,6 +568,7 @@ def main() -> int:
             "dataset_passes": per_dataset,
             "locality_mode_desc": locality_mode_desc,
         },
+        "rdp_frontier": frontier,
     }
 
     out_json = Path(args.out_json)
@@ -475,6 +633,40 @@ def main() -> int:
     )
     for dataset, pass_stat in sorted(per_dataset.items()):
         lines.append(f"  - {dataset}: {pass_stat['pass']} / {pass_stat['total']}")
+
+    if frontier is not None:
+        lines.extend(
+            [
+                "",
+                "## RDP frontier scan",
+                "",
+                "| dataset | terms | target keep ratio | actual keep | r2 | payload ratio | kept points | best under R2 gate? |",
+                "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+            ]
+        )
+        for item in frontier["rows"]:
+            best = item["best_point"]
+            best_keep = float(best["target_keep_ratio"]) if best else 0.0
+            best_ratio = float(best["actual_keep_ratio"]) if best else 0.0
+            best_r2 = float(best["r2"]) if best else 0.0
+            best_payload = float(best["payload_ratio"]) if best else 0.0
+            best_points = int(best["kept_points"]) if best else 0
+            lines.append(
+                "| "
+                + " | ".join(
+                    [
+                        str(item["dataset"]),
+                        _format_float(item["terms"]),
+                        _format_float(best_keep),
+                        _format_float(best_ratio),
+                        _format_float(best_r2),
+                        _format_float(best_payload),
+                        _format_float(best_points),
+                        "yes" if item["best_point_r2_gate_passes"] else "no",
+                    ]
+                )
+                + " |"
+            )
 
     out_md.write_text("\n".join(lines), encoding="utf-8")
 

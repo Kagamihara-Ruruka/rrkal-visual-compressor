@@ -1,140 +1,123 @@
-# 研究筆記：可證明的壓縮方向（RRKAL Visual Compressor）
+# 研究筆記：RRKAL Visual Compressor 的可辯護壓縮方向
 
-日期：2026-05-27
+日期：2026-05-28  
 專案：`rrkal-visual-compressor`
 
-## 1) 測試重點
+## 1) 研究範圍與定位
 
-本專案的目標是讓壓縮路徑「可被檢驗」，而非宣稱一個普適定理。
-只保留在可度量條件下成立的方法。
+本專案目前關注的是**可辯護性**，而不是「萬用壓縮理論」。
+所有主張都必須是條件式、可重現、可量測的。
 
-- 同一組輸入、同一個取樣點數；
-- 使用一致的重建度量（R2 / RMSE / Max-AE）；
-- 同步報告複雜度與位元組開銷（參數數、殘差比例、metadata）。
+每次比較都要先明確：
 
-## 2) 風險模型（硬條件）
+- 相同輸入樣本域與評估長度，
+- 固定目標下的重建指標（`R2`、`RMSE`、`Max-AE`），
+- 明確的複雜度與 payload 指標（係數數、殘差筆數、metadata 位元組）。
+- 在報告中分開列出精度益處與壓縮益處。
 
-### 風險 A：全域 Fourier 的局部擴散
-Fourier 是全域基底，局部突變可能在全域擾動（Gibbs）。
+## 2) 核心風險與檢查
 
-- 我們用 `src/vizcompress/research.py` 的 `locality_leakage_metric` 作為守門閘；
-- 步階訊號是壓力測試。
+### A. 全域模型的局部擴散
+全域 Fourier 容易把局部突變往遠端「汙染」。
 
-### 風險 B：非均勻 x 軸
-- 非均勻時間軸若未明確處理，會造成重建偏差。
-- `domains.py` 的 `stored_x` / `linear_plus_rdp_delta` / `linspace_from_min_max` 已列為不同策略。
-- `packages.py` 的 x 軸壓縮 metadata 校驗已修正。
+- 使用 `locality_leakage_metric` 量測。
+- 用 step 類合成訊號當壓力測試。
 
-### 風險 C：多通道耦合
-- 單通道獨立壓縮會浪費跨通道共用結構。
-- `compress_multichannel_fourier_pca` 在 PCA/SVD 降維後再做 Fourier，作為第一條替代。
+### B. 不規則時間軸假設
+時間戳若不規則，重建容易產生時間漂移。
 
-### 風險 D：殘差層體積反彈
-- 殘差層可能吃掉大部分收益。
-- 目前回報每個方法的 `payload_ratio`，以及殘差層可估計 payload，避免只看誤差。
+- `domains.py` 明確保存 x-domain 策略（`stored_x`、`linear_plus_rdp_delta`、`linspace_from_min_max`），
+- `packages.py` 驗證 `x_delta_t`、`x_delta_values` 等元資料欄位。
 
-## 3) 已落地的研究 baseline
+### C. 通道耦合
+多通道資料並非彼此獨立。
 
-`src/vizcompress/research.py` 目前包含：
+- `compress_multichannel_fourier_pca` 先做 PCA/SVD 共享潛在軸，再做 Fourier。
+
+### D. 殘差層過重
+若殘差層過大，整體壓縮效果會失效。
+
+- 所有比較列都同步記錄殘差佔比與 payload。
+
+## 3) 已實作基線
+
+`src/vizcompress/research.py` 已包含：
 
 - `compress_fourier_piecewise`
 - `compress_piecewise_polynomial`
 - `compress_fourier_with_uniform_param`
 - `compress_multichannel_fourier_pca`
-- `compress_haar_threshold`（Haar + 閾值）
+- `compress_haar_threshold`
+- `locality_leakage_metric`
 - `compress_fourier_with_linear_detrend`
 - `adaptive_residual_threshold`
-- `locality_leakage_metric`
-- `compress_fourier_with_rdp_budget`（RDP 預簡化 + Fourier）
+- `compress_fourier_with_rdp_budget`
+- 前面件配套的 frontier 掃描邏輯（於 sweep 腳本）
 
-`tests/test_research.py` 對應覆蓋：
+`tests/test_research.py` 已覆蓋：
 
-- 跳變點偵測與區域外洩比較
-- 分段 Fourier/多項式可行性
-- 非均勻取樣
-- 多通道 PCA 對比
-- Haar 門檻 baseline
-- 線性去趨勢
-- 自適應殘差門檻
+- step / spikes 的局部洩漏比較，
+- 有限值與形狀一致性，
+- 不規則時間軸穩定性，
+- 多通道 PCA，
+- Haar 與自適應殘差行為，
+- RDP 預簡化的約束與單調性。
 
-## 4) 點化簡與渲染預算
+## 4) 視覺化前的簡化（取樣預算）
 
-你的「先做 polyline simplification」是有意義的：
+你的想法正確：簡化不是另一種壓縮理論，而是**放在擬合前的取樣預算控制**。
 
-- 目標畫布 `W×H` 下可視化像素可見度上限約 `2P`（P 為可視度量）；
-- 在這個預算上再做函數近似（Fourier / polynomial / wavelet），可減少無效點與後續 payload。
+- 根據輸出影像尺寸 `W×H`，可見資訊有自然的上限。
+- 過量點數通常不會提升可視結果。
+- 在 Fourier / polynomial / wavelet 前先做簡化，可降低渲染前處理與擬合成本。
 
-可測量：
+### 4.1) RDP 預簡化基線
 
-- 誤差-降採樣單調性；
-- 壓縮成本（payload）變化；
-- 在不同 scale 的穩定性。
+- 輸入 `target_keep_ratio`
+- 內部以二分搜 `epsilon` 讓保留點數接近目標
+- 對簡化結果做 Fourier 擬合
+- 插值回原始 x-域
 
-### 4.1) RDP 預算 baseline 的觀察
+實驗上，RDP 可降低運算端點數，但若保留點仍多，payload 可能反而上升，因此目前作為獨立控制參數，而非預設主路徑。
 
-已新增 `compress_fourier_with_rdp_budget`：
+## 5) Frontier 掃描（新檢測機制）
 
-- 用 `target_keep_ratio` 表示可見化可用點預算；
-- 二分搜出對應的 RDP `epsilon`；
-- 在簡化後點列做 Fourier 擬合；
-- 再插值回原始 x 軸回推重建。
+`scripts/run_defensible_research_sweep.py` 新增：
 
-目前實驗（`--locality-mode any`、`--terms 16,32,64`）顯示：
+- `--run-rdp-frontier`
+- `--rdp-frontier-ratios`
+- `--rdp-frontier-min-keep`
+- `--rdp-frontier-max-keep`
 
-- 先簡化可減少渲染前處理點數；
-- 但若保留點過多，`payload` 可能不降（因為同時要存 RDP 控制點與 Fourier 參數）；
-- 因此先當作「可調旋鈕」，避免直接取代主 baseline。
+frontier 輸出會記錄每個 ratio 的：
 
-報表估算式：
+- 實際保留比例與保留點數
+- R2、RMSE、payload ratio
+- 在 `r2_gate` 下的最佳點
 
-$$
-\text{payload}_{rdp}\approx K(2f+8)+(24C+8)
-$$
+這樣可以直接找出每種資料型態的「甜蜜區」而非拍腦袋挑一個固定比率。
 
-- $K$：RDP 保留點數；
-- $f$：float64 位元組數（8）；
-- $C$：簡化後 Fourier 係數個數。
+## 6) Payload 估算（保守）
 
-## 5) 為何這裡是「可被證明」而非「萬能公式」
-
-我們只聲明：
-
-1. 信號族先決定（平滑、週期、分段規則、有限雜訊）；
-2. 相同資料、相同評估域；
-3. 相同誤差條件下比較。
-
-同時追求：
-
-- 證據先行（defensible checkpoint）；
-- 可重現（隨機種子固定）；
-- 準確記錄 x 軸策略。
-
-### 當前 checkpoint 狀態
-
-- strict（`--locality-mode strict`，預設）：`--terms 16,32,64 --r2-gate 0.99 --leakage-gate 0.25 --max-adaptive-keep-ratio 0.45` 得到 `0 / 16` 通過。
-- any（`--locality-mode any --r2-gate 0.98 --leakage-gate 0.85 --max-adaptive-keep-ratio 0.45`）得到 `12 / 16` 通過。
-
-解讀：strict 是硬門檻；any 用來定位可改進路徑。
-
-## 6) 報告欄位（含 payload）
+目前使用保守估算，不做 entropy coding：
 
 - `raw_payload_bytes = sample_count * 2 * 8`
-- Fourier payload（估算）`= coeff_count * 24 + 8`
-- piecewise payload（估算）`= Σ segment_bytes + breakpoints*8`
-- polynomial payload（估算）`= (approx_parameter_count + 2*segment_count + breakpoints) * 8`
-- rdp_prefilter payload（估算）`= K(2f+8)+(24C+8)`（`f=8`）
+- `payload_fourier ≈ parameter_count * 24 + 8`
+- `payload_piecewise_fourier = Σ(24 * segment_param_count) + len(breakpoints) * 8`
+- `payload_piecewise_polynomial = approx_param_count * 8 + 2 * segment_count * 8 + len(breakpoints) * 8`
+- `payload_rdp ≈ kept_points * (2*8 + 8) + payload_fourier`
 
-這些只是估算，不含壓縮器額外封裝（entropy coding / container overhead）。
+輸出中都有 `payload_ratio = raw_payload_bytes / payload_bytes` 便於對齊比較。
 
-## 7) 執行檢查清單
+## 7) 這樣跑
 
 ```bash
 python -m pytest tests/test_research.py -q
-py scripts/run_defensible_research_sweep.py --terms 16,32,64 --out-json docs/benchmarks/defensible_hardening_report.json --out-md docs/benchmarks/defensible_hardening_report.md
+py scripts/run_defensible_research_sweep.py --terms 16,32 --include-piecewise-polynomial --run-rdp-frontier --rdp-frontier-ratios 0.02,0.05,0.10,0.20,0.30
 ```
 
-## 8) 結果判讀
+## 8) 判讀原則
 
-- R2 若上升但 payload 也同步惡化，不能算有效贏家。
-- 局部外洩降低但在 spikes/steps 上誤差失控，不能上線。
-- 在同一條件下，若 fidelity 與 payload 同時改善，才可提昇到下一級。
+- 若 `R2` 上升但 payload 也同步上升，不能直接算勝出，要看壓縮比是否真的更好。
+- 局部表現變好但主體精度大幅下降，請直接拒絕。
+- 在固定條件下，同時看見精度與 payload 的穩定進步，才可進入下一個執行檢核點。
