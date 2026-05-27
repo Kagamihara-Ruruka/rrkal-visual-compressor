@@ -93,9 +93,20 @@ docs/
   ARCHITECTURE.md
   CONCEPTUAL_MODEL.md
   ROADMAP.md
+  VIDEO_FUNCTIONAL_COMPRESSION.md
   AGENT_HANDOFF.md
   DEVELOPMENT_GOVERNANCE.md
   *.zh-TW.md       Traditional Chinese versions
+```
+
+Video-oriented research is also available:
+
+```text
+Video prototype:
+  - VideoCube input model
+  - SVD + per-mode Fourier encoding
+  - Arbitrary output sample reconstruction
+  - size_ratio and reconstruction metric evidence
 ```
 
 See [docs/DEVELOPMENT_GOVERNANCE.md](docs/DEVELOPMENT_GOVERNANCE.md) for the

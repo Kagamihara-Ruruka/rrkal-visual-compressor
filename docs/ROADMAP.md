@@ -125,6 +125,42 @@ Metrics:
 
 This phase is important because it encodes visual fidelity as a range, not just as a center line.
 
+## Phase 2.5: Video-First Functional Encoding Research
+
+Goal: prove that temporal axes are just another function axis in the same compression
+pipeline, not a separate engine.
+
+Model:
+
+```text
+V(t, x, y) ≈ Σk c_k(t) · φk(x, y) + Î(x, y)
+```
+
+where:
+
+- `φk` are spatial modes (POD / low-rank approximation),
+- `c_k(t)` are one-dimensional temporal coefficient functions (Fourier),
+- `Î` is the mean frame.
+
+Prototype tasks:
+
+- Build `VideoCube` for structured frame sequences.
+- SVD/POD decomposition by frame axis.
+- Temporal Fourier for each coefficient channel.
+- Rendering-reconstruction on demand for target FPS/viewport sample count.
+- Evidence report: raw bytes vs function bytes, video RMSE/MAE/max error, size break-even.
+
+Definition of done:
+
+- Reconstruction at the original frame count matches synthetic low-rank test films with
+  R2 >= 0.99.
+- Up/down sampling from the model works (e.g., reconstruct 240 fps from 120-source
+  samples).
+- Reported `size_ratio` and `source-back` evidence are explicit and reproducible.
+
+This phase is experimental and does not change package format yet; it should produce
+research-level checkpoints and scripts first.
+
 ## Phase 3: `.vizasset` Package Format
 
 Goal: define the handoff contract between compressor, editor, and RRKAL.
