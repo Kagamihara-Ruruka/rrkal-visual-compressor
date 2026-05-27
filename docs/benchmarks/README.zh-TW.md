@@ -106,3 +106,20 @@ py scripts/run_terms_channel_threshold_sweep.py \
   --out-json docs/benchmarks/terms_channel_k_threshold_grid.json \
   --out-md docs/benchmarks/terms_channel_k_threshold_grid.md
 ```
+
+### 跨資料型態穩定性（terms × channel-K × kind）
+
+```bash
+py scripts/run_terms_channel_kind_threshold_sweep.py \
+  --sample-sizes 10000 \
+  --synthetic-kinds all \
+  --fourier-terms 16,32,64 \
+  --channel-k 2,3,4 \
+  --channel-window 16 \
+  --channel-band-epsilon 0.04 \
+  --rdp-epsilon 0.6 \
+  --thresholds 0.90,0.92,0.95,0.98 \
+  --svg-samples 240 \
+  --out-json docs/benchmarks/terms_channel_kind_threshold_grid.json \
+  --out-md docs/benchmarks/terms_channel_kind_threshold_grid.md
+```
