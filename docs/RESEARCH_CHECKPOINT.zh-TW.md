@@ -1,57 +1,56 @@
-# 研究檢核點 v1.1：可辯護壓縮路線
+# 研究檢查點 v1.1：可辯護的壓縮路線圖
 
 日期：2026-05-28  
-負責：RRKAL Visual Compressor  
-範圍：時間序列 / 2D 預覽層（尚未進入完整 3D 管線）
+負責專案：RRKAL Visual Compressor  
+範圍：時間序列 / 2D 預覽層，尚未進入 3D 引擎層
 
-## 1) 目前測試中的核心命題
+## 1) 目前正在測試的核心主張
 
-本專案不嘗試證明「萬用數學定理」。  
-我們正在驗證的是：
+我們不是在證明一條放諸四海皆準的定理。  
+目前假說是：
 
-> 對於有明確結構的資料（平穩趨勢 + 區域細節 + 適度雜訊），
-> 「可壓縮的函數表示」加上「受控殘差層」，在可量測條件下可優於原始逐點輸入。
+> 對於有明確結構的資料，例如平滑趨勢、局部細節與中等噪聲，緊湊的函數表示加上受控殘差層，有機會在可量測條件下優於原始點取樣。
 
-這是**可執行的工程命題**，非萬用真理聲明。
+這是一個**可測試的工程主張**，不是物理定律。
 
-## 2) 當前風險假設（已轉成檢測項）
+## 2) 目前的風險假說
 
-1. **全域 Fourier 的局部漏洩**  
-   尖變點可能產生非局部波紋。  
-   ✅ 已用 `locality_leakage_metric` 量測。
+1. **全域傅立葉的局部污染**
+   尖銳跳變可能造成非局部的波紋假影。  
+   目前用 `locality_leakage_metric` 量測。
 
-2. **不規則時間軸處理**  
-   時間戳不規則時必須明確編解碼策略。  
-   ✅ `domains.py` 已有多種 `x` 編碼路徑並保留驗證。
+2. **不規則 `x` 軸處理**
+   不規則時間戳需要明確的 encode/decode domain 策略。  
+   目前已有 `domains.py` 的 domain policy 與 payload 路徑檢查。
 
-3. **多通道耦合**  
-   通道通常不是彼此獨立。  
-   ✅ 已加入 PCA/SVD 的多通道 baseline。
+3. **多通道耦合**
+   真實系統中的通道通常不是彼此獨立。  
+   目前已加入 PCA/SVD 多軸 baseline。
 
-4. **殘差預算失控**  
-   第二層 correction 可能吃掉壓縮效果。  
-   ✅ 已追蹤殘差比例與 payload。
+4. **殘差層膨脹**
+   第二層 correction 可能吃掉壓縮收益。  
+   目前已追蹤 residual ratio 與 payload estimate。
 
-5. **畫面像素預算驅動取樣**  
-   超過顯示解析度的點數是浪費。  
-   ✅ 已加入 RDP 預簡化路徑，並新增 frontier 掃描。
+5. **視角 / DPI 感知取樣預算**
+   超過顯示解析度的過度取樣會造成浪費。  
+   目前已加入 RDP pre-filter 路徑與 frontier sweep。
 
-## 3) 本檢核點門檻規則
+## 3) 本檢查點的 gate 政策
 
-在 `scripts/run_defensible_research_sweep.py` 每一列結果中要求：
+`scripts/run_defensible_research_sweep.py` 的每一列都檢查：
 
-- `R2 >= r2_gate`（預設 `0.99`）
-- 局部方法是否過門檻：
-  - `strict`（預設）：piecewise Fourier 與 detrended Fourier 都要過
-  - `any`：兩者任一通過即可
-- 可選：`--include-piecewise-polynomial` 開啟 piecewise polynomial 候選
-- `adaptive_keep_ratio <= max_adaptive_keep_ratio`（預設 `0.45`）
+- `R2 >= r2_gate`，預設 `0.99`
+- locality candidates 依照模式通過：
+  - `strict`：piecewise Fourier 與 detrended Fourier 都要通過
+  - `any`：任一方法通過即可
+- 可選 `--include-piecewise-polynomial` 納入 piecewise polynomial candidate
+- `adaptive_keep_ratio <= max_adaptive_keep_ratio`，預設 `0.45`
 
-同時符合者標記為 `defensible = true`。
+同時通過以上條件的列，才標記為 `defensible = true`。
 
-## 4) RDP frontier 掃描（新）
+## 4) RDP frontier 掃描
 
-指令範例：
+執行命令：
 
 ```bash
 py scripts/run_defensible_research_sweep.py \
@@ -63,33 +62,37 @@ py scripts/run_defensible_research_sweep.py \
   --out-md docs/benchmarks/defensible_hardening_report_frontier.md
 ```
 
-輸出會包含：
+這會輸出：
 
-- 每個資料集/項數的 `target_keep_ratio` 掃描點
-- 每點的實際保留比例、R2、payload ratio、實際保留點數
-- 在 `r2_gate` 下的最佳甜蜜點
-- 單調性檢查（`target ratio` 越大時實際保留比例不應變小）
+- 每個 dataset / terms / target keep ratio 的掃描列
+- 每個掃描點的實際保留比例與 payload ratio
+- 依照 `r2_gate` 找出的最佳候選點
+- 最佳候選點的 frontier tier：
+  `strict_pass`、`exploratory_pass`、`demo_pass`、`reject`、`payload_reject`
+- monotonic sanity flag：`actual_keep_ratio` 應隨 target ratio 非遞減
+- JSON summary 與 Markdown 報表中的 tier histogram
 
-## 5) 前進與回退條件
+## 5) 推進與回退規則
 
-可前進條件：
+可以推進的條件：
 
-- JSON + MD 能重複產出且一致
-- 固定資料集 `steps / spikes / irregular / multiscale / smooth` 至少有一筆
-  非平凡通過（`defensible`） 
-- frontier 掃描主要指標穩定（同一命令多次結果一致）
-- `tests/test_research_sweep.py` 通過，代表 frontier ratio 解析、單調性、
-  最佳點選擇有單元測試守住
-- noise frontier 在固定 seed 下可重現，並能記錄高 sigma 時是否發生
-  `r2_below_gate`
-- frontier 候選點必須同時通過 fidelity（`r2_gate`）與儲存效益
-  （`frontier_min_payload_ratio`）門檻
+- JSON 與 Markdown 報表能用同一命令重現
+- 固定資料集 `steps`、`spikes`、`irregular`、`multiscale`、`smooth` 中至少有非平凡通過案例
+- frontier sweep 的 monotonic flag 穩定，至少 80% 列通過
+- `tests/test_research_sweep.py` 通過，代表 ratio parser、best-point selection、frontier tier 已被測試保護
+- noise frontier 在固定 seed 下可重現，且能記錄高 sigma 時的 `r2_below_gate`
+- frontier candidate 同時滿足 fidelity gate 與 storage gate：
+  `r2_gate` 與 `frontier_min_payload_ratio`
 
-連續兩個 checkpoint 持續發生硬失敗或結果漂移時，需回退與重設參數。
+需要立即回退的情況：
+
+- hard failure 在連續兩個 checkpoint 重複出現
+- 使用相同 seed 與相同命令時，frontier best point 發生不可解釋漂移
 
 ## 6) 下一步
 
-- 逐步提升 gate 嚴格度
-- 加入低、中、高噪音層級的固定測試區
-- 比較 `smooth`、`spikes`、`multiscale` 三種資料族群下的 noise frontier 結果
-- 加入「解碼與渲染時間」作為第二報表軸（目前優先做 payload 與 fidelity）
+- 小幅收嚴 gates，避免一次改太多造成不可解釋變化
+- 在模型擴張前，先建立低 / 中 / 高 noise budget 分層
+- 建立 `frontier_demo_r2_gate` 與 `frontier_exploratory_r2_gate` 的掃描矩陣
+- 比較 `smooth`、`spikes`、`multiscale` 三種資料族群下的 noise frontier
+- 準備 renderer-side benchmark：decode cost 與 raster budget 的耦合

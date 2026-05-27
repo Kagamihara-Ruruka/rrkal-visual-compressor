@@ -2,55 +2,53 @@
 
 Date: 2026-05-28  
 Owner: RRKAL Visual Compressor  
-Scope: time-series / 2D preview layer (not yet 3D engine)
+Scope: time-series / 2D preview layer, not yet 3D engine
 
-## 1) Core claim (currently tested)
+## 1) Core claim currently tested
 
 We are not proving a universal theorem.  
 Current hypothesis is:
 
-> For data with explicit structure (smooth trend + local detail + moderate noise), a
-> compact functional representation plus bounded residual layer can outperform raw
-> point sampling under measured constraints.
+> For data with explicit structure, such as smooth trend, local detail, and moderate noise, a compact functional representation plus bounded residual layer can outperform raw point sampling under measured constraints.
 
 This stays a **testable engineering claim**, not a physics law.
 
-## 2) Current risk hypotheses (already converted into checks)
+## 2) Current risk hypotheses
 
 1. **Global Fourier locality bleed**  
-   sharp jumps can create non-local ripple artifacts.  
-   ✅ measured by `locality_leakage_metric`.
+   Sharp jumps can create non-local ripple artifacts.  
+   Measured by `locality_leakage_metric`.
 
 2. **Irregular `x` handling**  
-   irregular timestamps need explicit domain policy in decode/encode.  
-   ✅ existing `domains.py` options + payload path checks are in place.
+   Irregular timestamps need explicit domain policy in decode/encode.  
+   Existing `domains.py` options and payload path checks are in place.
 
 3. **Channel coupling**  
-   channels are not independent in real systems.  
-   ✅ PCA/SVD multi-axis test path added.
+   Channels are not independent in real systems.  
+   PCA/SVD multi-axis test path added.
 
 4. **Residual budget blow-up**  
-   second-layer correction can erase compression gains.  
-   ✅ residual ratio and payload estimate now tracked.
+   Second-layer correction can erase compression gains.  
+   Residual ratio and payload estimate are now tracked.
 
 5. **View-aware sampling budget**  
-   over-sampling beyond display resolution is wasteful.  
-   ✅ RDP pre-filter path exists + frontier sweep added.
+   Over-sampling beyond display resolution is wasteful.  
+   RDP pre-filter path exists and frontier sweep has been added.
 
-## 3) New gate policy for this checkpoint
+## 3) Gate policy for this checkpoint
 
 For each row in `scripts/run_defensible_research_sweep.py`:
 
-- `R2 >= r2_gate` (default `0.99`)
+- `R2 >= r2_gate`, default `0.99`
 - locality candidates pass under chosen mode:
-  - `strict` (default): piecewise Fourier and detrended Fourier must pass
-  - `any`: either one can pass
+  - `strict`: piecewise Fourier and detrended Fourier must pass
+  - `any`: either method can pass
 - optional piecewise polynomial candidate with `--include-piecewise-polynomial`
-- `adaptive_keep_ratio <= max_adaptive_keep_ratio` (default `0.45`)
+- `adaptive_keep_ratio <= max_adaptive_keep_ratio`, default `0.45`
 
-Rows satisfying all become `defensible = true`.
+Rows satisfying all gates become `defensible = true`.
 
-## 4) RDP frontier scan (new)
+## 4) RDP frontier scan
 
 Command:
 
@@ -69,34 +67,30 @@ This adds:
 - per-dataset/per-term sweep rows at each target keep ratio
 - actual kept ratio and payload ratio for each sweep point
 - best point under `r2_gate` for quick sweet-spot review
-- best point frontier tier (`strict_pass`, `exploratory_pass`, `demo_pass`, `reject`, `payload_reject`)
-- monotonic sanity flag (`actual_keep_ratio` should be non-decreasing as target increases)
-- tier histogram in both JSON summary and markdown text output
+- best point frontier tier: `strict_pass`, `exploratory_pass`, `demo_pass`, `reject`, `payload_reject`
+- monotonic sanity flag: `actual_keep_ratio` should be non-decreasing as target increases
+- tier histogram in both JSON summary and Markdown output
 
-## 5) How to advance / rollback
+## 5) Advance / rollback rules
 
 Advance when:
 
-- artifacts are reproducible (JSON + MD with same command)
-- at least one non-trivial gate pass exists in fixed dataset set:
-  `steps`, `spikes`, `irregular`, `multiscale`, `smooth`
-- frontier sweep monotonic flag is stable (`>= 80%` of rows true)
-- `tests/test_research_sweep.py` passes, so the frontier parser and best-point
-  selection are guarded by unit tests
-- noise frontier is reproducible with fixed seed and records when higher sigma
-  causes `r2_below_gate`
-- frontier candidates must satisfy both fidelity (`r2_gate`) and storage
-  (`frontier_min_payload_ratio`) gates
+- artifacts are reproducible from the same command
+- at least one non-trivial gate pass exists in the fixed dataset set: `steps`, `spikes`, `irregular`, `multiscale`, `smooth`
+- frontier sweep monotonic flag is stable, at least 80% of rows pass
+- `tests/test_research_sweep.py` passes, guarding ratio parsing, best-point selection, and frontier tiers
+- noise frontier is reproducible with fixed seed and records when higher sigma causes `r2_below_gate`
+- frontier candidates satisfy both fidelity and storage gates: `r2_gate` and `frontier_min_payload_ratio`
 
 Regress immediately if:
 
 - hard failures repeat in two consecutive checkpoints
-- frontier best points drift while using same seeds and same command
+- frontier best points drift under the same seed and same command
 
 ## 6) Next execution step
 
 - tighten gates in small increments
-- introduce deterministic `noise_budget` splits (low/medium/high noise) before model expansion
-- add the next level: fixed `frontier_demo_r2_gate` and `frontier_exploratory_r2_gate` tuning matrix
-- compare noise frontier results across `smooth`, `spikes`, and `multiscale`
+- introduce deterministic low/medium/high `noise_budget` splits before model expansion
+- add a tuning matrix for `frontier_demo_r2_gate` and `frontier_exploratory_r2_gate`
+- compare noise frontier behavior across `smooth`, `spikes`, and `multiscale`
 - prepare renderer-side benchmark: decode cost vs raster budget coupling
