@@ -99,6 +99,7 @@ Therefore it is currently treated as an orthogonal control variable.
 - `--rdp-frontier-min-keep`
 - `--rdp-frontier-max-keep`
 - `--run-noise-frontier`
+- `--noise-frontier-kinds`
 - `--noise-frontier-sigmas`
 
 The frontier output (JSON + Markdown) records:
@@ -148,7 +149,7 @@ All outputs also include model-level `payload_ratio = raw_payload_bytes / payloa
 
 ```bash
 py -m pytest tests/test_research.py tests/test_research_sweep.py -q
-py scripts/run_defensible_research_sweep.py --terms 16,32 --include-piecewise-polynomial --run-rdp-frontier --run-noise-frontier --frontier-min-payload-ratio 1.0 --rdp-frontier-ratios 0.02,0.05,0.10,0.20,0.30 --noise-frontier-sigmas 0,0.02,0.05,0.10
+py scripts/run_defensible_research_sweep.py --terms 16,32 --include-piecewise-polynomial --run-rdp-frontier --run-noise-frontier --noise-frontier-kinds smooth,spikes,multiscale --frontier-min-payload-ratio 1.0 --rdp-frontier-ratios 0.02,0.05,0.10,0.20,0.30 --noise-frontier-sigmas 0,0.02,0.05,0.10
 ```
 
 ## 8) Interpretation rule

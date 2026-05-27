@@ -95,5 +95,5 @@ Regress immediately if:
 
 - tighten gates in small increments
 - introduce deterministic `noise_budget` splits (low/medium/high noise) before model expansion
-- expand noise frontier from synthetic `smooth` into `spikes` and `multiscale`
+- compare noise frontier results across `smooth`, `spikes`, and `multiscale`
 - prepare renderer-side benchmark: decode cost vs raster budget coupling

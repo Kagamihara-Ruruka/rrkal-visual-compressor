@@ -17,7 +17,7 @@ PROJECT_SRC = ROOT_DIR / "src"
 if str(PROJECT_SRC) not in sys.path:
     sys.path.insert(0, str(PROJECT_SRC))
 
-from vizcompress.data import make_synthetic_dataset
+from vizcompress.data import SYNTHETIC_KINDS, make_synthetic_dataset
 from vizcompress.metrics import regression_metrics
 from vizcompress.research import (
     adaptive_residual_threshold,
@@ -325,6 +325,18 @@ def _parse_float_list(raw: str, *, allow_zero: bool = False) -> list[float]:
     return values
 
 
+def _parse_string_list(raw: str) -> list[str]:
+    # Parse comma-separated names while preserving order and removing duplicates.
+    values: list[str] = []
+    for item in raw.split(","):
+        token = item.strip()
+        if token and token not in values:
+            values.append(token)
+    if not values:
+        raise ValueError(f"no valid value found in {raw!r}")
+    return values
+
+
 def _estimate_fourier_payload_bytes(model: FourierModel) -> int:
     # Rough payload proxy for one Fourier model:
     # selected frequencies + coefficients + one bias value.
@@ -425,6 +437,11 @@ def parse_args() -> argparse.Namespace:
         "--noise-frontier-kind",
         default="smooth",
         help="Synthetic base kind used for noise frontier",
+    )
+    parser.add_argument(
+        "--noise-frontier-kinds",
+        default="",
+        help="Comma-separated synthetic base kinds used for noise frontier; overrides --noise-frontier-kind",
     )
     parser.add_argument(
         "--noise-frontier-sigmas",
@@ -635,36 +652,43 @@ def main() -> int:
     noise_frontier = None
     if args.run_noise_frontier:
         noise_sigmas = _parse_float_list(args.noise_frontier_sigmas, allow_zero=True)
-        if args.noise_frontier_kind not in {name for name, _ in datasets}:
-            base_series = make_synthetic_dataset(4000, kind=args.noise_frontier_kind)
-        else:
-            base_series = dict(datasets)[args.noise_frontier_kind]
+        noise_kinds = (
+            _parse_string_list(args.noise_frontier_kinds)
+            if args.noise_frontier_kinds.strip()
+            else [args.noise_frontier_kind]
+        )
+        unknown_kinds = [kind for kind in noise_kinds if kind not in SYNTHETIC_KINDS]
+        if unknown_kinds:
+            raise ValueError(f"unknown noise frontier synthetic kind(s): {', '.join(unknown_kinds)}")
 
         keep_ratios = _parse_float_list(args.rdp_frontier_ratios)
         noise_rows = []
-        for sigma in noise_sigmas:
-            noisy_series = _with_gaussian_noise(
-                base_series,
-                sigma=sigma,
-                seed=int(args.noise_frontier_seed + round(sigma * 100000)),
-            )
-            for term in terms:
-                row = _benchmark_rdp_frontier(
-                    name=f"{args.noise_frontier_kind}_noise_{sigma:g}",
-                    series=noisy_series,
-                    terms=term,
-                    keep_ratio_list=keep_ratios,
-                    min_keep=args.rdp_frontier_min_keep,
-                    max_keep=args.rdp_frontier_max_keep or None,
-                    r2_gate=args.r2_gate,
-                    min_payload_ratio=args.frontier_min_payload_ratio,
+        dataset_by_name = dict(datasets)
+        for kind in noise_kinds:
+            base_series = dataset_by_name.get(kind) or make_synthetic_dataset(4000, kind=kind)
+            for sigma in noise_sigmas:
+                noisy_series = _with_gaussian_noise(
+                    base_series,
+                    sigma=sigma,
+                    seed=int(args.noise_frontier_seed + round(sigma * 100000) + len(kind)),
                 )
-                row["noise_sigma"] = float(sigma)
-                row["base_kind"] = args.noise_frontier_kind
-                noise_rows.append(row)
+                for term in terms:
+                    row = _benchmark_rdp_frontier(
+                        name=f"{kind}_noise_{sigma:g}",
+                        series=noisy_series,
+                        terms=term,
+                        keep_ratio_list=keep_ratios,
+                        min_keep=args.rdp_frontier_min_keep,
+                        max_keep=args.rdp_frontier_max_keep or None,
+                        r2_gate=args.r2_gate,
+                        min_payload_ratio=args.frontier_min_payload_ratio,
+                    )
+                    row["noise_sigma"] = float(sigma)
+                    row["base_kind"] = kind
+                    noise_rows.append(row)
 
         noise_frontier = {
-            "base_kind": args.noise_frontier_kind,
+            "base_kinds": noise_kinds,
             "sigmas": noise_sigmas,
             "seed": int(args.noise_frontier_seed),
             "keep_ratios": keep_ratios,
@@ -675,6 +699,7 @@ def main() -> int:
                 "best_points_with_gate": sum(1 for row in noise_rows if row["best_point_r2_gate_passes"]),
                 "monotonic_count": sum(1 for row in noise_rows if row["monotonic_keep"]),
                 "by_sigma": _summarize_frontier_by_key(noise_rows, "noise_sigma"),
+                "by_kind": _summarize_frontier_by_key(noise_rows, "base_kind"),
             },
         }
 
@@ -858,6 +883,28 @@ def main() -> int:
                 + " | ".join(
                     [
                         _format_float(sigma),
+                        _format_float(item["total"]),
+                        _format_float(item["best_points_with_gate"]),
+                        _format_float(item["monotonic"]),
+                        _format_float(item["best_r2"]),
+                        _format_float(item["best_payload_ratio"]),
+                    ]
+                )
+                + " |"
+            )
+        lines.extend(["", "### Noise frontier by kind", ""])
+        lines.extend(
+            [
+                "| kind | rows | gate passes | monotonic rows | best R2 | best payload ratio |",
+                "| --- | ---: | ---: | ---: | ---: | ---: |",
+            ]
+        )
+        for kind, item in sorted(noise_frontier["summary"]["by_kind"].items()):
+            lines.append(
+                "| "
+                + " | ".join(
+                    [
+                        kind,
                         _format_float(item["total"]),
                         _format_float(item["best_points_with_gate"]),
                         _format_float(item["monotonic"]),

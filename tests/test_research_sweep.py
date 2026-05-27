@@ -6,6 +6,7 @@ from scripts.run_defensible_research_sweep import (
     _benchmark_rdp_frontier,
     _frontier_gate_reason,
     _parse_float_list,
+    _parse_string_list,
     _summarize_frontier_by_key,
     _with_gaussian_noise,
 )
@@ -34,6 +35,17 @@ def test_frontier_gate_reason_combines_fidelity_and_payload():
         _frontier_gate_reason(r2_pass=False, payload_pass=False)
         == "r2_and_payload_below_gate"
     )
+
+
+def test_parse_string_list_preserves_order_and_deduplicates():
+    assert _parse_string_list("smooth, spikes, smooth,multiscale") == [
+        "smooth",
+        "spikes",
+        "multiscale",
+    ]
+
+    with pytest.raises(ValueError):
+        _parse_string_list(" , ")
 
 
 def test_rdp_frontier_reports_monotonic_keep_and_best_point():

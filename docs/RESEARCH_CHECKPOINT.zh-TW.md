@@ -91,5 +91,5 @@ py scripts/run_defensible_research_sweep.py \
 
 - 逐步提升 gate 嚴格度
 - 加入低、中、高噪音層級的固定測試區
-- 將 noise frontier 從 synthetic `smooth` 擴展到 `spikes` 與 `multiscale`
+- 比較 `smooth`、`spikes`、`multiscale` 三種資料族群下的 noise frontier 結果
 - 加入「解碼與渲染時間」作為第二報表軸（目前優先做 payload 與 fidelity）
