@@ -36,8 +36,26 @@ def test_rdp_frontier_reports_monotonic_keep_and_best_point():
     assert result["monotonic_keep"] is True
     assert result["best_point"] is not None
     assert result["best_point_r2_gate_passes"] is True
+    assert result["best_point"]["r2_gate_pass"] is True
+    assert result["best_point"]["gate_reason"] == "pass"
     assert len(result["sweep"]) == 4
 
     actual_keep = [row["actual_keep_ratio"] for row in result["sweep"]]
     assert actual_keep == sorted(actual_keep)
     assert all(row["payload_ratio"] > 0 for row in result["sweep"])
+
+
+def test_rdp_frontier_marks_rows_below_r2_gate():
+    series = make_synthetic_dataset(512, kind="steps")
+    result = _benchmark_rdp_frontier(
+        name="steps",
+        series=series,
+        terms=8,
+        keep_ratio_list=[0.02, 0.05],
+        min_keep=16,
+        r2_gate=1.01,
+    )
+
+    assert result["best_point_r2_gate_passes"] is False
+    assert all(row["r2_gate_pass"] is False for row in result["sweep"])
+    assert all(row["gate_reason"] == "r2_below_gate" for row in result["sweep"])

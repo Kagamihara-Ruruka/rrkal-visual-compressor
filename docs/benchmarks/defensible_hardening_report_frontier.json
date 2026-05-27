@@ -992,7 +992,9 @@
             "max_abs": 0.2915542910750157,
             "kept_points": 128,
             "payload_bytes": 3464.0,
-            "payload_ratio": 18.475750577367204
+            "payload_ratio": 18.475750577367204,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.05,
@@ -1002,7 +1004,9 @@
             "max_abs": 0.31854147461951227,
             "kept_points": 200,
             "payload_bytes": 5192.0,
-            "payload_ratio": 12.326656394453005
+            "payload_ratio": 12.326656394453005,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.1,
@@ -1012,7 +1016,9 @@
             "max_abs": 0.35911806396065793,
             "kept_points": 400,
             "payload_bytes": 9992.0,
-            "payload_ratio": 6.405124099279424
+            "payload_ratio": 6.405124099279424,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.2,
@@ -1022,7 +1028,9 @@
             "max_abs": 0.35428335684196177,
             "kept_points": 800,
             "payload_bytes": 19592.0,
-            "payload_ratio": 3.2666394446712945
+            "payload_ratio": 3.2666394446712945,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.3,
@@ -1032,7 +1040,9 @@
             "max_abs": 0.3442186791389586,
             "kept_points": 1200,
             "payload_bytes": 29192.0,
-            "payload_ratio": 2.1923814743765417
+            "payload_ratio": 2.1923814743765417,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           }
         ],
         "monotonic_keep": true,
@@ -1044,7 +1054,9 @@
           "max_abs": 0.31854147461951227,
           "kept_points": 200,
           "payload_bytes": 5192.0,
-          "payload_ratio": 12.326656394453005
+          "payload_ratio": 12.326656394453005,
+          "r2_gate_pass": false,
+          "gate_reason": "r2_below_gate"
         },
         "best_point_r2_gate_passes": false
       },
@@ -1068,7 +1080,9 @@
             "max_abs": 0.1496989191963371,
             "kept_points": 128,
             "payload_bytes": 3848.0,
-            "payload_ratio": 16.632016632016633
+            "payload_ratio": 16.632016632016633,
+            "r2_gate_pass": true,
+            "gate_reason": "pass"
           },
           {
             "target_keep_ratio": 0.05,
@@ -1078,7 +1092,9 @@
             "max_abs": 0.2242605466031185,
             "kept_points": 200,
             "payload_bytes": 5576.0,
-            "payload_ratio": 11.477761836441895
+            "payload_ratio": 11.477761836441895,
+            "r2_gate_pass": true,
+            "gate_reason": "pass"
           },
           {
             "target_keep_ratio": 0.1,
@@ -1088,7 +1104,9 @@
             "max_abs": 0.31536928575068174,
             "kept_points": 400,
             "payload_bytes": 10376.0,
-            "payload_ratio": 6.168080185042405
+            "payload_ratio": 6.168080185042405,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.2,
@@ -1098,7 +1116,9 @@
             "max_abs": 0.34604140854694543,
             "kept_points": 800,
             "payload_bytes": 19976.0,
-            "payload_ratio": 3.2038446135362433
+            "payload_ratio": 3.2038446135362433,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.3,
@@ -1108,7 +1128,9 @@
             "max_abs": 0.3456722509922433,
             "kept_points": 1200,
             "payload_bytes": 29576.0,
-            "payload_ratio": 2.1639166892074657
+            "payload_ratio": 2.1639166892074657,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           }
         ],
         "monotonic_keep": true,
@@ -1120,7 +1142,9 @@
           "max_abs": 0.1496989191963371,
           "kept_points": 128,
           "payload_bytes": 3848.0,
-          "payload_ratio": 16.632016632016633
+          "payload_ratio": 16.632016632016633,
+          "r2_gate_pass": true,
+          "gate_reason": "pass"
         },
         "best_point_r2_gate_passes": true
       },
@@ -1144,7 +1168,9 @@
             "max_abs": 0.6205903966968771,
             "kept_points": 125,
             "payload_bytes": 3392.0,
-            "payload_ratio": 18.867924528301888
+            "payload_ratio": 18.867924528301888,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.05,
@@ -1154,7 +1180,9 @@
             "max_abs": 0.6288505121520819,
             "kept_points": 200,
             "payload_bytes": 5192.0,
-            "payload_ratio": 12.326656394453005
+            "payload_ratio": 12.326656394453005,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.1,
@@ -1164,7 +1192,9 @@
             "max_abs": 0.841245154971109,
             "kept_points": 400,
             "payload_bytes": 9992.0,
-            "payload_ratio": 6.405124099279424
+            "payload_ratio": 6.405124099279424,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.2,
@@ -1174,7 +1204,9 @@
             "max_abs": 0.7937935285277946,
             "kept_points": 800,
             "payload_bytes": 19592.0,
-            "payload_ratio": 3.2666394446712945
+            "payload_ratio": 3.2666394446712945,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.3,
@@ -1184,7 +1216,9 @@
             "max_abs": 0.7877083537567343,
             "kept_points": 1200,
             "payload_bytes": 29192.0,
-            "payload_ratio": 2.1923814743765417
+            "payload_ratio": 2.1923814743765417,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           }
         ],
         "monotonic_keep": true,
@@ -1196,7 +1230,9 @@
           "max_abs": 0.7937935285277946,
           "kept_points": 800,
           "payload_bytes": 19592.0,
-          "payload_ratio": 3.2666394446712945
+          "payload_ratio": 3.2666394446712945,
+          "r2_gate_pass": false,
+          "gate_reason": "r2_below_gate"
         },
         "best_point_r2_gate_passes": false
       },
@@ -1220,7 +1256,9 @@
             "max_abs": 0.39580495058034787,
             "kept_points": 125,
             "payload_bytes": 3776.0,
-            "payload_ratio": 16.949152542372882
+            "payload_ratio": 16.949152542372882,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.05,
@@ -1230,7 +1268,9 @@
             "max_abs": 0.5274625145407695,
             "kept_points": 200,
             "payload_bytes": 5576.0,
-            "payload_ratio": 11.477761836441895
+            "payload_ratio": 11.477761836441895,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.1,
@@ -1240,7 +1280,9 @@
             "max_abs": 0.675655656968345,
             "kept_points": 400,
             "payload_bytes": 10376.0,
-            "payload_ratio": 6.168080185042405
+            "payload_ratio": 6.168080185042405,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.2,
@@ -1250,7 +1292,9 @@
             "max_abs": 0.5990103199636531,
             "kept_points": 800,
             "payload_bytes": 19976.0,
-            "payload_ratio": 3.2038446135362433
+            "payload_ratio": 3.2038446135362433,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.3,
@@ -1260,7 +1304,9 @@
             "max_abs": 0.571690424304279,
             "kept_points": 1200,
             "payload_bytes": 29576.0,
-            "payload_ratio": 2.1639166892074657
+            "payload_ratio": 2.1639166892074657,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           }
         ],
         "monotonic_keep": true,
@@ -1272,7 +1318,9 @@
           "max_abs": 0.571690424304279,
           "kept_points": 1200,
           "payload_bytes": 29576.0,
-          "payload_ratio": 2.1639166892074657
+          "payload_ratio": 2.1639166892074657,
+          "r2_gate_pass": false,
+          "gate_reason": "r2_below_gate"
         },
         "best_point_r2_gate_passes": false
       },
@@ -1296,7 +1344,9 @@
             "max_abs": 0.339682999123545,
             "kept_points": 128,
             "payload_bytes": 3464.0,
-            "payload_ratio": 18.475750577367204
+            "payload_ratio": 18.475750577367204,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.05,
@@ -1306,7 +1356,9 @@
             "max_abs": 0.24124624408920925,
             "kept_points": 200,
             "payload_bytes": 5192.0,
-            "payload_ratio": 12.326656394453005
+            "payload_ratio": 12.326656394453005,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.1,
@@ -1316,7 +1368,9 @@
             "max_abs": 0.4273568886421277,
             "kept_points": 400,
             "payload_bytes": 9992.0,
-            "payload_ratio": 6.405124099279424
+            "payload_ratio": 6.405124099279424,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.2,
@@ -1326,7 +1380,9 @@
             "max_abs": 0.23983280848986055,
             "kept_points": 800,
             "payload_bytes": 19592.0,
-            "payload_ratio": 3.2666394446712945
+            "payload_ratio": 3.2666394446712945,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.3,
@@ -1336,7 +1392,9 @@
             "max_abs": 0.2288016793937531,
             "kept_points": 1200,
             "payload_bytes": 29192.0,
-            "payload_ratio": 2.1923814743765417
+            "payload_ratio": 2.1923814743765417,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           }
         ],
         "monotonic_keep": true,
@@ -1348,7 +1406,9 @@
           "max_abs": 0.2288016793937531,
           "kept_points": 1200,
           "payload_bytes": 29192.0,
-          "payload_ratio": 2.1923814743765417
+          "payload_ratio": 2.1923814743765417,
+          "r2_gate_pass": false,
+          "gate_reason": "r2_below_gate"
         },
         "best_point_r2_gate_passes": false
       },
@@ -1372,7 +1432,9 @@
             "max_abs": 0.21650415447834637,
             "kept_points": 128,
             "payload_bytes": 3848.0,
-            "payload_ratio": 16.632016632016633
+            "payload_ratio": 16.632016632016633,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.05,
@@ -1382,7 +1444,9 @@
             "max_abs": 0.202371183760358,
             "kept_points": 200,
             "payload_bytes": 5576.0,
-            "payload_ratio": 11.477761836441895
+            "payload_ratio": 11.477761836441895,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.1,
@@ -1392,7 +1456,9 @@
             "max_abs": 0.3214728105583605,
             "kept_points": 400,
             "payload_bytes": 10376.0,
-            "payload_ratio": 6.168080185042405
+            "payload_ratio": 6.168080185042405,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.2,
@@ -1402,7 +1468,9 @@
             "max_abs": 0.20345569141625214,
             "kept_points": 800,
             "payload_bytes": 19976.0,
-            "payload_ratio": 3.2038446135362433
+            "payload_ratio": 3.2038446135362433,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.3,
@@ -1412,7 +1480,9 @@
             "max_abs": 0.18958584233335182,
             "kept_points": 1200,
             "payload_bytes": 29576.0,
-            "payload_ratio": 2.1639166892074657
+            "payload_ratio": 2.1639166892074657,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           }
         ],
         "monotonic_keep": true,
@@ -1424,7 +1494,9 @@
           "max_abs": 0.18958584233335182,
           "kept_points": 1200,
           "payload_bytes": 29576.0,
-          "payload_ratio": 2.1639166892074657
+          "payload_ratio": 2.1639166892074657,
+          "r2_gate_pass": false,
+          "gate_reason": "r2_below_gate"
         },
         "best_point_r2_gate_passes": false
       },
@@ -1448,7 +1520,9 @@
             "max_abs": 0.347641917641635,
             "kept_points": 128,
             "payload_bytes": 3464.0,
-            "payload_ratio": 18.475750577367204
+            "payload_ratio": 18.475750577367204,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.05,
@@ -1458,7 +1532,9 @@
             "max_abs": 0.31675902542431505,
             "kept_points": 200,
             "payload_bytes": 5192.0,
-            "payload_ratio": 12.326656394453005
+            "payload_ratio": 12.326656394453005,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.1,
@@ -1468,7 +1544,9 @@
             "max_abs": 0.32741757010227013,
             "kept_points": 397,
             "payload_bytes": 9920.0,
-            "payload_ratio": 6.451612903225806
+            "payload_ratio": 6.451612903225806,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.2,
@@ -1478,7 +1556,9 @@
             "max_abs": 0.2613238732932306,
             "kept_points": 798,
             "payload_bytes": 19544.0,
-            "payload_ratio": 3.274662300450266
+            "payload_ratio": 3.274662300450266,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.3,
@@ -1488,7 +1568,9 @@
             "max_abs": 0.2636650221006604,
             "kept_points": 1197,
             "payload_bytes": 29120.0,
-            "payload_ratio": 2.197802197802198
+            "payload_ratio": 2.197802197802198,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           }
         ],
         "monotonic_keep": true,
@@ -1500,7 +1582,9 @@
           "max_abs": 0.2636650221006604,
           "kept_points": 1197,
           "payload_bytes": 29120.0,
-          "payload_ratio": 2.197802197802198
+          "payload_ratio": 2.197802197802198,
+          "r2_gate_pass": false,
+          "gate_reason": "r2_below_gate"
         },
         "best_point_r2_gate_passes": false
       },
@@ -1524,7 +1608,9 @@
             "max_abs": 0.26543937673559526,
             "kept_points": 128,
             "payload_bytes": 3848.0,
-            "payload_ratio": 16.632016632016633
+            "payload_ratio": 16.632016632016633,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.05,
@@ -1534,7 +1620,9 @@
             "max_abs": 0.28741610845342447,
             "kept_points": 200,
             "payload_bytes": 5576.0,
-            "payload_ratio": 11.477761836441895
+            "payload_ratio": 11.477761836441895,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.1,
@@ -1544,7 +1632,9 @@
             "max_abs": 0.240066557894553,
             "kept_points": 397,
             "payload_bytes": 10304.0,
-            "payload_ratio": 6.211180124223603
+            "payload_ratio": 6.211180124223603,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.2,
@@ -1554,7 +1644,9 @@
             "max_abs": 0.2264740491926292,
             "kept_points": 798,
             "payload_bytes": 19928.0,
-            "payload_ratio": 3.211561621838619
+            "payload_ratio": 3.211561621838619,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.3,
@@ -1564,7 +1656,9 @@
             "max_abs": 0.2360991033672596,
             "kept_points": 1197,
             "payload_bytes": 29504.0,
-            "payload_ratio": 2.1691973969631237
+            "payload_ratio": 2.1691973969631237,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           }
         ],
         "monotonic_keep": true,
@@ -1576,7 +1670,9 @@
           "max_abs": 0.2264740491926292,
           "kept_points": 798,
           "payload_bytes": 19928.0,
-          "payload_ratio": 3.211561621838619
+          "payload_ratio": 3.211561621838619,
+          "r2_gate_pass": false,
+          "gate_reason": "r2_below_gate"
         },
         "best_point_r2_gate_passes": false
       },
@@ -1600,7 +1696,9 @@
             "max_abs": 0.34355476183041594,
             "kept_points": 128,
             "payload_bytes": 3464.0,
-            "payload_ratio": 18.475750577367204
+            "payload_ratio": 18.475750577367204,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.05,
@@ -1610,7 +1708,9 @@
             "max_abs": 0.23006516255266607,
             "kept_points": 200,
             "payload_bytes": 5192.0,
-            "payload_ratio": 12.326656394453005
+            "payload_ratio": 12.326656394453005,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.1,
@@ -1620,7 +1720,9 @@
             "max_abs": 0.3773194961701245,
             "kept_points": 400,
             "payload_bytes": 9992.0,
-            "payload_ratio": 6.405124099279424
+            "payload_ratio": 6.405124099279424,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.2,
@@ -1630,7 +1732,9 @@
             "max_abs": 0.2375043993763022,
             "kept_points": 800,
             "payload_bytes": 19592.0,
-            "payload_ratio": 3.2666394446712945
+            "payload_ratio": 3.2666394446712945,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.3,
@@ -1640,7 +1744,9 @@
             "max_abs": 0.24673458070712923,
             "kept_points": 1200,
             "payload_bytes": 29192.0,
-            "payload_ratio": 2.1923814743765417
+            "payload_ratio": 2.1923814743765417,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           }
         ],
         "monotonic_keep": true,
@@ -1652,7 +1758,9 @@
           "max_abs": 0.24673458070712923,
           "kept_points": 1200,
           "payload_bytes": 29192.0,
-          "payload_ratio": 2.1923814743765417
+          "payload_ratio": 2.1923814743765417,
+          "r2_gate_pass": false,
+          "gate_reason": "r2_below_gate"
         },
         "best_point_r2_gate_passes": false
       },
@@ -1676,7 +1784,9 @@
             "max_abs": 0.21633040694017064,
             "kept_points": 128,
             "payload_bytes": 3848.0,
-            "payload_ratio": 16.632016632016633
+            "payload_ratio": 16.632016632016633,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.05,
@@ -1686,7 +1796,9 @@
             "max_abs": 0.19172759567731323,
             "kept_points": 200,
             "payload_bytes": 5576.0,
-            "payload_ratio": 11.477761836441895
+            "payload_ratio": 11.477761836441895,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.1,
@@ -1696,7 +1808,9 @@
             "max_abs": 0.2567624642756255,
             "kept_points": 400,
             "payload_bytes": 10376.0,
-            "payload_ratio": 6.168080185042405
+            "payload_ratio": 6.168080185042405,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.2,
@@ -1706,7 +1820,9 @@
             "max_abs": 0.16062965648040795,
             "kept_points": 800,
             "payload_bytes": 19976.0,
-            "payload_ratio": 3.2038446135362433
+            "payload_ratio": 3.2038446135362433,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           },
           {
             "target_keep_ratio": 0.3,
@@ -1716,7 +1832,9 @@
             "max_abs": 0.192236403022771,
             "kept_points": 1200,
             "payload_bytes": 29576.0,
-            "payload_ratio": 2.1639166892074657
+            "payload_ratio": 2.1639166892074657,
+            "r2_gate_pass": false,
+            "gate_reason": "r2_below_gate"
           }
         ],
         "monotonic_keep": true,
@@ -1728,7 +1846,9 @@
           "max_abs": 0.192236403022771,
           "kept_points": 1200,
           "payload_bytes": 29576.0,
-          "payload_ratio": 2.1639166892074657
+          "payload_ratio": 2.1639166892074657,
+          "r2_gate_pass": false,
+          "gate_reason": "r2_below_gate"
         },
         "best_point_r2_gate_passes": false
       }

@@ -100,6 +100,7 @@ frontier 輸出會記錄每個 ratio 的：
 
 - 實際保留比例與保留點數
 - R2、RMSE、payload ratio
+- 每個候選點的 `r2_gate_pass` 與 `gate_reason`
 - 在 `r2_gate` 下的最佳點
 
 這樣可以直接找出每種資料型態的「甜蜜區」而非拍腦袋挑一個固定比率。

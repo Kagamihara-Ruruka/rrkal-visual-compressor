@@ -32,15 +32,15 @@
 
 ## RDP frontier scan
 
-| dataset | terms | target keep ratio | actual keep | r2 | payload ratio | kept points | best under R2 gate? |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| steps | 16 | 0.05 | 0.05 | 0.975534 | 12.3267 | 200 | no |
-| steps | 32 | 0.02 | 0.032 | 0.99335 | 16.632 | 128 | yes |
-| spikes | 16 | 0.2 | 0.2 | 0.920398 | 3.26664 | 800 | no |
-| spikes | 32 | 0.3 | 0.3 | 0.949603 | 2.16392 | 1200 | no |
-| irregular | 16 | 0.3 | 0.3 | 0.981385 | 2.19238 | 1200 | no |
-| irregular | 32 | 0.3 | 0.3 | 0.987559 | 2.16392 | 1200 | no |
-| multiscale | 16 | 0.3 | 0.29925 | 0.947113 | 2.1978 | 1197 | no |
-| multiscale | 32 | 0.2 | 0.1995 | 0.967025 | 3.21156 | 798 | no |
-| smooth | 16 | 0.3 | 0.3 | 0.980079 | 2.19238 | 1200 | no |
-| smooth | 32 | 0.3 | 0.3 | 0.98728 | 2.16392 | 1200 | no |
+| dataset | terms | target keep ratio | actual keep | r2 | payload ratio | kept points | best gate reason | best under R2 gate? |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: |
+| steps | 16 | 0.05 | 0.05 | 0.975534 | 12.3267 | 200 | r2_below_gate | no |
+| steps | 32 | 0.02 | 0.032 | 0.99335 | 16.632 | 128 | pass | yes |
+| spikes | 16 | 0.2 | 0.2 | 0.920398 | 3.26664 | 800 | r2_below_gate | no |
+| spikes | 32 | 0.3 | 0.3 | 0.949603 | 2.16392 | 1200 | r2_below_gate | no |
+| irregular | 16 | 0.3 | 0.3 | 0.981385 | 2.19238 | 1200 | r2_below_gate | no |
+| irregular | 32 | 0.3 | 0.3 | 0.987559 | 2.16392 | 1200 | r2_below_gate | no |
+| multiscale | 16 | 0.3 | 0.29925 | 0.947113 | 2.1978 | 1197 | r2_below_gate | no |
+| multiscale | 32 | 0.2 | 0.1995 | 0.967025 | 3.21156 | 798 | r2_below_gate | no |
+| smooth | 16 | 0.3 | 0.3 | 0.980079 | 2.19238 | 1200 | r2_below_gate | no |
+| smooth | 32 | 0.3 | 0.3 | 0.98728 | 2.16392 | 1200 | r2_below_gate | no |

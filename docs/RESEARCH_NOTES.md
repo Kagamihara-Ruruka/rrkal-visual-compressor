@@ -104,6 +104,7 @@ The frontier output (JSON + Markdown) records:
 - each candidate keep ratio,
 - actual retained points and R2,
 - payload ratio and kept point count,
+- `r2_gate_pass` and `gate_reason` for each candidate,
 - best candidate under `r2_gate`.
 
 This gives a direct way to find "sweet spots" instead of guessing one fixed ratio.

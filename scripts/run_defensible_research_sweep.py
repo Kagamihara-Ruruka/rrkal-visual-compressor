@@ -205,6 +205,7 @@ def _benchmark_rdp_frontier(
         )
         metrics = regression_metrics(series.y, model.reconstructed_y)
         payload_bytes = _estimate_rdp_prefilter_payload_bytes(model)
+        r2_pass = r2_gate is None or float(metrics["r2"]) >= float(r2_gate)
         sweep.append(
             {
                 "target_keep_ratio": float(target_keep_ratio),
@@ -215,6 +216,8 @@ def _benchmark_rdp_frontier(
                 "kept_points": int(model.prefilter.parameter_count),
                 "payload_bytes": float(payload_bytes),
                 "payload_ratio": _safe_ratio(raw_payload, payload_bytes),
+                "r2_gate_pass": bool(r2_pass),
+                "gate_reason": "pass" if r2_pass else "r2_below_gate",
             }
         )
 
@@ -230,9 +233,7 @@ def _benchmark_rdp_frontier(
     sweep = sorted(sweep, key=lambda item: item["target_keep_ratio"])
     # "best" here means highest payload compression among points with enough fidelity.
     best_candidates = [
-        item
-        for item in sweep
-        if r2_gate is None or item["r2"] >= float(r2_gate)
+        item for item in sweep if item["r2_gate_pass"]
     ]
     if best_candidates:
         best_point = max(
@@ -640,8 +641,8 @@ def main() -> int:
                 "",
                 "## RDP frontier scan",
                 "",
-                "| dataset | terms | target keep ratio | actual keep | r2 | payload ratio | kept points | best under R2 gate? |",
-                "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+                "| dataset | terms | target keep ratio | actual keep | r2 | payload ratio | kept points | best gate reason | best under R2 gate? |",
+                "| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: |",
             ]
         )
         for item in frontier["rows"]:
@@ -651,6 +652,7 @@ def main() -> int:
             best_r2 = float(best["r2"]) if best else 0.0
             best_payload = float(best["payload_ratio"]) if best else 0.0
             best_points = int(best["kept_points"]) if best else 0
+            best_reason = str(best["gate_reason"]) if best else "no_candidate"
             lines.append(
                 "| "
                 + " | ".join(
@@ -662,6 +664,7 @@ def main() -> int:
                         _format_float(best_r2),
                         _format_float(best_payload),
                         _format_float(best_points),
+                        best_reason,
                         "yes" if item["best_point_r2_gate_passes"] else "no",
                     ]
                 )
