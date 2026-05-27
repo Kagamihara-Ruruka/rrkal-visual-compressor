@@ -98,6 +98,8 @@ def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 
     detrended_payload = _estimate_fourier_payload_bytes(detrended.raw_fourier) + 2 * FLOAT64_BYTES
     haar_payload = _estimate_haar_payload_bytes(haar)
     adaptive_payload = _estimate_sparse_residual_payload_bytes(adaptive["keep_indices"])
+    adaptive_payload_ratio = _safe_ratio(raw_payload, adaptive_payload)
+    adaptive_keep_ratio = float(adaptive["keep_count"]) / float(series.sample_count)
 
     return {
         "dataset": name,
@@ -172,8 +174,51 @@ def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 
         "adaptive_residual": {
             "keep_count": int(adaptive["keep_count"]),
             "payload_bytes": adaptive_payload,
-            "payload_ratio": _safe_ratio(raw_payload, adaptive_payload),
+            "payload_ratio": adaptive_payload_ratio,
         },
+        "local_strategy_probe": _local_strategy_probe(
+            samples=int(series.sample_count),
+            rdp_r2=float(rdp_metrics["r2"]),
+            rdp_payload_ratio=_safe_ratio(raw_payload, rdp_payload),
+            haar_r2=float(h_metrics["r2"]),
+            haar_payload_ratio=_safe_ratio(raw_payload, haar_payload),
+            adaptive_keep_ratio=adaptive_keep_ratio,
+            adaptive_payload_ratio=adaptive_payload_ratio,
+        ),
+    }
+
+
+def _local_strategy_probe(
+    *,
+    samples: int,
+    rdp_r2: float,
+    rdp_payload_ratio: float,
+    haar_r2: float,
+    haar_payload_ratio: float,
+    adaptive_keep_ratio: float,
+    adaptive_payload_ratio: float,
+) -> dict[str, Any]:
+    # Local strategy probe only recommends which research branch to test next.
+    # It does not promote the branch as production-ready.
+    haar_r2_delta = float(haar_r2 - rdp_r2)
+    haar_payload_delta = float(haar_payload_ratio - rdp_payload_ratio)
+    if haar_r2_delta >= 0.0 and haar_payload_ratio >= 1.0:
+        strategy = "haar_local_basis"
+        reason = "Haar keeps at least RDP fidelity while preserving payload savings"
+    elif adaptive_keep_ratio <= 0.05 and adaptive_payload_ratio >= 1.0:
+        strategy = "sparse_residual_layer"
+        reason = "residual corrections are sparse enough to test as a retained layer"
+    else:
+        strategy = "needs_local_model_expansion"
+        reason = "current local/residual probes do not dominate RDP under this row"
+    return {
+        "recommended_probe": strategy,
+        "reason": reason,
+        "samples": int(samples),
+        "haar_r2_delta_vs_rdp": haar_r2_delta,
+        "haar_payload_delta_vs_rdp": haar_payload_delta,
+        "adaptive_keep_ratio": float(adaptive_keep_ratio),
+        "adaptive_payload_ratio": float(adaptive_payload_ratio),
     }
 
 
@@ -713,6 +758,28 @@ def _grouped_pass_rows(rows: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
     return per_dataset
 
 
+def _summarize_local_strategy_probes(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    counts: dict[str, int] = {}
+    best_haar_delta = float("-inf")
+    best_adaptive_payload_ratio = 0.0
+    for row in rows:
+        probe = row.get("local_strategy_probe")
+        if not probe:
+            continue
+        key = str(probe["recommended_probe"])
+        counts[key] = counts.get(key, 0) + 1
+        best_haar_delta = max(best_haar_delta, float(probe["haar_r2_delta_vs_rdp"]))
+        best_adaptive_payload_ratio = max(
+            best_adaptive_payload_ratio,
+            float(probe["adaptive_payload_ratio"]),
+        )
+    return {
+        "probe_counts": counts,
+        "best_haar_r2_delta_vs_rdp": 0.0 if best_haar_delta == float("-inf") else best_haar_delta,
+        "best_adaptive_payload_ratio": best_adaptive_payload_ratio,
+    }
+
+
 def _summarize_frontier_by_key(rows: list[dict[str, Any]], key: str) -> dict[str, dict[str, Any]]:
     # Small report helper: group frontier rows by one metadata field, such as
     # noise sigma, and count which rows met the R2 gate.
@@ -870,6 +937,7 @@ def main() -> int:
     ]
 
     per_dataset = _grouped_pass_rows(rows)
+    local_strategy_summary = _summarize_local_strategy_probes(rows)
     locality_mode_desc = f"{args.locality_mode}({ 'piecewise_polynomial' if args.include_piecewise_polynomial else 'piecewise_fourier+detrended'})"
 
     frontier = None
@@ -1044,6 +1112,7 @@ def main() -> int:
             "multichannel_rmse": mc["metrics"]["rmse"],
             "dataset_passes": per_dataset,
             "locality_mode_desc": locality_mode_desc,
+            "local_strategy_probe": local_strategy_summary,
         },
         "run_rdp_frontier": bool(args.run_rdp_frontier),
         "best_global_r2": max(row["global"]["r2"] for row in rows if "global" in row),
@@ -1064,6 +1133,7 @@ def main() -> int:
         "multichannel_rmse": mc["metrics"]["rmse"],
         "dataset_passes": per_dataset,
         "locality_mode_desc": locality_mode_desc,
+        "local_strategy_probe": local_strategy_summary,
         "rdp_frontier": frontier,
         "noise_frontier": noise_frontier,
     }
@@ -1130,6 +1200,39 @@ def main() -> int:
     )
     for dataset, pass_stat in sorted(per_dataset.items()):
         lines.append(f"  - {dataset}: {pass_stat['pass']} / {pass_stat['total']}")
+
+    lines.extend(["", "## Local strategy probe", ""])
+    lines.append("- probe counts:")
+    for probe_name, probe_count in sorted(local_strategy_summary["probe_counts"].items()):
+        lines.append(f"  - {probe_name}: {probe_count}")
+    lines.extend(
+        [
+            f"- best Haar R2 delta vs RDP = `{_format_float(local_strategy_summary['best_haar_r2_delta_vs_rdp'])}`",
+            f"- best adaptive residual payload ratio = `{_format_float(local_strategy_summary['best_adaptive_payload_ratio'])}`",
+            "",
+            "| dataset | terms | recommended probe | Haar R2 delta vs RDP | Haar CR delta vs RDP | adaptive keep | adaptive CR |",
+            "| --- | ---: | --- | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    for row in rows:
+        probe = row.get("local_strategy_probe")
+        if not probe:
+            continue
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    str(row["dataset"]),
+                    _format_float(row.get("terms", "")),
+                    str(probe["recommended_probe"]),
+                    _format_float(probe["haar_r2_delta_vs_rdp"]),
+                    _format_float(probe["haar_payload_delta_vs_rdp"]),
+                    _format_float(probe["adaptive_keep_ratio"]),
+                    _format_float(probe["adaptive_payload_ratio"]),
+                ]
+            )
+            + " |"
+        )
 
     if frontier is not None:
         lines.extend(

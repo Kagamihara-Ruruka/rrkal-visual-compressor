@@ -30,6 +30,26 @@
   - spikes: 0 / 2
   - steps: 0 / 2
 
+## Local strategy probe
+
+- probe counts:
+  - sparse_residual_layer: 10
+- best Haar R2 delta vs RDP = `-1.82865`
+- best adaptive residual payload ratio = `70.1754`
+
+| dataset | terms | recommended probe | Haar R2 delta vs RDP | Haar CR delta vs RDP | adaptive keep | adaptive CR |
+| --- | ---: | --- | ---: | ---: | ---: | ---: |
+| steps | 16 | sparse_residual_layer | -2.50542 | -0.643374 | 0.03825 | 26.1438 |
+| steps | 32 | sparse_residual_layer | -2.51865 | 2.17403 | 0.0205 | 48.7805 |
+| spikes | 16 | sparse_residual_layer | -1.94438 | 0.669005 | 0.021 | 47.619 |
+| spikes | 32 | sparse_residual_layer | -1.97863 | 3.44004 | 0.01425 | 70.1754 |
+| irregular | 16 | sparse_residual_layer | -1.94375 | 0.51533 | 0.03 | 33.3333 |
+| irregular | 32 | sparse_residual_layer | -1.9562 | 3.28637 | 0.029 | 34.4828 |
+| multiscale | 16 | sparse_residual_layer | -1.82865 | -1.60578 | 0.04025 | 24.8447 |
+| multiscale | 32 | sparse_residual_layer | -1.86564 | 1.16526 | 0.0365 | 27.3973 |
+| smooth | 16 | sparse_residual_layer | -1.94357 | 0.452142 | 0.032 | 31.25 |
+| smooth | 32 | sparse_residual_layer | -1.96348 | 3.24347 | 0.0365 | 27.3973 |
+
 - frontier strict gate = 0.99
 - frontier exploratory gate = 0.95
 - frontier demo gate = 0.9

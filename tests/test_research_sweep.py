@@ -6,6 +6,7 @@ from scripts.run_defensible_research_sweep import (
     _benchmark_rdp_frontier,
     _frontier_gate_reason,
     _frontier_tier,
+    _local_strategy_probe,
     _parse_gate_list,
     _parse_float_list,
     _parse_string_list,
@@ -13,6 +14,7 @@ from scripts.run_defensible_research_sweep import (
     _summarize_frontier_by_key,
     _summarize_frontier_tiers_by_key,
     _summarize_frontier_tier_matrix,
+    _summarize_local_strategy_probes,
     _with_gaussian_noise,
 )
 from vizcompress.data import make_synthetic_dataset
@@ -230,6 +232,61 @@ def test_frontier_tier_summary_groups_by_key():
     assert summary["smooth"]["tier_counts"]["demo_pass"] == 1
     assert summary["smooth"]["best_r2"] == 0.96
     assert summary["spikes"]["tier_counts"]["reject"] == 1
+
+
+def test_local_strategy_probe_prefers_haar_when_it_dominates_rdp():
+    probe = _local_strategy_probe(
+        samples=1000,
+        rdp_r2=0.91,
+        rdp_payload_ratio=5.0,
+        haar_r2=0.93,
+        haar_payload_ratio=6.0,
+        adaptive_keep_ratio=0.2,
+        adaptive_payload_ratio=3.0,
+    )
+
+    assert probe["recommended_probe"] == "haar_local_basis"
+    assert probe["haar_r2_delta_vs_rdp"] > 0
+
+
+def test_local_strategy_probe_prefers_sparse_residual_when_residual_is_small():
+    probe = _local_strategy_probe(
+        samples=1000,
+        rdp_r2=0.95,
+        rdp_payload_ratio=5.0,
+        haar_r2=0.90,
+        haar_payload_ratio=6.0,
+        adaptive_keep_ratio=0.02,
+        adaptive_payload_ratio=12.0,
+    )
+
+    assert probe["recommended_probe"] == "sparse_residual_layer"
+
+
+def test_local_strategy_summary_counts_probe_recommendations():
+    rows = [
+        {
+            "local_strategy_probe": {
+                "recommended_probe": "haar_local_basis",
+                "haar_r2_delta_vs_rdp": 0.1,
+                "adaptive_payload_ratio": 2.0,
+            }
+        },
+        {
+            "local_strategy_probe": {
+                "recommended_probe": "sparse_residual_layer",
+                "haar_r2_delta_vs_rdp": -0.1,
+                "adaptive_payload_ratio": 10.0,
+            }
+        },
+    ]
+
+    summary = _summarize_local_strategy_probes(rows)
+
+    assert summary["probe_counts"]["haar_local_basis"] == 1
+    assert summary["probe_counts"]["sparse_residual_layer"] == 1
+    assert summary["best_haar_r2_delta_vs_rdp"] == 0.1
+    assert summary["best_adaptive_payload_ratio"] == 10.0
 
 
 def test_noise_frontier_recommendation_promotes_local_strategy_for_high_noise():

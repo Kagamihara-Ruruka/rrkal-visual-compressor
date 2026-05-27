@@ -79,6 +79,15 @@
         "payload_bytes": 2448.0,
         "payload_ratio": 26.143790849673202
       },
+      "local_strategy_probe": {
+        "recommended_probe": "sparse_residual_layer",
+        "reason": "residual corrections are sparse enough to test as a retained layer",
+        "samples": 4000,
+        "haar_r2_delta_vs_rdp": -2.505420382615152,
+        "haar_payload_delta_vs_rdp": -0.6433736172950528,
+        "adaptive_keep_ratio": 0.03825,
+        "adaptive_payload_ratio": 26.143790849673202
+      },
       "gates": {
         "r2_gate": false,
         "leakage_gate": false,
@@ -167,6 +176,15 @@
         "keep_count": 82,
         "payload_bytes": 1312.0,
         "payload_ratio": 48.78048780487805
+      },
+      "local_strategy_probe": {
+        "recommended_probe": "sparse_residual_layer",
+        "reason": "residual corrections are sparse enough to test as a retained layer",
+        "samples": 4000,
+        "haar_r2_delta_vs_rdp": -2.5186537622307092,
+        "haar_payload_delta_vs_rdp": 2.174025853428052,
+        "adaptive_keep_ratio": 0.0205,
+        "adaptive_payload_ratio": 48.78048780487805
       },
       "gates": {
         "r2_gate": true,
@@ -257,6 +275,15 @@
         "payload_bytes": 1344.0,
         "payload_ratio": 47.61904761904762
       },
+      "local_strategy_probe": {
+        "recommended_probe": "sparse_residual_layer",
+        "reason": "residual corrections are sparse enough to test as a retained layer",
+        "samples": 4000,
+        "haar_r2_delta_vs_rdp": -1.9443776049231072,
+        "haar_payload_delta_vs_rdp": 0.669005466264176,
+        "adaptive_keep_ratio": 0.021,
+        "adaptive_payload_ratio": 47.61904761904762
+      },
       "gates": {
         "r2_gate": false,
         "leakage_gate": false,
@@ -345,6 +372,15 @@
         "keep_count": 57,
         "payload_bytes": 912.0,
         "payload_ratio": 70.17543859649123
+      },
+      "local_strategy_probe": {
+        "recommended_probe": "sparse_residual_layer",
+        "reason": "residual corrections are sparse enough to test as a retained layer",
+        "samples": 4000,
+        "haar_r2_delta_vs_rdp": -1.978634015934117,
+        "haar_payload_delta_vs_rdp": 3.440044071738999,
+        "adaptive_keep_ratio": 0.01425,
+        "adaptive_payload_ratio": 70.17543859649123
       },
       "gates": {
         "r2_gate": false,
@@ -435,6 +471,15 @@
         "payload_bytes": 1920.0,
         "payload_ratio": 33.333333333333336
       },
+      "local_strategy_probe": {
+        "recommended_probe": "sparse_residual_layer",
+        "reason": "residual corrections are sparse enough to test as a retained layer",
+        "samples": 4000,
+        "haar_r2_delta_vs_rdp": -1.9437476562061087,
+        "haar_payload_delta_vs_rdp": 0.5153300628662407,
+        "adaptive_keep_ratio": 0.03,
+        "adaptive_payload_ratio": 33.333333333333336
+      },
       "gates": {
         "r2_gate": true,
         "leakage_gate": false,
@@ -523,6 +568,15 @@
         "keep_count": 116,
         "payload_bytes": 1856.0,
         "payload_ratio": 34.48275862068966
+      },
+      "local_strategy_probe": {
+        "recommended_probe": "sparse_residual_layer",
+        "reason": "residual corrections are sparse enough to test as a retained layer",
+        "samples": 4000,
+        "haar_r2_delta_vs_rdp": -1.9561964858389191,
+        "haar_payload_delta_vs_rdp": 3.286368668341064,
+        "adaptive_keep_ratio": 0.029,
+        "adaptive_payload_ratio": 34.48275862068966
       },
       "gates": {
         "r2_gate": true,
@@ -613,6 +667,15 @@
         "payload_bytes": 2576.0,
         "payload_ratio": 24.84472049689441
       },
+      "local_strategy_probe": {
+        "recommended_probe": "sparse_residual_layer",
+        "reason": "residual corrections are sparse enough to test as a retained layer",
+        "samples": 4000,
+        "haar_r2_delta_vs_rdp": -1.828653225066438,
+        "haar_payload_delta_vs_rdp": -1.6057834528621946,
+        "adaptive_keep_ratio": 0.04025,
+        "adaptive_payload_ratio": 24.84472049689441
+      },
       "gates": {
         "r2_gate": true,
         "leakage_gate": false,
@@ -701,6 +764,15 @@
         "keep_count": 146,
         "payload_bytes": 2336.0,
         "payload_ratio": 27.397260273972602
+      },
+      "local_strategy_probe": {
+        "recommended_probe": "sparse_residual_layer",
+        "reason": "residual corrections are sparse enough to test as a retained layer",
+        "samples": 4000,
+        "haar_r2_delta_vs_rdp": -1.8656353294942045,
+        "haar_payload_delta_vs_rdp": 1.1652551526126285,
+        "adaptive_keep_ratio": 0.0365,
+        "adaptive_payload_ratio": 27.397260273972602
       },
       "gates": {
         "r2_gate": true,
@@ -791,6 +863,15 @@
         "payload_bytes": 2048.0,
         "payload_ratio": 31.25
       },
+      "local_strategy_probe": {
+        "recommended_probe": "sparse_residual_layer",
+        "reason": "residual corrections are sparse enough to test as a retained layer",
+        "samples": 4000,
+        "haar_r2_delta_vs_rdp": -1.9435699820883752,
+        "haar_payload_delta_vs_rdp": 0.45214161721367674,
+        "adaptive_keep_ratio": 0.032,
+        "adaptive_payload_ratio": 31.25
+      },
       "gates": {
         "r2_gate": true,
         "leakage_gate": false,
@@ -879,6 +960,15 @@
         "keep_count": 146,
         "payload_bytes": 2336.0,
         "payload_ratio": 27.397260273972602
+      },
+      "local_strategy_probe": {
+        "recommended_probe": "sparse_residual_layer",
+        "reason": "residual corrections are sparse enough to test as a retained layer",
+        "samples": 4000,
+        "haar_r2_delta_vs_rdp": -1.963477082455021,
+        "haar_payload_delta_vs_rdp": 3.243472209615442,
+        "adaptive_keep_ratio": 0.0365,
+        "adaptive_payload_ratio": 27.397260273972602
       },
       "gates": {
         "r2_gate": true,
@@ -972,7 +1062,14 @@
         "pass": 0
       }
     },
-    "locality_mode_desc": "strict(piecewise_polynomial)"
+    "locality_mode_desc": "strict(piecewise_polynomial)",
+    "local_strategy_probe": {
+      "probe_counts": {
+        "sparse_residual_layer": 10
+      },
+      "best_haar_r2_delta_vs_rdp": -1.828653225066438,
+      "best_adaptive_payload_ratio": 70.17543859649123
+    }
   },
   "run_rdp_frontier": true,
   "best_global_r2": 0.9999002893927597,
@@ -1010,6 +1107,13 @@
     }
   },
   "locality_mode_desc": "strict(piecewise_polynomial)",
+  "local_strategy_probe": {
+    "probe_counts": {
+      "sparse_residual_layer": 10
+    },
+    "best_haar_r2_delta_vs_rdp": -1.828653225066438,
+    "best_adaptive_payload_ratio": 70.17543859649123
+  },
   "rdp_frontier": {
     "keep_ratios": [
       0.02,

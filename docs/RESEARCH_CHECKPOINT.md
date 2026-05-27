@@ -73,6 +73,7 @@ This adds:
 - optional tier matrix via `--run-frontier-tier-matrix`, which re-scores the same frontier sweeps across `frontier_exploratory_r2_gates` and `frontier_demo_r2_gates`
 - noise frontier tier summaries grouped by `sigma` and `base_kind`
 - noise frontier recommendation, which converts tier failures into a next experiment label rather than a success claim
+- local strategy probe comparing current RDP, Haar/local basis, and sparse residual signals without promoting any branch to production
 
 ## 5) Advance / rollback rules
 
@@ -98,4 +99,5 @@ Regress immediately if:
 - compare noise frontier behavior across `smooth`, `spikes`, and `multiscale`
 - use tier-by-sigma and tier-by-kind summaries to decide whether residual, wavelet, or adaptive segmentation should be promoted next
 - treat `recommended_next_strategy` as an experiment queue item, not as proof that the chosen method will pass the strict gate
+- use the local strategy probe table to decide whether Haar/local basis or sparse residual should get the next implementation checkpoint
 - prepare renderer-side benchmark: decode cost vs raster budget coupling

@@ -74,6 +74,7 @@ py scripts/run_defensible_research_sweep.py \
 - 可選 `--run-frontier-tier-matrix`，用同一批 frontier sweeps 重新評估多組 `frontier_exploratory_r2_gates` 與 `frontier_demo_r2_gates`
 - noise frontier 會依 `sigma` 與 `base_kind` 顯示 tier 分布
 - noise frontier 會輸出 recommendation，把 tier 失敗轉成下一步實驗標籤，而不是宣稱已經成功
+- local strategy probe 會比較目前 RDP、Haar/local basis 與 sparse residual 訊號，但不把任何分支直接提升為 production
 
 ## 5) 推進與回退規則
 
@@ -100,4 +101,5 @@ py scripts/run_defensible_research_sweep.py \
 - 比較 `smooth`、`spikes`、`multiscale` 三種資料族群下的 noise frontier
 - 用 tier-by-sigma 與 tier-by-kind 判斷下一步該優先推 residual、wavelet，或 adaptive segmentation
 - 將 `recommended_next_strategy` 視為實驗排程項目，不視為該策略已通過 strict gate
+- 用 local strategy probe 表格判斷下一個 checkpoint 應優先做 Haar/local basis 還是 sparse residual
 - 準備 renderer-side benchmark：decode cost 與 raster budget 的耦合
