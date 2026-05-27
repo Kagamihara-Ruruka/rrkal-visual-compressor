@@ -1,0 +1,10 @@
+{
+  "left": "\\\\RaiDrive-lyn59\\Google Drive_lyn594815\\Codex\\2026-05-26\\qt-vispy\\rrkal-visual-compressor\\docs\\benchmarks\\terms_channel_parity_left_copy.json",
+  "right": "\\\\RaiDrive-lyn59\\Google Drive_lyn594815\\Codex\\2026-05-26\\qt-vispy\\rrkal-visual-compressor\\docs\\benchmarks\\terms_channel_parity_right_copy.json",
+  "left_hash": "71c42f69cd819050d5aee2e423b86634213ea58bab833cd42b8b1e5439f27087",
+  "right_hash": "71c42f69cd819050d5aee2e423b86634213ea58bab833cd42b8b1e5439f27087",
+  "logical_signature_match": true,
+  "parity_ok": true,
+  "precision": 12,
+  "skip_run": false
+}
