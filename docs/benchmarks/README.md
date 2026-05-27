@@ -182,3 +182,34 @@ py scripts/run_terms_channel_kind_threshold_sweep.py \
   --out-json docs/benchmarks/terms_channel_kind_threshold_grid.json \
   --out-md docs/benchmarks/terms_channel_kind_threshold_grid.md
 ```
+
+## Cross-machine reproducibility check
+
+For parity between `K:` and local `C:` copies, generate the same artifact in both
+places with the same parameters, then compare hash and key gate fields:
+
+```bash
+py scripts/run_terms_channel_kind_threshold_sweep.py \
+  --sample-sizes 1000 \
+  --synthetic-kinds smooth \
+  --fourier-terms 16 \
+  --channel-k 2 \
+  --channel-window 16 \
+  --channel-band-epsilon 0.04 \
+  --rdp-epsilon 0.6 \
+  --thresholds 0.90 \
+  --svg-samples 120 \
+  --out-json docs/benchmarks/ci_terms_channel_kind_threshold_sweep.json \
+  --out-md docs/benchmarks/ci_terms_channel_kind_threshold_sweep.md
+
+# compare
+Get-FileHash docs/benchmarks/ci_terms_channel_kind_threshold_sweep.json
+```
+
+If hashes differ, it is usually one of:
+- Working-copy code drift (`K:` and `C:` commits differ).
+- Environment/seed drift from unpinned dependencies.
+- Missing function compatibility (`c` workspace running older code snapshot).
+
+`C:` workspace should be aligned to the same commit as `K:` before taking an
+evidence claim.

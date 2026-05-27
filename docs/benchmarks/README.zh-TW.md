@@ -45,3 +45,17 @@ py scripts/run_terms_channel_kind_threshold_sweep.py \
 ## English
 
 For the English version, see `README.md`.
+
+## 跨機器可重現性檢核
+
+為了驗證 `K:` 與本機 `C:` 跑出一致結果：
+
+1. 在兩端用同參數重跑一次快照輸出（同一個 JSON/MD 命名）。
+2. 比對 `Get-FileHash`（或 `sha256sum`）是否一致。
+3. 比較 `benchmark_gate` 與 `rows_by_kind` 的關鍵欄位，特別是：
+   - `package_wins_against_direct_svg_gzip_count`
+   - `package_wins_against_source_csv_gzip_count`
+   - `defensible_rows_ratio`
+
+若無法比對，先確認 `C:` 工作區不是舊快照（缺少 `benchmark_synthetic_terms_channel_k_sweep` 等新 API 或腳本落差），
+再確認輸入依賴與 `PYTHONPATH` 是否一致。
