@@ -266,3 +266,48 @@ against compressed baselines, not only raw text.
 When `--require-review-pass` is used, the build command treats `accepted: false`
 as a hard failure. This is the operational form of "do not accept a compressed
 asset that exceeds its declared error budget."
+
+## Dual-Layer Function Workflow
+
+The practical architecture is intentionally separated into two explicit
+function layers:
+
+1. `encode`: raw data -> function asset
+2. `render`: function asset + viewport policy -> rendered output
+
+In equations:
+
+```text
+E = encode(D)                 # codec as function
+O = render(E, v, b, s)        # rendering as function
+```
+
+where:
+
+- `D` is raw structured data,
+- `v` is viewport state (`canvas_size`, `dpr`, pan/zoom matrix),
+- `b` is visible bound budget (e.g., pixel error / frame time),
+- `s` is style + shader + visual policy.
+
+This model is what you can refer to as **function composition with policy injection**:
+
+```text
+output = render(encode(D), viewport, budgets, policy)
+```
+
+The key operational benefit is that rendering only evaluates the subset of
+coefficients needed for the current view, instead of forcing a full inverse decode
+to a point-by-point representation before rasterization.
+
+In this view, the renderer is not a second copy of the compressor; it is the
+second function in a chain that is:
+
+```text
+compressor function -> viewport-aware function
+```
+
+This is why the pipeline behaves as:
+
+- bandwidth-efficient at rest (small, versioned asset),
+- latency-aware during interaction (adaptive LOD),
+- auditable by policy (`max-points`, `max-terms`, `max-error`, `max-latency`).

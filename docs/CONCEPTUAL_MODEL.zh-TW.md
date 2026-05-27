@@ -233,3 +233,20 @@ ratio = \frac{|source\ numeric\ arrays|}{|package|}
 如果 direct SVG baseline 存在，review packet 會同時記錄 raw SVG bytes 與 gzip-compressed SVG bytes。這很重要，因為文字型 baseline 實務上常會用 gzip 傳輸；公平的 package claim 不應只贏 raw text，也應該能被拿來跟 compressed baseline 比較。
 
 使用 `--require-review-pass` 時，build command 會把 `accepted: false` 視為硬失敗。這就是「不要接受超出宣稱 error budget 的 compressed asset」在操作層的形式。
+
+## Dual-Layer Function Workflow / 雙層函數化工作流
+
+實作上把流程拆成兩個明確函數：
+E = encode(D)                 # 壓縮器：raw data -> function asset
+O = render(E, v, b, s)        # 渲染器：function asset + viewport policy -> output
+
+- D：原始資料
+- ：畫布狀態（尺寸、DPR、平移縮放）
+- ：可見預算（像素誤差、每幀時間）
+- s：樣式與策略（shader / 視覺參數）
+
+等價寫法：
+output = render(encode(D), viewport, budgets, policy)
+
+這個設計的關鍵是：只依據視口需求解碼必要係數，不會先還原成完整點列再繪製。
+
