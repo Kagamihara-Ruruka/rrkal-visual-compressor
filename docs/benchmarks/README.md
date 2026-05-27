@@ -225,6 +225,18 @@ py scripts/check_benchmark_parity.py \
   --right docs/benchmarks/ci_terms_channel_kind_threshold_sweep_c.json
 ```
 
+You can also run the parity regression tests directly in CI/test environments:
+
+```bash
+py -m pytest tests/test_benchmark_parity.py
+```
+
+A pass here guarantees the script accepts:
+
+- identical files (`hash: MATCH`)
+- metadata-only differences (`logical_signature: PASS`)
+- key-value diffs (`logical_signature: FAIL`)
+
 If hashes differ, it is usually one of:
 - Working-copy code drift (`K:` and `C:` commits differ).
 - Environment/seed drift from unpinned dependencies.

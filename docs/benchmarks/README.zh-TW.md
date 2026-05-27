@@ -75,3 +75,15 @@ py scripts/check_benchmark_parity.py \
 
 - `hash: MATCH`（表示二進位完全一致）
 - `logical_signature: PASS`（表示關鍵欄位邏輯一致）
+
+可用單元測試直接驗證這個比對邏輯：
+
+```bash
+py -m pytest tests/test_benchmark_parity.py
+```
+
+透過測試可確認：
+
+- 完全相同檔案會回傳 `hash: MATCH`
+- 只有 metadata 差異時仍為 `logical_signature: PASS`
+- 關鍵欄位差異會回傳 `logical_signature: FAIL`
