@@ -114,3 +114,26 @@ py -m pytest tests/test_benchmark_parity.py
 - 完全相同檔案會回傳 `hash: MATCH`
 - 只有 metadata 差異時仍為 `logical_signature: PASS`
 - 關鍵欄位差異會回傳 `logical_signature: FAIL`
+
+### K/C 交叉比對 + 合約檢查（推薦）
+
+可用單一命令一次完成雙端輸出比對與合約檢查：
+
+```bash
+py scripts/compare_terms_channel_benchmark_parity.py \
+  --left-root "K:\\Codex\\2026-05-26\\qt-vispy\\rrkal-visual-compressor" \
+  --right-root "C:\\Users\\lyn59\\Documents\\Codex\\2026-05-26\\qt-vispy\\rrkal-visual-compressor" \
+  --sample-sizes 1000 \
+  --synthetic-kinds smooth \
+  --fourier-terms 16 \
+  --channel-k 3 \
+  --channel-window 16 \
+  --channel-band-epsilon 0.04 \
+  --rdp-epsilon 0.6 \
+  --thresholds 0.90 \
+  --svg-samples 120 \
+  --left-out-json docs/benchmarks/ci_left.json \
+  --right-out-json docs/benchmarks/ci_right.json \
+  --report-json docs/benchmarks/ci_compare_report.json \
+  --validate-contract
+```

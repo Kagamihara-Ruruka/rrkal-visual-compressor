@@ -7,10 +7,13 @@ import subprocess
 import sys
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
+PROJECT_SRC = ROOT_DIR / "src"
+if str(PROJECT_SRC) not in sys.path:
+    sys.path.insert(0, str(PROJECT_SRC))
 
 
 IGNORED_KEYS = {
@@ -180,6 +183,19 @@ def _safe_load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _validate_payload(path: Path, payload: dict[str, Any], precision: int) -> dict[str, Any]:
+    from vizcompress.benchmark_contracts import validate_benchmark_contract
+
+    ok, errors = validate_benchmark_contract(payload)
+    return {
+        "path": str(path),
+        "passed": ok,
+        "error_count": len(errors),
+        "precision": precision,
+        "errors": errors,
+    }
+
+
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -204,6 +220,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--auto-noise-layer", action="store_true")
     parser.add_argument("--left-out-json", default="docs/benchmarks/terms_channel_parity_left.json")
     parser.add_argument("--right-out-json", default="docs/benchmarks/terms_channel_parity_right.json")
+    parser.add_argument(
+        "--report-json",
+        default="docs/benchmarks/terms_channel_benchmark_parity_report.json",
+        help="Output path for parity report.",
+    )
     parser.add_argument("--x-domain-policy", default="preserve")
     parser.add_argument("--x-domain-epsilon", type=float, default=0.002)
     parser.add_argument("--x-domain-max-error", type=float, default=1e-4)
@@ -214,6 +235,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-defensible-ratio", type=float, default=None)
     parser.add_argument("--min-high-fidelity-rows", type=int, default=None)
     parser.add_argument("--skip-run", action="store_true", help="Use existing --left-out-json and --right-out-json files.")
+    parser.add_argument(
+        "--validate-contract",
+        action="store_true",
+        help="Validate benchmark contract constraints for both side payloads before parity comparison.",
+    )
     parser.add_argument("--precision", type=int, default=12, help="Float rounding precision for logical signature.")
     return parser.parse_args()
 
@@ -240,6 +266,22 @@ def main() -> int:
     left_payload = _safe_load_json(left_path)
     right_payload = _safe_load_json(right_path)
 
+    contract_checks: Dict[str, Any] = {"enabled": args.validate_contract}
+    if args.validate_contract:
+        left_contract = _validate_payload(left_path, left_payload, args.precision)
+        right_contract = _validate_payload(right_path, right_payload, args.precision)
+        contract_checks["left"] = left_contract
+        contract_checks["right"] = right_contract
+        contract_checks["both_passed"] = left_contract["passed"] and right_contract["passed"]
+        if not contract_checks["both_passed"]:
+            print("contract validation failed")
+            for side, payload in (("left", left_contract), ("right", right_contract)):
+                if not payload["passed"]:
+                    print(f"{side} errors={payload['error_count']}")
+                    for item in payload["errors"][:3]:
+                        print(f"  - {item}")
+            return 2
+
     left_hash = _logical_signature(left_payload, args.precision)
     right_hash = _logical_signature(right_payload, args.precision)
 
@@ -255,6 +297,7 @@ def main() -> int:
         "parity_ok": parity_ok,
         "precision": args.precision,
         "skip_run": args.skip_run,
+        "contract_validation": contract_checks,
     }
 
     for side, signature in (("left", left_hash), ("right", right_hash)):
@@ -262,7 +305,7 @@ def main() -> int:
     print(f"logical_signature: {'PASS' if match else 'FAIL'}")
     print(f"parity: {'PASS' if parity_ok else 'FAIL'}")
 
-    report_path = Path("docs/benchmarks/terms_channel_benchmark_parity_report.json")
+    report_path = Path(args.report_json)
     _write_json(report_path, report)
     print(f"wrote {report_path}")
 

@@ -214,6 +214,27 @@ py scripts/validate_benchmark_contracts_all.py \
 
 This prints PASS/FAIL per file and returns a non-zero exit code on any failure.
 
+For K/C reproducibility plus contract safety checks in one command:
+
+```bash
+py scripts/compare_terms_channel_benchmark_parity.py \
+  --left-root "K:\\Codex\\2026-05-26\\qt-vispy\\rrkal-visual-compressor" \
+  --right-root "C:\\Users\\lyn59\\Documents\\Codex\\2026-05-26\\qt-vispy\\rrkal-visual-compressor" \
+  --sample-sizes 1000 \
+  --synthetic-kinds smooth \
+  --fourier-terms 16 \
+  --channel-k 3 \
+  --channel-window 16 \
+  --channel-band-epsilon 0.04 \
+  --rdp-epsilon 0.6 \
+  --thresholds 0.90 \
+  --svg-samples 120 \
+  --left-out-json docs/benchmarks/ci_left.json \
+  --right-out-json docs/benchmarks/ci_right.json \
+  --report-json docs/benchmarks/ci_compare_report.json \
+  --validate-contract
+```
+
 ### Hard-signal behavior note
 
 In `5k_hard`, `noisy` and `spikes` rows show little or no high-fidelity coverage (`R²>=0.99`) at this scale, while `steps` remains stable and yields the best ratio.
