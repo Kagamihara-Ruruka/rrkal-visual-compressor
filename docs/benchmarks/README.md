@@ -235,6 +235,24 @@ py scripts/compare_terms_channel_benchmark_parity.py \
   --validate-contract
 ```
 
+The generated report JSON includes machine-checkable status:
+
+- `status: ok` all checks pass
+- `status: contract_failed` contract gate failed
+- `status: signature_mismatch` semantic signature mismatch while hash differs
+- `status: parity_failed` hash mismatches after tolerances
+- `contract_validation.enabled` indicates contract checking mode
+- `contract_validation.enforced` is true only with `--require-contract-pass`
+- `contract_validation.left/right` summarize per-side contract outcomes
+- `contract_validation.left_passed/right_passed` are boolean pass flags
+- `contract_violations` lists contract-fail summaries
+
+In CI, use a strict contract gate with:
+
+```bash
+py scripts/compare_terms_channel_benchmark_parity.py ... --validate-contract --require-contract-pass
+```
+
 ### Hard-signal behavior note
 
 In `5k_hard`, `noisy` and `spikes` rows show little or no high-fidelity coverage (`R²>=0.99`) at this scale, while `steps` remains stable and yields the best ratio.

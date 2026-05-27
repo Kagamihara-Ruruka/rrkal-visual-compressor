@@ -126,4 +126,50 @@ def test_compare_terms_channel_parity_contract_failure(tmp_path: Path):
     assert result.returncode == 2
     text = result.stdout + result.stderr
     assert "contract validation failed" in text
-    assert not report.exists()
+    assert report.exists()
+    payload = json.loads(report.read_text(encoding="utf-8"))
+    assert payload["status"] == "contract_failed"
+    assert payload["contract_validation"]["enforced"] is False
+
+
+def test_compare_terms_channel_parity_require_contract_pass(tmp_path: Path):
+    root = Path(__file__).resolve().parents[1]
+
+    left_payload = _payload(True)
+    right_payload = _payload(False)
+
+    left = tmp_path / "left_invalid.json"
+    right = tmp_path / "right_invalid.json"
+    report = tmp_path / "report_invalid.json"
+
+    left.write_text(json.dumps(left_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    right.write_text(json.dumps(right_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(root / "scripts" / "compare_terms_channel_benchmark_parity.py"),
+            "--left-root",
+            str(tmp_path),
+            "--right-root",
+            str(tmp_path),
+            "--left-out-json",
+            left.name,
+            "--right-out-json",
+            right.name,
+            "--report-json",
+            str(report),
+            "--skip-run",
+            "--require-contract-pass",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 2
+    assert report.exists()
+    payload = json.loads(report.read_text(encoding="utf-8"))
+    assert payload["contract_validation"]["enabled"] is True
+    assert payload["contract_validation"]["enforced"] is True
+    assert payload["status"] == "contract_failed"

@@ -196,6 +196,39 @@ def _validate_payload(path: Path, payload: dict[str, Any], precision: int) -> di
     }
 
 
+def _build_contract_checks(
+    args: argparse.Namespace,
+    *,
+    left_path: Path,
+    left_payload: dict[str, Any],
+    right_path: Path,
+    right_payload: dict[str, Any],
+) -> tuple[dict[str, Any], list[str]]:
+    validate_contract = args.validate_contract or args.require_contract_pass
+    checks: Dict[str, Any] = {"enabled": validate_contract, "enforced": args.require_contract_pass}
+
+    violations: list[str] = []
+    if not validate_contract:
+        return checks, violations
+
+    left_contract = _validate_payload(left_path, left_payload, args.precision)
+    right_contract = _validate_payload(right_path, right_payload, args.precision)
+    checks["left"] = left_contract
+    checks["right"] = right_contract
+    both_passed = left_contract["passed"] and right_contract["passed"]
+    checks["both_passed"] = both_passed
+    checks["left_passed"] = bool(left_contract["passed"])
+    checks["right_passed"] = bool(right_contract["passed"])
+
+    if not both_passed:
+        if not left_contract["passed"]:
+            violations.append(f"left_contract_failed: {left_contract['error_count']} errors")
+        if not right_contract["passed"]:
+            violations.append(f"right_contract_failed: {right_contract['error_count']} errors")
+
+    return checks, violations
+
+
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -240,6 +273,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Validate benchmark contract constraints for both side payloads before parity comparison.",
     )
+    parser.add_argument(
+        "--require-contract-pass",
+        action="store_true",
+        help="Fail command when contract checks fail (implies validate-contract behavior).",
+    )
     parser.add_argument("--precision", type=int, default=12, help="Float rounding precision for logical signature.")
     return parser.parse_args()
 
@@ -266,21 +304,25 @@ def main() -> int:
     left_payload = _safe_load_json(left_path)
     right_payload = _safe_load_json(right_path)
 
-    contract_checks: Dict[str, Any] = {"enabled": args.validate_contract}
-    if args.validate_contract:
-        left_contract = _validate_payload(left_path, left_payload, args.precision)
-        right_contract = _validate_payload(right_path, right_payload, args.precision)
-        contract_checks["left"] = left_contract
-        contract_checks["right"] = right_contract
-        contract_checks["both_passed"] = left_contract["passed"] and right_contract["passed"]
-        if not contract_checks["both_passed"]:
-            print("contract validation failed")
-            for side, payload in (("left", left_contract), ("right", right_contract)):
-                if not payload["passed"]:
-                    print(f"{side} errors={payload['error_count']}")
-                    for item in payload["errors"][:3]:
-                        print(f"  - {item}")
-            return 2
+    contract_checks, contract_violations = _build_contract_checks(
+        args,
+        left_path=left_path,
+        left_payload=left_payload,
+        right_path=right_path,
+        right_payload=right_payload,
+    )
+
+    if contract_checks.get("enabled") and contract_checks.get("both_passed") is False:
+        print("contract validation failed")
+        for side in ("left", "right"):
+            side_data = contract_checks.get(side, {})
+            if not isinstance(side_data, dict):
+                continue
+            if side_data.get("passed"):
+                continue
+            print(f"{side} errors={side_data['error_count']}")
+            for item in side_data.get("errors", [])[:3]:
+                print(f"  - {item}")
 
     left_hash = _logical_signature(left_payload, args.precision)
     right_hash = _logical_signature(right_payload, args.precision)
@@ -298,18 +340,30 @@ def main() -> int:
         "precision": args.precision,
         "skip_run": args.skip_run,
         "contract_validation": contract_checks,
+        "contract_violations": contract_violations,
+        "status": "ok",
     }
+
+    if contract_violations:
+        report["status"] = "contract_failed"
+    elif not match:
+        report["status"] = "signature_mismatch"
+    elif not parity_ok:
+        report["status"] = "parity_failed"
 
     for side, signature in (("left", left_hash), ("right", right_hash)):
         print(f"{side} hash: {signature}")
     print(f"logical_signature: {'PASS' if match else 'FAIL'}")
     print(f"parity: {'PASS' if parity_ok else 'FAIL'}")
+    print(f"status: {report['status']}")
 
     report_path = Path(args.report_json)
     _write_json(report_path, report)
     print(f"wrote {report_path}")
 
-    return 0 if parity_ok else 2
+    if contract_violations:
+        return 2
+    return 0 if match and parity_ok else 2
 
 
 if __name__ == "__main__":
