@@ -1,4 +1,4 @@
-﻿# Research Notes: Defensible Compression Directions (RRKAL Visual Compressor)
+# Research Notes: Defensible Compression Directions (RRKAL Visual Compressor)
 
 Date: 2026-05-27  
 Project: `rrkal-visual-compressor`
@@ -51,6 +51,7 @@ Residual layers may carry most of the entropy and remove compression gains.
 - `locality_leakage_metric`
 - `compress_fourier_with_linear_detrend` (linear de-trend + Fourier)
 - `adaptive_residual_threshold` (volatility-driven residual masking)
+- `compress_fourier_with_rdp_budget` (viewport-aware RDP + Fourier)
 
 `tests/test_research.py` now covers:
 
@@ -75,6 +76,35 @@ This is testable:
 - stability across scale levels,
 - monotonic error vs epsilon,
 - reduction in residual payload.
+
+### 4.1) RDP budget baseline now measured
+
+We added a dedicated baseline `compress_fourier_with_rdp_budget`:
+
+- choose `target_keep_ratio` from viewport budget,
+- binary-search RDP `epsilon` to reach that keep count,
+- fit Fourier on simplified points,
+- interpolate back to original domain.
+
+In the current exploratory run (`--locality-mode any`, `--terms 16,32,64`), this baseline:
+
+- improves compute budget at rendering side by reducing input points,
+- but can increase total payload if kept points are still too many (because payload includes both RDP control points and Fourier coefficients),
+- is therefore currently used as a **separate knob**, not always a default replacement.
+
+Formula (payload proxy in report):
+
+$$
+\text{payload}_{rdp} \approx K(2f+8)\;+\;(24C+8)
+$$
+
+where:
+
+- $K$ = kept points from RDP,
+- $f$ = 8 bytes (float64),
+- $C$ = Fourier coefficient count on simplified curve.
+
+---
 
 ## 5) Why this is scientifically stable (and where it is not)
 

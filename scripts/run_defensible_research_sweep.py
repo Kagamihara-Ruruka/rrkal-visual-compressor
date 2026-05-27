@@ -23,8 +23,10 @@ from vizcompress.research import (
     adaptive_residual_threshold,
     PiecewiseModel,
     PiecewisePolynomialModel,
+    RDPPrefilteredFourierModel,
     compress_fourier_piecewise,
     compress_fourier_with_uniform_param,
+    compress_fourier_with_rdp_budget,
     compress_fourier_with_linear_detrend,
     compress_haar_threshold,
     compress_piecewise_polynomial,
@@ -36,21 +38,30 @@ from vizcompress.core import FourierModel, TimeSeries
 
 
 def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 4) -> dict[str, Any]:
-    # Fit several representations for the same data series so the report can compare
-    # "quality first" vs "locality / payload" on the same baseline.
+    # Fit multiple representations for the same signal.
+    # This keeps quality, locality, and payload comparisons fair.
     global_model = compress_fourier(series, terms=terms)
     piecewise = compress_fourier_piecewise(series, terms=terms, max_breaks=max_breaks)
     polynomial = compress_piecewise_polynomial(series, degree=3, max_breaks=max_breaks)
     uniform = compress_fourier_with_uniform_param(series, terms=terms, reparametrize_to_uniform=True)
+    # Keep a small fraction of points for rendering-aware fitting.
+    # This simulates a pixel/DPI budget before mathematical fitting.
+    target_keep_ratio = min(0.25, 0.04 + terms / 1000.0)
+    rdp_prefilter = compress_fourier_with_rdp_budget(
+        series,
+        terms=terms,
+        target_keep_ratio=target_keep_ratio,
+        min_keep=128,
+    )
     detrended = compress_fourier_with_linear_detrend(series, terms=terms)
     haar_level = max(1, int(np.floor(np.log2(series.sample_count))) - 1)
     haar = compress_haar_threshold(series, level=min(3, haar_level))
 
     # Compute residuals against the detrended reconstruction.
-    # A small residual means the Fourier + trend model already captured most patterns.
+    # If this residual is small, the core model already captured most structure.
     residual = series.y - detrended.reconstructed_y
     # Keep only "important" residual points by a dynamic threshold.
-    # In this research run, these points represent the second-layer payload.
+    # In this run, those points are the residual/second layer payload.
     adaptive = adaptive_residual_threshold(
         x=series.x,
         residual=residual,
@@ -63,6 +74,7 @@ def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 
     p_metrics = regression_metrics(series.y, piecewise.reconstructed_y)
     poly_metrics = regression_metrics(series.y, polynomial.reconstructed_y)
     u_metrics = regression_metrics(series.y, uniform.reconstructed_y)
+    rdp_metrics = regression_metrics(series.y, rdp_prefilter.reconstructed_y)
     d_metrics = regression_metrics(series.y, detrended.reconstructed_y)
     h_metrics = regression_metrics(series.y, haar.reconstructed_y)
 
@@ -76,12 +88,13 @@ def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 
     threshold_floor = float(np.min(adaptive["threshold"]))
     threshold_ceiling = float(np.max(adaptive["threshold"]))
 
-    # Baseline payload: raw x and y as float64 arrays, same length.
+    # Baseline payload: raw x+y as float64 arrays at original length.
     raw_payload = float(series.sample_count) * 2.0 * FLOAT64_BYTES
     global_payload = _estimate_fourier_payload_bytes(global_model)
     piecewise_payload = _estimate_piecewise_fourier_payload_bytes(piecewise)
     poly_payload = _estimate_piecewise_polynomial_payload_bytes(polynomial)
     uniform_payload = _estimate_fourier_payload_bytes(uniform)
+    rdp_payload = _estimate_rdp_prefilter_payload_bytes(rdp_prefilter)
     detrended_payload = _estimate_fourier_payload_bytes(detrended.raw_fourier) + 2 * FLOAT64_BYTES
     haar_payload = _estimate_haar_payload_bytes(haar)
     adaptive_payload = _estimate_sparse_residual_payload_bytes(adaptive["keep_indices"])
@@ -123,6 +136,17 @@ def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 
             "payload_bytes": uniform_payload,
             "payload_ratio": _safe_ratio(raw_payload, uniform_payload),
         },
+        "rdp_prefilter_fourier": {
+            "r2": float(rdp_metrics["r2"]),
+            "rmse": float(rdp_metrics["rmse"]),
+            "max_abs": float(rdp_metrics["max_abs"]),
+            "target_keep_ratio": float(target_keep_ratio),
+            "actual_keep_ratio": float(rdp_prefilter.metrics["keep_ratio_actual"]),
+            "rdp_kept": int(rdp_prefilter.prefilter.parameter_count),
+            "rdp_epsilon": float(rdp_prefilter.prefilter.epsilon),
+            "payload_bytes": rdp_payload,
+            "payload_ratio": _safe_ratio(raw_payload, rdp_payload),
+        },
         "detrended_fourier": {
             "r2": float(d_metrics["r2"]),
             "rmse": float(d_metrics["rmse"]),
@@ -154,21 +178,22 @@ def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 
 
 
 def _safe_ratio(numerator: float, denominator: float, *, eps: float = 1e-12) -> float:
-    # Avoid divide-by-zero noise in reports when a method is temporarily "empty".
+    # Avoid divide-by-zero noise in reports.
+    # If denominator is near zero, return 0 to keep the table stable.
     if denominator <= eps:
         return 0.0
     return float(numerator / denominator)
 
 
 def _estimate_fourier_payload_bytes(model: FourierModel) -> int:
-    # Roughly estimate bytes to store one Fourier model:
-    # selected indexes + coefficient pairs + bias/offset.
+    # Rough payload proxy for one Fourier model:
+    # selected frequencies + coefficients + one bias value.
     coeff_count = int(model.parameter_count)
     return int(24 * coeff_count + 8)
 
 
 def _estimate_piecewise_fourier_payload_bytes(model: PiecewiseModel) -> float:
-    # Segment models are stored one by one, plus a tiny list of split positions.
+    # Sum each segment's Fourier payload and add split index bytes.
     segment_bytes = sum(24 * int(seg.parameter_count) for seg in model.segment_models)
     breakpoint_bytes = int(len(model.breakpoints)) * INT64_BYTES
     # each breakpoint is an int64 index.
@@ -176,21 +201,28 @@ def _estimate_piecewise_fourier_payload_bytes(model: PiecewiseModel) -> float:
 
 
 def _estimate_piecewise_polynomial_payload_bytes(model: PiecewisePolynomialModel) -> float:
-    # Coefficients + interval endpoints + breakpoint indexes.
+    # Payload = polynomial coefficients + interval endpoints + breakpoint indexes.
     coeff_bytes = float(model.metrics.get("approx_parameter_count", 0) * FLOAT64_BYTES)
     interval_bytes = float(len(model.segment_coeffs) * 2 * FLOAT64_BYTES)
     breakpoint_bytes = float(len(model.breakpoints) * INT64_BYTES)
     return coeff_bytes + interval_bytes + breakpoint_bytes
 
 
+def _estimate_rdp_prefilter_payload_bytes(model: RDPPrefilteredFourierModel) -> float:
+    # RDP kept (x,y) points plus Fourier payload of simplified points.
+    # This often grows if kept points are too many.
+    keep_bytes = float(model.prefilter.parameter_count * (2 * FLOAT64_BYTES + INT64_BYTES))
+    return keep_bytes + _estimate_fourier_payload_bytes(model.core_fourier)
+
+
 def _estimate_haar_payload_bytes(model) -> float:
-    # Store kept wavelet detail values and a small header.
+    # Store kept Haar detail coefficients + small metadata header.
     kept = float(model.metrics["kept_coefficients"])
     return kept * FLOAT64_BYTES + 2 * FLOAT64_BYTES
 
 
 def _estimate_sparse_residual_payload_bytes(keep_indices: np.ndarray) -> float:
-    # Residual layer stores index+value for every kept point.
+    # Residual layer stores (index,value) for each kept correction point.
     return float(len(keep_indices) * (INT64_BYTES + FLOAT64_BYTES))
 
 
@@ -371,6 +403,9 @@ def main() -> int:
                 row["detrended_fourier"]["r2_delta_vs_global"] for row in rows if "detrended_fourier" in row
             ),
             "defensible_rows": sum(1 for row in rows if row["gates"]["defensible"]),
+            "defensible_rdp_rows": sum(
+                1 for row in rows if row.get("rdp_prefilter_fourier", {}).get("r2", 0.0) > args.r2_gate
+            ),
             "rows_with_gate_fields": sum(1 for row in rows if "gates" in row),
             "multichannel_rmse": mc["metrics"]["rmse"],
             "dataset_passes": per_dataset,
@@ -391,8 +426,8 @@ def main() -> int:
         f"- Rows: `{len(rows)}`",
         f"- Gate config: `R2 >= {args.r2_gate}` `leakage <= {args.leakage_gate}` `adaptive_keep <= {args.max_adaptive_keep_ratio}` `locality_mode = {args.locality_mode}` `include_poly = {args.include_piecewise_polynomial}`",
         "",
-        "| dataset | terms | global R2 | detrended R2 | piecewise R2 | poly R2 | global leak | detrended leak | piecewise leak | poly leak | r2-delta | adaptive keep | adaptive th mean | global CR | detrended CR | piecewise CR | poly CR | locality candidates | defensible |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| dataset | terms | global R2 | detrended R2 | piecewise R2 | poly R2 | global leak | detrended leak | piecewise leak | poly leak | r2-delta | adaptive keep | adaptive th mean | global CR | detrended CR | piecewise CR | poly CR | rdp-pre CR | locality candidates | defensible |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in rows:
         if "global" not in row:
@@ -419,6 +454,7 @@ def main() -> int:
                     _format_float(row["detrended_fourier"]["payload_ratio"]),
                     _format_float(row["piecewise_fourier"]["payload_ratio"]),
                     _format_float(row["piecewise_polynomial"]["payload_ratio"]),
+                    _format_float(row["rdp_prefilter_fourier"]["payload_ratio"]),
                     locality_candidates,
                     "pass" if row["gates"]["defensible"] else "fail",
                 ]

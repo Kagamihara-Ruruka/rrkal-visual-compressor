@@ -1,4 +1,4 @@
-﻿# 研究筆記：可證明的壓縮方向（RRKAL Visual Compressor）
+# 研究筆記：可證明的壓縮方向（RRKAL Visual Compressor）
 
 日期：2026-05-27
 專案：`rrkal-visual-compressor`
@@ -45,6 +45,7 @@ Fourier 是全域基底，局部突變可能在全域擾動（Gibbs）。
 - `compress_fourier_with_linear_detrend`
 - `adaptive_residual_threshold`
 - `locality_leakage_metric`
+- `compress_fourier_with_rdp_budget`（RDP 預簡化 + Fourier）
 
 `tests/test_research.py` 對應覆蓋：
 
@@ -68,6 +69,31 @@ Fourier 是全域基底，局部突變可能在全域擾動（Gibbs）。
 - 誤差-降採樣單調性；
 - 壓縮成本（payload）變化；
 - 在不同 scale 的穩定性。
+
+### 4.1) RDP 預算 baseline 的觀察
+
+已新增 `compress_fourier_with_rdp_budget`：
+
+- 用 `target_keep_ratio` 表示可見化可用點預算；
+- 二分搜出對應的 RDP `epsilon`；
+- 在簡化後點列做 Fourier 擬合；
+- 再插值回原始 x 軸回推重建。
+
+目前實驗（`--locality-mode any`、`--terms 16,32,64`）顯示：
+
+- 先簡化可減少渲染前處理點數；
+- 但若保留點過多，`payload` 可能不降（因為同時要存 RDP 控制點與 Fourier 參數）；
+- 因此先當作「可調旋鈕」，避免直接取代主 baseline。
+
+報表估算式：
+
+$$
+\text{payload}_{rdp}\approx K(2f+8)+(24C+8)
+$$
+
+- $K$：RDP 保留點數；
+- $f$：float64 位元組數（8）；
+- $C$：簡化後 Fourier 係數個數。
 
 ## 5) 為何這裡是「可被證明」而非「萬能公式」
 
@@ -96,6 +122,7 @@ Fourier 是全域基底，局部突變可能在全域擾動（Gibbs）。
 - Fourier payload（估算）`= coeff_count * 24 + 8`
 - piecewise payload（估算）`= Σ segment_bytes + breakpoints*8`
 - polynomial payload（估算）`= (approx_parameter_count + 2*segment_count + breakpoints) * 8`
+- rdp_prefilter payload（估算）`= K(2f+8)+(24C+8)`（`f=8`）
 
 這些只是估算，不含壓縮器額外封裝（entropy coding / container overhead）。
 

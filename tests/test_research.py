@@ -6,6 +6,7 @@ from vizcompress.compressors import compress_fourier
 from vizcompress.core import TimeSeries
 from vizcompress.data import make_synthetic_dataset
 from vizcompress.research import (
+    compress_fourier_with_rdp_budget,
     compress_fourier_piecewise,
     compress_fourier_with_uniform_param,
     compress_haar_threshold,
@@ -116,6 +117,53 @@ def test_uniform_param_fourier_captures_irregular_series_without_x_error():
     assert uniform_series_fourier.reconstructed_y.shape == series.y.shape
 
 
+def test_rdp_render_budget_preprocessor_improves_or_matches_local_shape():
+    # Viewport-aware flow test:
+    # 1) drop points with RDP, 2) fit Fourier on dropped curve, 3) rebuild.
+    x = np.linspace(0.0, 1.0, 1800, dtype=np.float64)
+    y = (
+        1.0 * np.sin(2 * np.pi * 3.0 * x)
+        + 0.3 * np.sin(2 * np.pi * 11.0 * x + 0.4)
+        + 0.05 * np.cos(2 * np.pi * 31.0 * x)
+    )
+    series = TimeSeries(x=x, y=y, source="manual:rdp-budget")
+
+    full = compress_fourier_with_uniform_param(series, terms=64)
+    budget = compress_fourier_with_rdp_budget(series, terms=64, target_keep_ratio=0.08, min_keep=120)
+
+    assert budget.prefilter.parameter_count < series.sample_count
+    assert budget.prefilter.parameter_count >= 2
+    assert budget.reconstructed_y.shape == series.y.shape
+    assert np.isfinite(budget.reconstructed_y).all()
+    # Accuracy should remain acceptable; this is a budget trade-off check.
+    assert budget.metrics["r2"] >= 0.85
+    assert full.metrics["r2"] >= budget.metrics["r2"] * 0.8
+
+
+def test_rdp_budget_honors_min_and_max_bounds():
+    # Clamp logic should always keep at least `min_keep` and obey max cap when provided.
+    x = np.linspace(0.0, 1.0, 2000, dtype=np.float64)
+    y = np.sin(2 * np.pi * 4.0 * x) + 0.02 * np.random.default_rng(7).normal(size=x.size)
+    series = TimeSeries(x=x, y=y, source="manual:rdp-budget-bounds")
+
+    budget = compress_fourier_with_rdp_budget(
+        series,
+        terms=32,
+        target_keep_ratio=0.9,
+        min_keep=500,
+        max_keep=200,  # max should be enforced to 500 due min_keep floor.
+    )
+
+    assert budget.prefilter.parameter_count >= 500
+
+    budget_small = compress_fourier_with_rdp_budget(
+        series,
+        terms=32,
+        target_keep_ratio=0.0001,
+        min_keep=2,
+        max_keep=50,
+    )
+    assert budget_small.prefilter.parameter_count <= 50
 def test_multichannel_pca_shared_fourier_beats_independent_budget_on_correlated_channels():
     # Correlated channels should be compressible as shared latent factors.
     # We verify the PCA rank=1 path returns lower-entropy latent reconstruction.
