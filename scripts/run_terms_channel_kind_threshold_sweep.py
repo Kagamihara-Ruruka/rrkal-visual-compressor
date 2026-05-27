@@ -203,6 +203,8 @@ def _summarize_rows(rows: list[dict[str, Any]], threshold: float) -> dict[str, A
         "high_fidelity_rows_count": len([row for row in rows if row["fourier_r2"] >= 0.99]),
         "defensible_rows_count": 0,
         "defensible_rows_ratio": 0.0,
+        "package_wins_against_direct_svg_gzip_count": 0,
+        "package_wins_against_source_csv_gzip_count": 0,
         "best_rows": {
             "direct_svg_gzip": {},
         },
@@ -231,6 +233,12 @@ def _summarize_rows(rows: list[dict[str, Any]], threshold: float) -> dict[str, A
         summary["best_direct_svg_gzip_to_package_ratio"] = best_global["direct_svg_gzip_to_package_ratio"]
         summary["best_ratio_samples"] = best_global.get("samples")
         summary["best_direct_svg_gzip_ratio_samples"] = best_global.get("samples")
+        summary["package_wins_against_direct_svg_gzip_count"] = len(
+            [row for row in rows if row["direct_svg_gzip_to_package_ratio"] > 1.0]
+        )
+        summary["package_wins_against_source_csv_gzip_count"] = len(
+            [row for row in rows if row["source_csv_gzip_to_package_ratio"] > 1.0]
+        )
 
     if defensible_rows:
         best_def = max(defensible_rows, key=lambda row: row["direct_svg_gzip_to_package_ratio"])
