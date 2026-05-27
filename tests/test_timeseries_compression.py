@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import json
 import subprocess
+import importlib.util
 import sys
 from pathlib import Path
 
@@ -1414,6 +1415,63 @@ def test_cli_compare_reports_raw_and_gzip_baselines(tmp_path):
     assert direct["bytes"] > 0
     assert direct["gzip_bytes"] > 0
     assert direct["gzip_to_package_ratio"] > 0.0
+
+
+def test_terms_channel_sweep_summary_tracks_gate_win_counts():
+    repo_root = Path(__file__).resolve().parents[1]
+    script_path = repo_root / "scripts" / "run_terms_channel_kind_threshold_sweep.py"
+    spec = importlib.util.spec_from_file_location("run_terms_channel_kind_threshold_sweep", script_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("could not load terms-channel sweep script")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    synthetic_rows = [
+        {
+            "synthetic_kind": "smooth",
+            "samples": 1000,
+            "fourier_terms": 16,
+            "direct_svg_to_package_ratio": 0.8,
+            "direct_svg_gzip_to_package_ratio": 1.3,
+            "source_csv_gzip_to_package_ratio": 1.1,
+            "fourier_r2": 0.999,
+            "channel_k": 3.0,
+        },
+        {
+            "synthetic_kind": "steps",
+            "samples": 2000,
+            "fourier_terms": 16,
+            "direct_svg_to_package_ratio": 0.9,
+            "direct_svg_gzip_to_package_ratio": 0.5,
+            "source_csv_gzip_to_package_ratio": 0.9,
+            "fourier_r2": 0.999,
+            "channel_k": 2.0,
+            "channel_coverage_ratio": 0.95,
+        },
+    ]
+
+    summary = module._summarize_rows(synthetic_rows, threshold=0.9)
+    assert summary["package_wins_against_direct_svg_gzip_count"] == 1
+    assert summary["package_wins_against_source_csv_gzip_count"] == 1
+    assert summary["defensible_rows_count"] == 2
+    assert summary["defensible_rows_ratio"] == 1.0
+
+    gate = evaluate_benchmark_gate(
+        {"rows": synthetic_rows, "summary": summary},
+        require_svg_gzip_win=True,
+        require_csv_gzip_win=True,
+    )
+    assert gate["ok"] is True
+
+    failing_summary = dict(summary)
+    failing_summary["package_wins_against_source_csv_gzip_count"] = 0
+    gate = evaluate_benchmark_gate(
+        {"rows": synthetic_rows, "summary": failing_summary},
+        require_svg_gzip_win=True,
+        require_csv_gzip_win=True,
+    )
+    assert gate["ok"] is False
+    assert any("did not beat source CSV.gz" in error for error in gate["errors"])
 
 
 def test_cli_inspect_reports_clean_profile_without_residual_layer(tmp_path):

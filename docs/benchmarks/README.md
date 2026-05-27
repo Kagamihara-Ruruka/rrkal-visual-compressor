@@ -30,6 +30,8 @@ for validating compression claims.
 - `terms_channel_kind_threshold_grid_10k.json` / `_10k.md`: sample run with gate-ready kind sweep dataset.
 - `terms_channel_kind_threshold_grid_10k_gate.json` / `_10k_gate.md`: gate-enabled kind sweep with defensible constraints.
 
+- `README.zh-TW.md`: benchmark governance and validation notes in Traditional Chinese.
+
 ## Current Reading
 
 The smooth 100k terms sweep shows that all tested Fourier term counts beat both
