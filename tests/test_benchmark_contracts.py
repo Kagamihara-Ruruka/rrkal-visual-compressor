@@ -94,3 +94,80 @@ def test_validate_benchmark_contract_script(tmp_path: Path):
     assert data["passed"] is True
     assert data["error_count"] == 0
 
+
+def test_validate_benchmark_contracts_all_script(tmp_path: Path):
+    root = Path(__file__).resolve().parents[1] / "docs" / "benchmarks"
+    bad = tmp_path / "bad.json"
+    good = tmp_path / "good.json"
+    good.write_text(
+        json.dumps(
+            {
+                "benchmark": "unit_rows",
+                "rows": [
+                    {
+                        "synthetic_kind": "smooth",
+                        "samples": 1000,
+                        "fourier_terms": 16,
+                        "channel_k": 3.0,
+                        "fourier_r2": 0.99,
+                        "direct_svg_to_package_ratio": 1.2,
+                        "direct_svg_gzip_to_package_ratio": 1.2,
+                        "source_csv_gzip_to_package_ratio": 1.2,
+                    },
+                    {
+                        "synthetic_kind": "smooth",
+                        "samples": 1000,
+                        "fourier_terms": 32,
+                        "channel_k": 3.0,
+                        "fourier_r2": 0.991,
+                        "direct_svg_to_package_ratio": 1.2,
+                        "direct_svg_gzip_to_package_ratio": 1.2,
+                        "source_csv_gzip_to_package_ratio": 1.2,
+                    },
+                ],
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    bad.write_text(
+        json.dumps(
+            {
+                "benchmark": "unit_rows",
+                "rows": [
+                    {
+                        "synthetic_kind": "smooth",
+                        "samples": 1000,
+                        "fourier_terms": 16,
+                        "channel_k": 3.0,
+                        "fourier_r2": 0.99,
+                        "direct_svg_to_package_ratio": 1.2,
+                        "direct_svg_gzip_to_package_ratio": -1.0,
+                        "source_csv_gzip_to_package_ratio": 1.2,
+                    }
+                ],
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(Path(__file__).resolve().parents[1] / "scripts" / "validate_benchmark_contracts_all.py"),
+            "--root",
+            str(tmp_path),
+            "--out",
+            str(tmp_path / "all_contracts.json"),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 2
+    report = json.loads((tmp_path / "all_contracts.json").read_text(encoding="utf-8"))
+    assert report["total"] == 2
+    assert report["failed"] == 1

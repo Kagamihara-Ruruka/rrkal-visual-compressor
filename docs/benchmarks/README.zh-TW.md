@@ -53,6 +53,33 @@ py scripts/run_terms_channel_kind_threshold_sweep.py \
   --out-md docs/benchmarks/terms_channel_kind_threshold_grid_10k_gate.md
 ```
 
+### 合約驗證
+
+使用基準合約驗證器確認欄位一致性，避免不同 sweep 設定下拿到不可比對的結果：
+
+```bash
+py scripts/validate_benchmark_contracts.py \
+  docs/benchmarks/terms_channel_kind_threshold_grid_10k_gate.json \
+  --out docs/benchmarks/terms_channel_kind_threshold_grid_10k_gate_contract.json
+```
+
+合約檢核包含：
+
+- 對固定 `(synthetic_kind, samples, channel_k)`，`fourier_r2` 不隨項數下降。
+- 覆蓋率存在時，必須落在 `[0,1]`。
+- 壓縮比欄位必須是有限且大於 0 的值。
+- summary 的行為欄位要可由 row-level 計算還原一致。
+
+一次檢查整個資料夾全部 JSON：
+
+```bash
+py scripts/validate_benchmark_contracts_all.py \
+  --root docs/benchmarks \
+  --out docs/benchmarks/contract_matrix_latest.json
+```
+
+腳本會逐檔輸出 `PASS/FAIL`，有任一失敗會以非 0 離開碼回報。
+
 ## 英文版
 
 See `README.md`.

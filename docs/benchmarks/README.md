@@ -204,6 +204,16 @@ Contract checks include:
 - Compression ratios are finite and positive.
 - Summary counters are consistent with row-level recomputation.
 
+To validate all benchmark JSON files in a folder:
+
+```bash
+py scripts/validate_benchmark_contracts_all.py \
+  --root docs/benchmarks \
+  --out docs/benchmarks/contract_matrix_latest.json
+```
+
+This prints PASS/FAIL per file and returns a non-zero exit code on any failure.
+
 ### Hard-signal behavior note
 
 In `5k_hard`, `noisy` and `spikes` rows show little or no high-fidelity coverage (`R²>=0.99`) at this scale, while `steps` remains stable and yields the best ratio.
