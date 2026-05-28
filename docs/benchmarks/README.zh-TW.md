@@ -24,6 +24,7 @@
 - `terms_channel_kind_threshold_grid_10k_gate.json` / `_10k_gate.md`：10k 點門檻資料（加上渲染門檻）。
 - `terms_channel_kind_threshold_grid_5k_hard.json` / `_5k_hard.md`：含噪、突變、階梯的堅固訊號穩健性探測。
 - `terms_channel_kind_threshold_grid_5k_noiseclean.json` / `_5k_noiseclean.md`：`--sigma-clip 2.5 --auto-noise-layer` 的去雜訊版本。
+- `defensible_hardening_report_terms64.json` / `.md`：`16,32,64` Fourier terms 的研究強化 sweep，用來檢查更高 terms 是否能降低 sparse residual budget，再決定是否新增模型家族。
 - `README.md`：英文版。
 
 ## 目前觀察重點
@@ -33,6 +34,8 @@
 - `package_wins_against_direct_svg_gzip_count`：壓縮套件比 `SVG.gz` 小的案例數。
 - `package_wins_against_source_csv_gzip_count`：壓縮套件比原始 `CSV.gz` 小的案例數。
 - `benchmark_gate.ok`：門檻是否同時通過。
+- `defensible_hardening_report_terms64` 目前顯示 spike-like 資料的 mixed evidence：
+  `spikes/16` 需要 `20%` residual、`spikes/32` 需要 `10%` residual，而 `spikes/64` 已能通過預設 `5%` sparse residual frontier。因此在新增 local model family 前，應先測更高 terms 的成本邊界。
 
 ## 指令參考
 

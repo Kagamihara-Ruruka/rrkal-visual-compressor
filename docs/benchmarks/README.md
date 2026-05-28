@@ -31,6 +31,7 @@ for validating compression claims.
 - `terms_channel_kind_threshold_grid_10k_gate.json` / `_10k_gate.md`: gate-enabled kind sweep with defensible constraints.
 - `terms_channel_kind_threshold_grid_5k_hard.json` / `_5k_hard.md`: hard-signal sweep (`noisy,spikes,steps`) as robustness probe.
 - `terms_channel_kind_threshold_grid_5k_noiseclean.json` / `_5k_noiseclean.md`: hard-signal sweep with `--sigma-clip 2.5 --auto-noise-layer`.
+- `defensible_hardening_report_terms64.json` / `.md`: research hardening sweep with Fourier terms `16,32,64`; used to check whether higher terms reduce sparse residual budget before adding a new model family.
 
 - `README.zh-TW.md`: benchmark governance and validation notes in Traditional Chinese.
 
@@ -52,6 +53,12 @@ The defensible candidate threshold is configurable through
 `--defensible-channel-coverage` in `vizcompress.cli bench`. The same benchmark
 artifact can therefore expose either a looser default sweep (`0.9`) or a stricter
 operational policy (`>=0.98`) without re-running unrelated model settings.
+
+The `defensible_hardening_report_terms64` artifact is current negative/positive
+evidence for spike-like data. In the latest run, `spikes/16` needs `20%`
+residual retention, `spikes/32` needs `10%`, and `spikes/64` passes the default
+`5%` sparse residual frontier. This supports testing higher terms before
+promoting a separate local model family.
 
 ### Defensive Evidence Pattern (中文同義: 防禦式證據)
 
