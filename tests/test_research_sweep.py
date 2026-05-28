@@ -300,12 +300,15 @@ def test_sparse_residual_frontier_improves_base_reconstruction():
         base_y=base,
         raw_payload=64.0,
         keep_ratios=[0.25],
+        r2_gate=0.99,
+        min_payload_ratio=1.0,
     )
 
     best = frontier["best_point"]
     assert best["keep_count"] == 1
     assert best["r2_delta_vs_base"] > 0.0
     assert best["payload_ratio"] == 4.0
+    assert best["promotable"] is True
 
 
 def test_sparse_residual_frontier_summary_keeps_best_delta():
@@ -314,14 +317,22 @@ def test_sparse_residual_frontier_summary_keeps_best_delta():
             "dataset": "smooth",
             "terms": 16,
             "sparse_residual_frontier": {
-                "best_point": {"r2_delta_vs_base": 0.01, "payload_ratio": 5.0}
+                "best_point": {
+                    "r2_delta_vs_base": 0.01,
+                    "payload_ratio": 5.0,
+                },
+                "best_point_promotable": False,
             },
         },
         {
             "dataset": "spikes",
             "terms": 32,
             "sparse_residual_frontier": {
-                "best_point": {"r2_delta_vs_base": 0.2, "payload_ratio": 3.0}
+                "best_point": {
+                    "r2_delta_vs_base": 0.2,
+                    "payload_ratio": 3.0,
+                },
+                "best_point_promotable": True,
             },
         },
     ]
@@ -330,6 +341,7 @@ def test_sparse_residual_frontier_summary_keeps_best_delta():
 
     assert summary["best_r2_delta_vs_base"] == 0.2
     assert summary["best_row"]["dataset"] == "spikes"
+    assert summary["promotable_rows"] == 1
 
 
 def test_noise_frontier_recommendation_promotes_local_strategy_for_high_noise():

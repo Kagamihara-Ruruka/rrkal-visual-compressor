@@ -105,6 +105,8 @@ def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 
         base_y=detrended.reconstructed_y,
         raw_payload=raw_payload,
         keep_ratios=[0.005, 0.01, 0.02, 0.05],
+        r2_gate=0.99,
+        min_payload_ratio=1.0,
     )
 
     return {
@@ -201,6 +203,8 @@ def _benchmark_sparse_residual_frontier(
     base_y: np.ndarray,
     raw_payload: float,
     keep_ratios: list[float],
+    r2_gate: float,
+    min_payload_ratio: float,
 ) -> dict[str, Any]:
     # Keep the largest absolute residual corrections and apply them exactly.
     # This models a sparse residual layer without changing the main function.
@@ -217,6 +221,9 @@ def _benchmark_sparse_residual_frontier(
         corrected[indices] = corrected[indices] + residual[indices]
         metrics = regression_metrics(original, corrected)
         payload_bytes = float(keep_count * (INT64_BYTES + FLOAT64_BYTES))
+        payload_ratio = _safe_ratio(raw_payload, payload_bytes)
+        r2_gate_pass = float(metrics["r2"]) >= float(r2_gate)
+        payload_gate_pass = payload_ratio >= float(min_payload_ratio)
         rows.append(
             {
                 "keep_ratio": float(keep_ratio),
@@ -224,14 +231,22 @@ def _benchmark_sparse_residual_frontier(
                 "r2": float(metrics["r2"]),
                 "r2_delta_vs_base": float(metrics["r2"] - base_metrics["r2"]),
                 "payload_bytes": payload_bytes,
-                "payload_ratio": _safe_ratio(raw_payload, payload_bytes),
+                "payload_ratio": payload_ratio,
+                "r2_gate_pass": bool(r2_gate_pass),
+                "payload_gate_pass": bool(payload_gate_pass),
+                "promotable": bool(r2_gate_pass and payload_gate_pass),
             }
         )
-    best = max(rows, key=lambda item: (item["r2_delta_vs_base"], item["payload_ratio"]))
+    promotable = [item for item in rows if item["promotable"]]
+    candidates = promotable or rows
+    best = max(candidates, key=lambda item: (item["r2_delta_vs_base"], item["payload_ratio"]))
     return {
         "base_r2": float(base_metrics["r2"]),
+        "r2_gate": float(r2_gate),
+        "min_payload_ratio": float(min_payload_ratio),
         "rows": rows,
         "best_point": best,
+        "best_point_promotable": bool(best["promotable"]),
     }
 
 
@@ -831,6 +846,7 @@ def _summarize_sparse_residual_frontiers(rows: list[dict[str, Any]]) -> dict[str
     best_delta = 0.0
     best_payload_ratio = 0.0
     best_row: dict[str, Any] | None = None
+    promotable_rows = 0
     for row in rows:
         frontier = row.get("sparse_residual_frontier")
         if not frontier:
@@ -838,6 +854,8 @@ def _summarize_sparse_residual_frontiers(rows: list[dict[str, Any]]) -> dict[str
         best = frontier.get("best_point")
         if not best:
             continue
+        if frontier.get("best_point_promotable"):
+            promotable_rows += 1
         delta = float(best["r2_delta_vs_base"])
         payload_ratio = float(best["payload_ratio"])
         if best_row is None or (delta, payload_ratio) > (best_delta, best_payload_ratio):
@@ -852,6 +870,7 @@ def _summarize_sparse_residual_frontiers(rows: list[dict[str, Any]]) -> dict[str
         "best_r2_delta_vs_base": best_delta,
         "best_payload_ratio": best_payload_ratio,
         "best_row": best_row,
+        "promotable_rows": promotable_rows,
     }
 
 
@@ -1318,9 +1337,10 @@ def main() -> int:
             "",
             f"- best R2 delta vs base = `{_format_float(sparse_residual_summary['best_r2_delta_vs_base'])}`",
             f"- best payload ratio = `{_format_float(sparse_residual_summary['best_payload_ratio'])}`",
+            f"- promotable rows = `{_format_float(sparse_residual_summary['promotable_rows'])}`",
             "",
-            "| dataset | terms | keep ratio | keep count | R2 | R2 delta vs base | payload ratio |",
-            "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+            "| dataset | terms | keep ratio | keep count | R2 | R2 delta vs base | payload ratio | promotable |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
         ]
     )
     for row in rows:
@@ -1339,6 +1359,7 @@ def main() -> int:
                     _format_float(best["r2"]),
                     _format_float(best["r2_delta_vs_base"]),
                     _format_float(best["payload_ratio"]),
+                    "yes" if best["promotable"] else "no",
                 ]
             )
             + " |"
