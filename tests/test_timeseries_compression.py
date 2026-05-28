@@ -165,6 +165,50 @@ def test_exporters_write_expected_files(tmp_path):
     assert data["channel"]["coverage_ratio"] > 0.94
 
 
+def test_cli_mvp_writes_demo_package_benchmark_and_summary(tmp_path):
+    output_dir = tmp_path / "mvp"
+    cmd = [
+        sys.executable,
+        "-m",
+        "vizcompress.cli",
+        "mvp",
+        "--samples",
+        "1200",
+        "--synthetic-kind",
+        "smooth",
+        "--fourier-terms",
+        "32",
+        "--svg-samples",
+        "240",
+        "--out",
+        str(output_dir),
+        "--min-fourier-r2",
+        "0.9",
+    ]
+
+    result = subprocess.run(
+        cmd,
+        cwd=ROOT_DIR,
+        env=_cli_test_env(),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    summary_path = output_dir / "mvp_summary.json"
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert summary["status"] == "pass"
+    assert summary["validation"]["package_ok"] is True
+    assert summary["validation"]["source_ok"] is True
+    assert summary["benchmark_gate"]["ok"] is True
+    assert (output_dir / "asset" / "model.vizretain" / "asset.json").exists()
+    assert (output_dir / "asset" / "fourier_channel.svg").exists()
+    assert (output_dir / "asset" / "demo.py").exists()
+    assert (output_dir / "benchmark.json").exists()
+    assert (output_dir / "benchmark.md").exists()
+
+
 def test_write_vizasset_package(tmp_path):
     series = make_synthetic_signal(10_000)
     rdp = compress_rdp(series, epsilon=0.012)

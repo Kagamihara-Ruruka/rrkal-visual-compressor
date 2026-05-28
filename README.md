@@ -121,6 +121,7 @@ RRKAL-inspired development rules used by agents working in this repository.
 See [docs/CONCEPTUAL_MODEL.md](docs/CONCEPTUAL_MODEL.md) for the mathematical
 boundary: representation is not compression, accepted packages must be
 verifiable, and the project does not claim universal compression.
+See [docs/MVP.md](docs/MVP.md) for the current one-command MVP checkpoint.
 
 ## Development
 
@@ -131,6 +132,17 @@ vizcompress --help
 ```
 
 ## First Working Command
+
+Run the complete MVP demo pipeline:
+
+```powershell
+py -m vizcompress.cli mvp --samples 20000 --synthetic-kind spikes --fourier-terms 64 --out mvp_outputs
+```
+
+This writes a demo asset package, preview SVGs, `demo.py`, `metrics.json`, a
+small benchmark report, and `mvp_summary.json`. The command exits successfully
+only when package validation, source reconstruction validation, and the MVP
+benchmark gate pass.
 
 Generate a synthetic time series, compress it with RDP and Fourier, then export SVG, `demo.py`, and `metrics.json`:
 

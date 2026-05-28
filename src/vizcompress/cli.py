@@ -105,6 +105,21 @@ def main(argv: list[str] | None = None) -> int:
     build.add_argument("--review-max-error", type=float, default=None, help="Review packet max absolute error budget.")
     build.add_argument("--require-review-pass", action="store_true", help="Fail build when the generated review packet is not accepted.")
 
+    mvp = subparsers.add_parser("mvp", help="Run the MVP demo pipeline: build, verify, benchmark, summarize.")
+    mvp.add_argument("--samples", type=int, default=20_000, help="Synthetic sample count for the demo asset.")
+    mvp.add_argument("--synthetic-kind", choices=SYNTHETIC_KINDS, default="spikes", help="Synthetic dataset shape.")
+    mvp.add_argument("--out", type=Path, default=Path("mvp_outputs"), help="MVP output directory.")
+    mvp.add_argument("--fourier-terms", type=int, default=64, help="Fourier coefficients for the demo package.")
+    mvp.add_argument("--svg-samples", type=int, default=1200, help="Preview SVG sample count.")
+    mvp.add_argument("--channel-k", type=float, default=3.0, help="Standard-deviation multiplier for channel width.")
+    mvp.add_argument("--channel-window", type=int, default=501, help="Rolling window for channel band estimation.")
+    mvp.add_argument("--channel-band-epsilon", type=float, default=0.01, help="RDP epsilon for channel band curve.")
+    mvp.add_argument("--rdp-epsilon", type=float, default=0.012, help="RDP epsilon on normalized y values.")
+    mvp.add_argument("--review-max-rmse", type=float, default=None, help="Optional review RMSE gate.")
+    mvp.add_argument("--review-max-mae", type=float, default=None, help="Optional review MAE gate.")
+    mvp.add_argument("--review-max-error", type=float, default=None, help="Optional review max-error gate.")
+    mvp.add_argument("--min-fourier-r2", type=float, default=0.95, help="Minimum Fourier R2 expected by the MVP smoke benchmark.")
+
     bench = subparsers.add_parser("bench", help="Benchmark direct SVG size against model-backed package size.")
     bench.add_argument(
         "--synthetic-sizes",
@@ -220,6 +235,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "build":
         return _build(args)
+    if args.command == "mvp":
+        return _mvp(args)
     if args.command == "bench":
         return _bench(args)
     if args.command == "inspect":
@@ -387,6 +404,127 @@ def _default_package_name(package_profile: str) -> str:
     if package_profile == "clean":
         return "model.vizclean"
     return "model.vizretain"
+
+
+def _mvp(args: argparse.Namespace) -> int:
+    out_dir: Path = args.out
+    build_dir = out_dir / "asset"
+    benchmark_json = out_dir / "benchmark.json"
+    benchmark_md = out_dir / "benchmark.md"
+    summary_json = out_dir / "mvp_summary.json"
+    package_dir = build_dir / "model.vizretain"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    build_args = argparse.Namespace(
+        synthetic=args.samples,
+        csv=None,
+        synthetic_kind=args.synthetic_kind,
+        x_column="time",
+        y_column="value",
+        out=build_dir,
+        rdp_epsilon=args.rdp_epsilon,
+        fourier_terms=args.fourier_terms,
+        svg_samples=args.svg_samples,
+        smooth_window=1,
+        sigma_clip=None,
+        noise_layer_terms=0,
+        auto_noise_layer=False,
+        direct_svg=True,
+        channel=True,
+        channel_band="rolling_std",
+        channel_window=args.channel_window,
+        channel_k=args.channel_k,
+        channel_band_epsilon=args.channel_band_epsilon,
+        package=True,
+        package_profile="retain-residual",
+        package_name="model.vizretain",
+        x_domain_policy="auto",
+        x_domain_epsilon=0.002,
+        x_domain_max_error=1e-4,
+        review_packet=True,
+        review_source="model-input",
+        review_max_rmse=args.review_max_rmse,
+        review_max_mae=args.review_max_mae,
+        review_max_error=args.review_max_error,
+        require_review_pass=False,
+    )
+    _build(build_args)
+
+    validation = validate_vizasset(package_dir, reconstruction_samples=min(args.samples, 2048))
+    source = make_synthetic_dataset(args.samples, kind=args.synthetic_kind)
+    source_validation = validate_vizasset_source(
+        package_dir,
+        source,
+        signal="retained",
+        max_rmse=args.review_max_rmse,
+        max_mae=args.review_max_mae,
+        max_error=args.review_max_error,
+    )
+
+    benchmark = benchmark_synthetic_sizes(
+        [args.samples],
+        synthetic_kind=args.synthetic_kind,
+        fourier_terms=args.fourier_terms,
+        rdp_epsilon=args.rdp_epsilon,
+        svg_samples=args.svg_samples,
+        channel=True,
+        channel_k=args.channel_k,
+        channel_window=args.channel_window,
+        channel_band_epsilon=args.channel_band_epsilon,
+        x_domain_policy="auto",
+        x_domain_epsilon=0.002,
+        x_domain_max_error=1e-4,
+        defensible_channel_coverage_threshold=0.9,
+    )
+    gate = evaluate_benchmark_gate(
+        benchmark,
+        require_svg_gzip_win=False,
+        require_csv_gzip_win=False,
+        min_fourier_r2=args.min_fourier_r2,
+        min_channel_coverage=None,
+    )
+    benchmark["benchmark_gate"] = gate
+    write_benchmark(benchmark_json, benchmark)
+    write_benchmark_markdown(benchmark_md, benchmark)
+
+    row = benchmark["rows"][0]
+    summary = {
+        "mvp": "rrkal.visual_compressor.timeseries",
+        "status": "pass" if validation.ok and source_validation.ok and gate["ok"] else "review",
+        "synthetic_kind": args.synthetic_kind,
+        "samples": args.samples,
+        "fourier_terms": args.fourier_terms,
+        "outputs": {
+            "asset_dir": str(build_dir),
+            "package": str(package_dir),
+            "benchmark_json": str(benchmark_json),
+            "benchmark_md": str(benchmark_md),
+            "summary_json": str(summary_json),
+        },
+        "validation": {
+            "package_ok": validation.ok,
+            "package_errors": list(validation.errors),
+            "source_ok": source_validation.ok,
+            "source_errors": list(source_validation.errors),
+            "source_metrics": source_validation.details.get("source_verification", {}),
+        },
+        "benchmark_gate": gate,
+        "evidence": {
+            "fourier_r2": row["fourier_r2"],
+            "package_bytes": row["package_bytes"],
+            "direct_svg_gzip_bytes": row["direct_svg_gzip_bytes"],
+            "source_csv_gzip_estimated_bytes": row.get("source_csv_gzip_estimated_bytes")
+            or row.get("source_csv_gzip_bytes_estimated")
+            or row.get("source_csv_gzip_bytes"),
+            "direct_svg_gzip_to_package_ratio": row.get("direct_svg_gzip_to_package_ratio"),
+            "source_csv_gzip_to_package_ratio": row.get("source_csv_gzip_to_package_ratio"),
+            "recommendation": row["recommendation"],
+            "gzip_recommendation": row["gzip_recommendation"],
+        },
+    }
+    summary_json.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    print(json.dumps(summary, indent=2))
+    return 0 if summary["status"] == "pass" else 1
 
 
 def _bench(args: argparse.Namespace) -> int:

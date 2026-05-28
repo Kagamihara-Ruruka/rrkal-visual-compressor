@@ -16,6 +16,7 @@ noisy_outputs/
 clean_profile_outputs/
 retain_profile_outputs/
 vizcompress_outputs/
+mvp_outputs/
 *.vizasset/
 *.vizretain/
 *.vizclean/

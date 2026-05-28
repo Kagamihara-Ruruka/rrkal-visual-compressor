@@ -87,6 +87,7 @@ RRKAL Visual Editor
 - [docs/AGENT_HANDOFF.zh-TW.md](docs/AGENT_HANDOFF.zh-TW.md)：agent 交接狀態。
 - [docs/PROJECT_EVALUATION.zh-TW.md](docs/PROJECT_EVALUATION.zh-TW.md)：專案可行性、學術根基與商業變現匯報。
 - [docs/ACADEMIC_REFERENCES.zh-TW.md](docs/ACADEMIC_REFERENCES.zh-TW.md)：學術與技術參考來源。
+- [docs/MVP.zh-TW.md](docs/MVP.zh-TW.md)：目前一鍵 MVP 檢查點。
 
 ## 開發
 
@@ -97,6 +98,16 @@ vizcompress --help
 ```
 
 ## 第一個可執行命令
+
+執行完整 MVP demo pipeline：
+
+```powershell
+py -m vizcompress.cli mvp --samples 20000 --synthetic-kind spikes --fourier-terms 64 --out mvp_outputs
+```
+
+這會輸出 demo asset package、preview SVG、`demo.py`、`metrics.json`、
+小型 benchmark report 與 `mvp_summary.json`。只有在 package validation、
+source reconstruction validation 與 MVP benchmark gate 都通過時，命令才會成功離開。
 
 產生 synthetic time series，用 RDP 和 Fourier 壓縮，再輸出 SVG、`demo.py`、`metrics.json`：
 
