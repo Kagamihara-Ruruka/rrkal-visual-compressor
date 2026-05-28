@@ -77,6 +77,8 @@ This adds:
 - sparse residual frontier that measures top-residual correction budgets against the detrended Fourier base
 - sparse residual promotion gate using the same `r2_gate` and payload gate language as other frontiers
 - sparse residual escalation diagnostic that retries failed rows with larger residual budgets, reporting the minimum promotable residual budget so we can tell whether a failure is a budget issue or a model-family issue
+- residual budget tier labels:
+  `cheap_residual` below 5%, `moderate_residual` from 5% through 10%, and `expensive_residual` above 10%
 
 ## 5) Advance / rollback rules
 
@@ -106,4 +108,5 @@ Regress immediately if:
 - use sparse residual frontier best points to decide whether residual retention should become the next promoted research branch
 - only promote residual retention after the sparse residual frontier reports promotable rows, not merely positive R2 delta
 - inspect sparse residual escalation before changing model families; if a failed row passes only after a much larger residual budget, record the payload tradeoff explicitly
+- treat `expensive_residual` as a warning to test higher terms, local basis, wavelet, or adaptive segmentation before declaring the residual layer efficient
 - prepare renderer-side benchmark: decode cost vs raster budget coupling

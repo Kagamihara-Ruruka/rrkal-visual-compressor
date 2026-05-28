@@ -885,9 +885,24 @@ def _summarize_sparse_residual_frontiers(rows: list[dict[str, Any]]) -> dict[str
     }
 
 
+def _residual_budget_tier(keep_ratio: float) -> str:
+    # This is a report label, not a proof. It gives readers a quick sense of
+    # whether the residual layer is still compact enough to be attractive.
+    if keep_ratio < 0.05:
+        return "cheap_residual"
+    if keep_ratio <= 0.10:
+        return "moderate_residual"
+    return "expensive_residual"
+
+
 def _summarize_sparse_residual_escalation(rows: list[dict[str, Any]]) -> dict[str, Any]:
     promotable_rows = 0
     solved_by_escalation: list[dict[str, Any]] = []
+    budget_tier_counts = {
+        "cheap_residual": 0,
+        "moderate_residual": 0,
+        "expensive_residual": 0,
+    }
     for row in rows:
         baseline = row.get("sparse_residual_frontier")
         escalation = row.get("sparse_residual_escalation")
@@ -899,6 +914,8 @@ def _summarize_sparse_residual_escalation(rows: list[dict[str, Any]]) -> dict[st
             promotable_rows += 1
         if not base_ok and escalation_ok:
             best = escalation.get("min_promotable_point") or escalation["best_point"]
+            budget_tier = _residual_budget_tier(float(best["keep_ratio"]))
+            budget_tier_counts[budget_tier] += 1
             solved_by_escalation.append(
                 {
                     "dataset": row.get("dataset"),
@@ -906,11 +923,13 @@ def _summarize_sparse_residual_escalation(rows: list[dict[str, Any]]) -> dict[st
                     "keep_ratio": best["keep_ratio"],
                     "r2": best["r2"],
                     "payload_ratio": best["payload_ratio"],
+                    "budget_tier": budget_tier,
                 }
             )
     return {
         "promotable_rows": promotable_rows,
         "solved_by_escalation": solved_by_escalation,
+        "budget_tier_counts": budget_tier_counts,
     }
 
 
@@ -1414,9 +1433,10 @@ def main() -> int:
             "",
             f"- promotable rows = `{_format_float(sparse_residual_escalation_summary['promotable_rows'])}`",
             f"- solved by escalation = `{_format_float(len(sparse_residual_escalation_summary['solved_by_escalation']))}`",
+            f"- budget tiers = `{sparse_residual_escalation_summary['budget_tier_counts']}`",
             "",
-            "| dataset | terms | minimum keep ratio | R2 | payload ratio |",
-            "| --- | ---: | ---: | ---: | ---: |",
+            "| dataset | terms | minimum keep ratio | budget tier | R2 | payload ratio |",
+            "| --- | ---: | ---: | --- | ---: | ---: |",
         ]
     )
     for item in sparse_residual_escalation_summary["solved_by_escalation"]:
@@ -1427,6 +1447,7 @@ def main() -> int:
                     str(item["dataset"]),
                     _format_float(item["terms"]),
                     _format_float(item["keep_ratio"]),
+                    str(item["budget_tier"]),
                     _format_float(item["r2"]),
                     _format_float(item["payload_ratio"]),
                 ]

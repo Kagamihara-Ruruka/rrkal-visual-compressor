@@ -2446,16 +2446,23 @@
           "terms": 16,
           "keep_ratio": 0.2,
           "r2": 0.9919696607714753,
-          "payload_ratio": 5.0
+          "payload_ratio": 5.0,
+          "budget_tier": "expensive_residual"
         },
         {
           "dataset": "spikes",
           "terms": 32,
           "keep_ratio": 0.1,
           "r2": 0.9921559471029484,
-          "payload_ratio": 10.0
+          "payload_ratio": 10.0,
+          "budget_tier": "moderate_residual"
         }
-      ]
+      ],
+      "budget_tier_counts": {
+        "cheap_residual": 0,
+        "moderate_residual": 1,
+        "expensive_residual": 1
+      }
     }
   },
   "run_rdp_frontier": true,
@@ -2527,16 +2534,23 @@
         "terms": 16,
         "keep_ratio": 0.2,
         "r2": 0.9919696607714753,
-        "payload_ratio": 5.0
+        "payload_ratio": 5.0,
+        "budget_tier": "expensive_residual"
       },
       {
         "dataset": "spikes",
         "terms": 32,
         "keep_ratio": 0.1,
         "r2": 0.9921559471029484,
-        "payload_ratio": 10.0
+        "payload_ratio": 10.0,
+        "budget_tier": "moderate_residual"
       }
-    ]
+    ],
+    "budget_tier_counts": {
+      "cheap_residual": 0,
+      "moderate_residual": 1,
+      "expensive_residual": 1
+    }
   },
   "rdp_frontier": {
     "keep_ratios": [

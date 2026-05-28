@@ -78,6 +78,8 @@ py scripts/run_defensible_research_sweep.py \
 - sparse residual frontier 會量測 top-residual correction budgets 相對於 detrended Fourier base 的改善幅度
 - sparse residual promotion gate 會沿用 `r2_gate` 與 payload gate 的語言，避免只用 R2 delta 宣稱成功
 - sparse residual escalation diagnostic 會對失敗列改用較大的 residual budget 重試，並回報最小可通過 residual budget，用來判斷失敗是預算不足，還是模型家族本身不適合
+- residual budget tier 標籤：
+  低於 5% 是 `cheap_residual`，5% 到 10% 是 `moderate_residual`，高於 10% 是 `expensive_residual`
 
 ## 5) 推進與回退規則
 
@@ -108,4 +110,5 @@ py scripts/run_defensible_research_sweep.py \
 - 用 sparse residual frontier 的最佳點判斷 residual retention 是否能成為下一個被提升的研究分支
 - 只有 sparse residual frontier 出現 promotable rows 時，才提升 residual retention；不能只因 R2 delta 為正就提升
 - 在更換模型家族前，先檢查 sparse residual escalation；如果失敗列只是在更大的 residual budget 下才通過，就要明確記錄 payload 代價
+- 把 `expensive_residual` 視為警訊：在宣稱 residual layer 有效率前，先測更高 terms、local basis、wavelet 或 adaptive segmentation
 - 準備 renderer-side benchmark：decode cost 與 raster budget 的耦合

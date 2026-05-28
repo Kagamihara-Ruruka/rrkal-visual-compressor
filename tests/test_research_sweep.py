@@ -12,6 +12,7 @@ from scripts.run_defensible_research_sweep import (
     _parse_float_list,
     _parse_string_list,
     _recommend_noise_frontier_strategy,
+    _residual_budget_tier,
     _summarize_frontier_by_key,
     _summarize_frontier_tiers_by_key,
     _summarize_frontier_tier_matrix,
@@ -346,6 +347,13 @@ def test_sparse_residual_frontier_summary_keeps_best_delta():
     assert summary["promotable_rows"] == 1
 
 
+def test_residual_budget_tier_labels_cost_level():
+    assert _residual_budget_tier(0.02) == "cheap_residual"
+    assert _residual_budget_tier(0.05) == "moderate_residual"
+    assert _residual_budget_tier(0.10) == "moderate_residual"
+    assert _residual_budget_tier(0.15) == "expensive_residual"
+
+
 def test_sparse_residual_escalation_tracks_rows_solved_by_larger_budget():
     rows = [
         {
@@ -387,6 +395,8 @@ def test_sparse_residual_escalation_tracks_rows_solved_by_larger_budget():
     assert len(summary["solved_by_escalation"]) == 1
     assert summary["solved_by_escalation"][0]["dataset"] == "spikes"
     assert summary["solved_by_escalation"][0]["keep_ratio"] == 0.15
+    assert summary["solved_by_escalation"][0]["budget_tier"] == "expensive_residual"
+    assert summary["budget_tier_counts"]["expensive_residual"] == 1
 
 
 def test_noise_frontier_recommendation_promotes_local_strategy_for_high_noise():
