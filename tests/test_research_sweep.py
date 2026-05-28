@@ -16,6 +16,7 @@ from scripts.run_defensible_research_sweep import (
     _summarize_frontier_tiers_by_key,
     _summarize_frontier_tier_matrix,
     _summarize_local_strategy_probes,
+    _summarize_sparse_residual_escalation,
     _summarize_sparse_residual_frontiers,
     _with_gaussian_noise,
 )
@@ -342,6 +343,44 @@ def test_sparse_residual_frontier_summary_keeps_best_delta():
     assert summary["best_r2_delta_vs_base"] == 0.2
     assert summary["best_row"]["dataset"] == "spikes"
     assert summary["promotable_rows"] == 1
+
+
+def test_sparse_residual_escalation_tracks_rows_solved_by_larger_budget():
+    rows = [
+        {
+            "dataset": "spikes",
+            "terms": 16,
+            "sparse_residual_frontier": {"best_point_promotable": False},
+            "sparse_residual_escalation": {
+                "best_point_promotable": True,
+                "best_point": {
+                    "keep_ratio": 0.1,
+                    "r2": 0.991,
+                    "payload_ratio": 10.0,
+                },
+            },
+        },
+        {
+            "dataset": "smooth",
+            "terms": 32,
+            "sparse_residual_frontier": {"best_point_promotable": True},
+            "sparse_residual_escalation": {
+                "best_point_promotable": True,
+                "best_point": {
+                    "keep_ratio": 0.1,
+                    "r2": 0.999,
+                    "payload_ratio": 10.0,
+                },
+            },
+        },
+    ]
+
+    summary = _summarize_sparse_residual_escalation(rows)
+
+    assert summary["promotable_rows"] == 2
+    assert len(summary["solved_by_escalation"]) == 1
+    assert summary["solved_by_escalation"][0]["dataset"] == "spikes"
+    assert summary["solved_by_escalation"][0]["keep_ratio"] == 0.1
 
 
 def test_noise_frontier_recommendation_promotes_local_strategy_for_high_noise():

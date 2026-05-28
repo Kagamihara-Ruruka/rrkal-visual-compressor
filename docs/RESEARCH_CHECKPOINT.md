@@ -76,6 +76,7 @@ This adds:
 - local strategy probe comparing current RDP, Haar/local basis, and sparse residual signals without promoting any branch to production
 - sparse residual frontier that measures top-residual correction budgets against the detrended Fourier base
 - sparse residual promotion gate using the same `r2_gate` and payload gate language as other frontiers
+- sparse residual escalation diagnostic that retries failed rows with larger residual budgets, so we can tell whether a failure is a budget issue or a model-family issue
 
 ## 5) Advance / rollback rules
 
@@ -104,4 +105,5 @@ Regress immediately if:
 - use the local strategy probe table to decide whether Haar/local basis or sparse residual should get the next implementation checkpoint
 - use sparse residual frontier best points to decide whether residual retention should become the next promoted research branch
 - only promote residual retention after the sparse residual frontier reports promotable rows, not merely positive R2 delta
+- inspect sparse residual escalation before changing model families; if a failed row passes only after a much larger residual budget, record the payload tradeoff explicitly
 - prepare renderer-side benchmark: decode cost vs raster budget coupling

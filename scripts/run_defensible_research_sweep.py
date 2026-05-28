@@ -108,6 +108,14 @@ def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 
         r2_gate=0.99,
         min_payload_ratio=1.0,
     )
+    sparse_residual_escalation = _benchmark_sparse_residual_frontier(
+        original_y=series.y,
+        base_y=detrended.reconstructed_y,
+        raw_payload=raw_payload,
+        keep_ratios=[0.10, 0.15, 0.20],
+        r2_gate=0.99,
+        min_payload_ratio=1.0,
+    )
 
     return {
         "dataset": name,
@@ -185,6 +193,7 @@ def _benchmark_row(name: str, series: TimeSeries, terms: int, max_breaks: int = 
             "payload_ratio": adaptive_payload_ratio,
         },
         "sparse_residual_frontier": sparse_residual_frontier,
+        "sparse_residual_escalation": sparse_residual_escalation,
         "local_strategy_probe": _local_strategy_probe(
             samples=int(series.sample_count),
             rdp_r2=float(rdp_metrics["r2"]),
@@ -874,6 +883,35 @@ def _summarize_sparse_residual_frontiers(rows: list[dict[str, Any]]) -> dict[str
     }
 
 
+def _summarize_sparse_residual_escalation(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    promotable_rows = 0
+    solved_by_escalation: list[dict[str, Any]] = []
+    for row in rows:
+        baseline = row.get("sparse_residual_frontier")
+        escalation = row.get("sparse_residual_escalation")
+        if not baseline or not escalation:
+            continue
+        base_ok = bool(baseline.get("best_point_promotable"))
+        escalation_ok = bool(escalation.get("best_point_promotable"))
+        if escalation_ok:
+            promotable_rows += 1
+        if not base_ok and escalation_ok:
+            best = escalation["best_point"]
+            solved_by_escalation.append(
+                {
+                    "dataset": row.get("dataset"),
+                    "terms": row.get("terms"),
+                    "keep_ratio": best["keep_ratio"],
+                    "r2": best["r2"],
+                    "payload_ratio": best["payload_ratio"],
+                }
+            )
+    return {
+        "promotable_rows": promotable_rows,
+        "solved_by_escalation": solved_by_escalation,
+    }
+
+
 def _summarize_frontier_by_key(rows: list[dict[str, Any]], key: str) -> dict[str, dict[str, Any]]:
     # Small report helper: group frontier rows by one metadata field, such as
     # noise sigma, and count which rows met the R2 gate.
@@ -1033,6 +1071,7 @@ def main() -> int:
     per_dataset = _grouped_pass_rows(rows)
     local_strategy_summary = _summarize_local_strategy_probes(rows)
     sparse_residual_summary = _summarize_sparse_residual_frontiers(rows)
+    sparse_residual_escalation_summary = _summarize_sparse_residual_escalation(rows)
     locality_mode_desc = f"{args.locality_mode}({ 'piecewise_polynomial' if args.include_piecewise_polynomial else 'piecewise_fourier+detrended'})"
 
     frontier = None
@@ -1209,6 +1248,7 @@ def main() -> int:
             "locality_mode_desc": locality_mode_desc,
             "local_strategy_probe": local_strategy_summary,
             "sparse_residual_frontier": sparse_residual_summary,
+            "sparse_residual_escalation": sparse_residual_escalation_summary,
         },
         "run_rdp_frontier": bool(args.run_rdp_frontier),
         "best_global_r2": max(row["global"]["r2"] for row in rows if "global" in row),
@@ -1231,6 +1271,7 @@ def main() -> int:
         "locality_mode_desc": locality_mode_desc,
         "local_strategy_probe": local_strategy_summary,
         "sparse_residual_frontier": sparse_residual_summary,
+        "sparse_residual_escalation": sparse_residual_escalation_summary,
         "rdp_frontier": frontier,
         "noise_frontier": noise_frontier,
     }
@@ -1360,6 +1401,32 @@ def main() -> int:
                     _format_float(best["r2_delta_vs_base"]),
                     _format_float(best["payload_ratio"]),
                     "yes" if best["promotable"] else "no",
+                ]
+            )
+            + " |"
+        )
+    lines.extend(
+        [
+            "",
+            "### Sparse residual escalation",
+            "",
+            f"- promotable rows = `{_format_float(sparse_residual_escalation_summary['promotable_rows'])}`",
+            f"- solved by escalation = `{_format_float(len(sparse_residual_escalation_summary['solved_by_escalation']))}`",
+            "",
+            "| dataset | terms | keep ratio | R2 | payload ratio |",
+            "| --- | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    for item in sparse_residual_escalation_summary["solved_by_escalation"]:
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    str(item["dataset"]),
+                    _format_float(item["terms"]),
+                    _format_float(item["keep_ratio"]),
+                    _format_float(item["r2"]),
+                    _format_float(item["payload_ratio"]),
                 ]
             )
             + " |"

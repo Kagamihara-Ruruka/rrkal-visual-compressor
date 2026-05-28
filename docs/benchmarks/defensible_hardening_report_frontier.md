@@ -69,6 +69,16 @@
 | smooth | 16 | 0.05 | 200 | 0.999879 | 0.000700919 | 20 | yes |
 | smooth | 32 | 0.05 | 200 | 0.999961 | 0.000393916 | 20 | yes |
 
+### Sparse residual escalation
+
+- promotable rows = `10`
+- solved by escalation = `2`
+
+| dataset | terms | keep ratio | R2 | payload ratio |
+| --- | ---: | ---: | ---: | ---: |
+| spikes | 16 | 0.2 | 0.99197 | 5 |
+| spikes | 32 | 0.2 | 0.995462 | 5 |
+
 - frontier strict gate = 0.99
 - frontier exploratory gate = 0.95
 - frontier demo gate = 0.9

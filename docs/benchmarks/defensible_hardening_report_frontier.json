@@ -142,6 +142,58 @@
         },
         "best_point_promotable": true
       },
+      "sparse_residual_escalation": {
+        "base_r2": 0.9828256862809198,
+        "r2_gate": 0.99,
+        "min_payload_ratio": 1.0,
+        "rows": [
+          {
+            "keep_ratio": 0.1,
+            "keep_count": 400,
+            "r2": 0.9978605417274287,
+            "r2_delta_vs_base": 0.015034855446508844,
+            "payload_bytes": 6400.0,
+            "payload_ratio": 10.0,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          },
+          {
+            "keep_ratio": 0.15,
+            "keep_count": 600,
+            "r2": 0.9983676181881735,
+            "r2_delta_vs_base": 0.015541931907253725,
+            "payload_bytes": 9600.0,
+            "payload_ratio": 6.666666666666667,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          },
+          {
+            "keep_ratio": 0.2,
+            "keep_count": 800,
+            "r2": 0.9987539122019492,
+            "r2_delta_vs_base": 0.015928225921029382,
+            "payload_bytes": 12800.0,
+            "payload_ratio": 5.0,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          }
+        ],
+        "best_point": {
+          "keep_ratio": 0.2,
+          "keep_count": 800,
+          "r2": 0.9987539122019492,
+          "r2_delta_vs_base": 0.015928225921029382,
+          "payload_bytes": 12800.0,
+          "payload_ratio": 5.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
+        "best_point_promotable": true
+      },
       "local_strategy_probe": {
         "recommended_probe": "sparse_residual_layer",
         "reason": "residual corrections are sparse enough to test as a retained layer",
@@ -297,6 +349,58 @@
           "r2_delta_vs_base": 0.007464856814073828,
           "payload_bytes": 3200.0,
           "payload_ratio": 20.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
+        "best_point_promotable": true
+      },
+      "sparse_residual_escalation": {
+        "base_r2": 0.9911829835529979,
+        "r2_gate": 0.99,
+        "min_payload_ratio": 1.0,
+        "rows": [
+          {
+            "keep_ratio": 0.1,
+            "keep_count": 400,
+            "r2": 0.9990962952109479,
+            "r2_delta_vs_base": 0.00791331165794995,
+            "payload_bytes": 6400.0,
+            "payload_ratio": 10.0,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          },
+          {
+            "keep_ratio": 0.15,
+            "keep_count": 600,
+            "r2": 0.9993297968027666,
+            "r2_delta_vs_base": 0.008146813249768625,
+            "payload_bytes": 9600.0,
+            "payload_ratio": 6.666666666666667,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          },
+          {
+            "keep_ratio": 0.2,
+            "keep_count": 800,
+            "r2": 0.9994878365536228,
+            "r2_delta_vs_base": 0.00830485300062489,
+            "payload_bytes": 12800.0,
+            "payload_ratio": 5.0,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          }
+        ],
+        "best_point": {
+          "keep_ratio": 0.2,
+          "keep_count": 800,
+          "r2": 0.9994878365536228,
+          "r2_delta_vs_base": 0.00830485300062489,
+          "payload_bytes": 12800.0,
+          "payload_ratio": 5.0,
           "r2_gate_pass": true,
           "payload_gate_pass": true,
           "promotable": true
@@ -464,6 +568,58 @@
         },
         "best_point_promotable": false
       },
+      "sparse_residual_escalation": {
+        "base_r2": 0.9470254861305224,
+        "r2_gate": 0.99,
+        "min_payload_ratio": 1.0,
+        "rows": [
+          {
+            "keep_ratio": 0.1,
+            "keep_count": 400,
+            "r2": 0.9873075555532514,
+            "r2_delta_vs_base": 0.04028206942272905,
+            "payload_bytes": 6400.0,
+            "payload_ratio": 10.0,
+            "r2_gate_pass": false,
+            "payload_gate_pass": true,
+            "promotable": false
+          },
+          {
+            "keep_ratio": 0.15,
+            "keep_count": 600,
+            "r2": 0.9898876229484104,
+            "r2_delta_vs_base": 0.042862136817887975,
+            "payload_bytes": 9600.0,
+            "payload_ratio": 6.666666666666667,
+            "r2_gate_pass": false,
+            "payload_gate_pass": true,
+            "promotable": false
+          },
+          {
+            "keep_ratio": 0.2,
+            "keep_count": 800,
+            "r2": 0.9919696607714753,
+            "r2_delta_vs_base": 0.044944174640952905,
+            "payload_bytes": 12800.0,
+            "payload_ratio": 5.0,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          }
+        ],
+        "best_point": {
+          "keep_ratio": 0.2,
+          "keep_count": 800,
+          "r2": 0.9919696607714753,
+          "r2_delta_vs_base": 0.044944174640952905,
+          "payload_bytes": 12800.0,
+          "payload_ratio": 5.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
+        "best_point_promotable": true
+      },
       "local_strategy_probe": {
         "recommended_probe": "sparse_residual_layer",
         "reason": "residual corrections are sparse enough to test as a retained layer",
@@ -625,6 +781,58 @@
         },
         "best_point_promotable": false
       },
+      "sparse_residual_escalation": {
+        "base_r2": 0.9673195362904735,
+        "r2_gate": 0.99,
+        "min_payload_ratio": 1.0,
+        "rows": [
+          {
+            "keep_ratio": 0.1,
+            "keep_count": 400,
+            "r2": 0.9921559471029484,
+            "r2_delta_vs_base": 0.024836410812474896,
+            "payload_bytes": 6400.0,
+            "payload_ratio": 10.0,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          },
+          {
+            "keep_ratio": 0.15,
+            "keep_count": 600,
+            "r2": 0.9941236344863318,
+            "r2_delta_vs_base": 0.026804098195858272,
+            "payload_bytes": 9600.0,
+            "payload_ratio": 6.666666666666667,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          },
+          {
+            "keep_ratio": 0.2,
+            "keep_count": 800,
+            "r2": 0.9954619561163216,
+            "r2_delta_vs_base": 0.028142419825848086,
+            "payload_bytes": 12800.0,
+            "payload_ratio": 5.0,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          }
+        ],
+        "best_point": {
+          "keep_ratio": 0.2,
+          "keep_count": 800,
+          "r2": 0.9954619561163216,
+          "r2_delta_vs_base": 0.028142419825848086,
+          "payload_bytes": 12800.0,
+          "payload_ratio": 5.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
+        "best_point_promotable": true
+      },
       "local_strategy_probe": {
         "recommended_probe": "sparse_residual_layer",
         "reason": "residual corrections are sparse enough to test as a retained layer",
@@ -780,6 +988,58 @@
           "r2_delta_vs_base": 0.0006770015371294624,
           "payload_bytes": 3200.0,
           "payload_ratio": 20.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
+        "best_point_promotable": true
+      },
+      "sparse_residual_escalation": {
+        "base_r2": 0.9991831542562458,
+        "r2_gate": 0.99,
+        "min_payload_ratio": 1.0,
+        "rows": [
+          {
+            "keep_ratio": 0.1,
+            "keep_count": 400,
+            "r2": 0.999901716509904,
+            "r2_delta_vs_base": 0.0007185622536581837,
+            "payload_bytes": 6400.0,
+            "payload_ratio": 10.0,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          },
+          {
+            "keep_ratio": 0.15,
+            "keep_count": 600,
+            "r2": 0.9999258942916464,
+            "r2_delta_vs_base": 0.0007427400354005353,
+            "payload_bytes": 9600.0,
+            "payload_ratio": 6.666666666666667,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          },
+          {
+            "keep_ratio": 0.2,
+            "keep_count": 800,
+            "r2": 0.9999425089389007,
+            "r2_delta_vs_base": 0.0007593546826548669,
+            "payload_bytes": 12800.0,
+            "payload_ratio": 5.0,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          }
+        ],
+        "best_point": {
+          "keep_ratio": 0.2,
+          "keep_count": 800,
+          "r2": 0.9999425089389007,
+          "r2_delta_vs_base": 0.0007593546826548669,
+          "payload_bytes": 12800.0,
+          "payload_ratio": 5.0,
           "r2_gate_pass": true,
           "payload_gate_pass": true,
           "promotable": true
@@ -947,6 +1207,58 @@
         },
         "best_point_promotable": true
       },
+      "sparse_residual_escalation": {
+        "base_r2": 0.9995572165085782,
+        "r2_gate": 0.99,
+        "min_payload_ratio": 1.0,
+        "rows": [
+          {
+            "keep_ratio": 0.1,
+            "keep_count": 400,
+            "r2": 0.9999632883975323,
+            "r2_delta_vs_base": 0.00040607188895414037,
+            "payload_bytes": 6400.0,
+            "payload_ratio": 10.0,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          },
+          {
+            "keep_ratio": 0.15,
+            "keep_count": 600,
+            "r2": 0.9999728321145673,
+            "r2_delta_vs_base": 0.00041561560598912806,
+            "payload_bytes": 9600.0,
+            "payload_ratio": 6.666666666666667,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          },
+          {
+            "keep_ratio": 0.2,
+            "keep_count": 800,
+            "r2": 0.9999793068684489,
+            "r2_delta_vs_base": 0.0004220903598707304,
+            "payload_bytes": 12800.0,
+            "payload_ratio": 5.0,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          }
+        ],
+        "best_point": {
+          "keep_ratio": 0.2,
+          "keep_count": 800,
+          "r2": 0.9999793068684489,
+          "r2_delta_vs_base": 0.0004220903598707304,
+          "payload_bytes": 12800.0,
+          "payload_ratio": 5.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
+        "best_point_promotable": true
+      },
       "local_strategy_probe": {
         "recommended_probe": "sparse_residual_layer",
         "reason": "residual corrections are sparse enough to test as a retained layer",
@@ -1102,6 +1414,58 @@
           "r2_delta_vs_base": 0.0032339184569553092,
           "payload_bytes": 3200.0,
           "payload_ratio": 20.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
+        "best_point_promotable": true
+      },
+      "sparse_residual_escalation": {
+        "base_r2": 0.9957796516400628,
+        "r2_gate": 0.99,
+        "min_payload_ratio": 1.0,
+        "rows": [
+          {
+            "keep_ratio": 0.1,
+            "keep_count": 400,
+            "r2": 0.9994072392704947,
+            "r2_delta_vs_base": 0.0036275876304319166,
+            "payload_bytes": 6400.0,
+            "payload_ratio": 10.0,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          },
+          {
+            "keep_ratio": 0.15,
+            "keep_count": 600,
+            "r2": 0.9995778670017247,
+            "r2_delta_vs_base": 0.0037982153616619163,
+            "payload_bytes": 9600.0,
+            "payload_ratio": 6.666666666666667,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          },
+          {
+            "keep_ratio": 0.2,
+            "keep_count": 800,
+            "r2": 0.9996868337048166,
+            "r2_delta_vs_base": 0.0039071820647538225,
+            "payload_bytes": 12800.0,
+            "payload_ratio": 5.0,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          }
+        ],
+        "best_point": {
+          "keep_ratio": 0.2,
+          "keep_count": 800,
+          "r2": 0.9996868337048166,
+          "r2_delta_vs_base": 0.0039071820647538225,
+          "payload_bytes": 12800.0,
+          "payload_ratio": 5.0,
           "r2_gate_pass": true,
           "payload_gate_pass": true,
           "promotable": true
@@ -1269,6 +1633,58 @@
         },
         "best_point_promotable": true
       },
+      "sparse_residual_escalation": {
+        "base_r2": 0.9978792346623713,
+        "r2_gate": 0.99,
+        "min_payload_ratio": 1.0,
+        "rows": [
+          {
+            "keep_ratio": 0.1,
+            "keep_count": 400,
+            "r2": 0.9998051403119024,
+            "r2_delta_vs_base": 0.001925905649531101,
+            "payload_bytes": 6400.0,
+            "payload_ratio": 10.0,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          },
+          {
+            "keep_ratio": 0.15,
+            "keep_count": 600,
+            "r2": 0.999867999963476,
+            "r2_delta_vs_base": 0.0019887653011047,
+            "payload_bytes": 9600.0,
+            "payload_ratio": 6.666666666666667,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          },
+          {
+            "keep_ratio": 0.2,
+            "keep_count": 800,
+            "r2": 0.9999026872470377,
+            "r2_delta_vs_base": 0.0020234525846664075,
+            "payload_bytes": 12800.0,
+            "payload_ratio": 5.0,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          }
+        ],
+        "best_point": {
+          "keep_ratio": 0.2,
+          "keep_count": 800,
+          "r2": 0.9999026872470377,
+          "r2_delta_vs_base": 0.0020234525846664075,
+          "payload_bytes": 12800.0,
+          "payload_ratio": 5.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
+        "best_point_promotable": true
+      },
       "local_strategy_probe": {
         "recommended_probe": "sparse_residual_layer",
         "reason": "residual corrections are sparse enough to test as a retained layer",
@@ -1424,6 +1840,58 @@
           "r2_delta_vs_base": 0.0007009185985631383,
           "payload_bytes": 3200.0,
           "payload_ratio": 20.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
+        "best_point_promotable": true
+      },
+      "sparse_residual_escalation": {
+        "base_r2": 0.9991782421121169,
+        "r2_gate": 0.99,
+        "min_payload_ratio": 1.0,
+        "rows": [
+          {
+            "keep_ratio": 0.1,
+            "keep_count": 400,
+            "r2": 0.9999145880013369,
+            "r2_delta_vs_base": 0.0007363458892200025,
+            "payload_bytes": 6400.0,
+            "payload_ratio": 10.0,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          },
+          {
+            "keep_ratio": 0.15,
+            "keep_count": 600,
+            "r2": 0.9999355666508818,
+            "r2_delta_vs_base": 0.0007573245387648697,
+            "payload_bytes": 9600.0,
+            "payload_ratio": 6.666666666666667,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          },
+          {
+            "keep_ratio": 0.2,
+            "keep_count": 800,
+            "r2": 0.9999512569871593,
+            "r2_delta_vs_base": 0.0007730148750423327,
+            "payload_bytes": 12800.0,
+            "payload_ratio": 5.0,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          }
+        ],
+        "best_point": {
+          "keep_ratio": 0.2,
+          "keep_count": 800,
+          "r2": 0.9999512569871593,
+          "r2_delta_vs_base": 0.0007730148750423327,
+          "payload_bytes": 12800.0,
+          "payload_ratio": 5.0,
           "r2_gate_pass": true,
           "payload_gate_pass": true,
           "promotable": true
@@ -1591,6 +2059,58 @@
         },
         "best_point_promotable": true
       },
+      "sparse_residual_escalation": {
+        "base_r2": 0.9995667543005001,
+        "r2_gate": 0.99,
+        "min_payload_ratio": 1.0,
+        "rows": [
+          {
+            "keep_ratio": 0.1,
+            "keep_count": 400,
+            "r2": 0.9999785181032698,
+            "r2_delta_vs_base": 0.000411763802769638,
+            "payload_bytes": 6400.0,
+            "payload_ratio": 10.0,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          },
+          {
+            "keep_ratio": 0.15,
+            "keep_count": 600,
+            "r2": 0.9999858481932001,
+            "r2_delta_vs_base": 0.0004190938927000065,
+            "payload_bytes": 9600.0,
+            "payload_ratio": 6.666666666666667,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          },
+          {
+            "keep_ratio": 0.2,
+            "keep_count": 800,
+            "r2": 0.9999897633951476,
+            "r2_delta_vs_base": 0.00042300909464743075,
+            "payload_bytes": 12800.0,
+            "payload_ratio": 5.0,
+            "r2_gate_pass": true,
+            "payload_gate_pass": true,
+            "promotable": true
+          }
+        ],
+        "best_point": {
+          "keep_ratio": 0.2,
+          "keep_count": 800,
+          "r2": 0.9999897633951476,
+          "r2_delta_vs_base": 0.00042300909464743075,
+          "payload_bytes": 12800.0,
+          "payload_ratio": 5.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
+        "best_point_promotable": true
+      },
       "local_strategy_probe": {
         "recommended_probe": "sparse_residual_layer",
         "reason": "residual corrections are sparse enough to test as a retained layer",
@@ -1717,6 +2237,25 @@
         "promotable": false
       },
       "promotable_rows": 8
+    },
+    "sparse_residual_escalation": {
+      "promotable_rows": 10,
+      "solved_by_escalation": [
+        {
+          "dataset": "spikes",
+          "terms": 16,
+          "keep_ratio": 0.2,
+          "r2": 0.9919696607714753,
+          "payload_ratio": 5.0
+        },
+        {
+          "dataset": "spikes",
+          "terms": 32,
+          "keep_ratio": 0.2,
+          "r2": 0.9954619561163216,
+          "payload_ratio": 5.0
+        }
+      ]
     }
   },
   "run_rdp_frontier": true,
@@ -1779,6 +2318,25 @@
       "promotable": false
     },
     "promotable_rows": 8
+  },
+  "sparse_residual_escalation": {
+    "promotable_rows": 10,
+    "solved_by_escalation": [
+      {
+        "dataset": "spikes",
+        "terms": 16,
+        "keep_ratio": 0.2,
+        "r2": 0.9919696607714753,
+        "payload_ratio": 5.0
+      },
+      {
+        "dataset": "spikes",
+        "terms": 32,
+        "keep_ratio": 0.2,
+        "r2": 0.9954619561163216,
+        "payload_ratio": 5.0
+      }
+    ]
   },
   "rdp_frontier": {
     "keep_ratios": [
