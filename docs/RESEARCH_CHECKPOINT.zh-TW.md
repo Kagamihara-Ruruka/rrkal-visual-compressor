@@ -77,7 +77,7 @@ py scripts/run_defensible_research_sweep.py \
 - local strategy probe 會比較目前 RDP、Haar/local basis 與 sparse residual 訊號，但不把任何分支直接提升為 production
 - sparse residual frontier 會量測 top-residual correction budgets 相對於 detrended Fourier base 的改善幅度
 - sparse residual promotion gate 會沿用 `r2_gate` 與 payload gate 的語言，避免只用 R2 delta 宣稱成功
-- sparse residual escalation diagnostic 會對失敗列改用較大的 residual budget 重試，用來判斷失敗是預算不足，還是模型家族本身不適合
+- sparse residual escalation diagnostic 會對失敗列改用較大的 residual budget 重試，並回報最小可通過 residual budget，用來判斷失敗是預算不足，還是模型家族本身不適合
 
 ## 5) 推進與回退規則
 

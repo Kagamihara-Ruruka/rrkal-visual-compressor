@@ -140,6 +140,17 @@
           "payload_gate_pass": true,
           "promotable": true
         },
+        "min_promotable_point": {
+          "keep_ratio": 0.02,
+          "keep_count": 80,
+          "r2": 0.9938356921282453,
+          "r2_delta_vs_base": 0.011010005847325477,
+          "payload_bytes": 1280.0,
+          "payload_ratio": 50.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
         "best_point_promotable": true
       },
       "sparse_residual_escalation": {
@@ -188,6 +199,17 @@
           "r2_delta_vs_base": 0.015928225921029382,
           "payload_bytes": 12800.0,
           "payload_ratio": 5.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
+        "min_promotable_point": {
+          "keep_ratio": 0.1,
+          "keep_count": 400,
+          "r2": 0.9978605417274287,
+          "r2_delta_vs_base": 0.015034855446508844,
+          "payload_bytes": 6400.0,
+          "payload_ratio": 10.0,
           "r2_gate_pass": true,
           "payload_gate_pass": true,
           "promotable": true
@@ -353,6 +375,17 @@
           "payload_gate_pass": true,
           "promotable": true
         },
+        "min_promotable_point": {
+          "keep_ratio": 0.005,
+          "keep_count": 20,
+          "r2": 0.994641209797203,
+          "r2_delta_vs_base": 0.0034582262442051093,
+          "payload_bytes": 320.0,
+          "payload_ratio": 200.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
         "best_point_promotable": true
       },
       "sparse_residual_escalation": {
@@ -401,6 +434,17 @@
           "r2_delta_vs_base": 0.00830485300062489,
           "payload_bytes": 12800.0,
           "payload_ratio": 5.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
+        "min_promotable_point": {
+          "keep_ratio": 0.1,
+          "keep_count": 400,
+          "r2": 0.9990962952109479,
+          "r2_delta_vs_base": 0.00791331165794995,
+          "payload_bytes": 6400.0,
+          "payload_ratio": 10.0,
           "r2_gate_pass": true,
           "payload_gate_pass": true,
           "promotable": true
@@ -566,6 +610,7 @@
           "payload_gate_pass": true,
           "promotable": false
         },
+        "min_promotable_point": null,
         "best_point_promotable": false
       },
       "sparse_residual_escalation": {
@@ -608,6 +653,17 @@
           }
         ],
         "best_point": {
+          "keep_ratio": 0.2,
+          "keep_count": 800,
+          "r2": 0.9919696607714753,
+          "r2_delta_vs_base": 0.044944174640952905,
+          "payload_bytes": 12800.0,
+          "payload_ratio": 5.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
+        "min_promotable_point": {
           "keep_ratio": 0.2,
           "keep_count": 800,
           "r2": 0.9919696607714753,
@@ -779,6 +835,7 @@
           "payload_gate_pass": true,
           "promotable": false
         },
+        "min_promotable_point": null,
         "best_point_promotable": false
       },
       "sparse_residual_escalation": {
@@ -827,6 +884,17 @@
           "r2_delta_vs_base": 0.028142419825848086,
           "payload_bytes": 12800.0,
           "payload_ratio": 5.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
+        "min_promotable_point": {
+          "keep_ratio": 0.1,
+          "keep_count": 400,
+          "r2": 0.9921559471029484,
+          "r2_delta_vs_base": 0.024836410812474896,
+          "payload_bytes": 6400.0,
+          "payload_ratio": 10.0,
           "r2_gate_pass": true,
           "payload_gate_pass": true,
           "promotable": true
@@ -992,6 +1060,17 @@
           "payload_gate_pass": true,
           "promotable": true
         },
+        "min_promotable_point": {
+          "keep_ratio": 0.005,
+          "keep_count": 20,
+          "r2": 0.9994513258048263,
+          "r2_delta_vs_base": 0.0002681715485804981,
+          "payload_bytes": 320.0,
+          "payload_ratio": 200.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
         "best_point_promotable": true
       },
       "sparse_residual_escalation": {
@@ -1040,6 +1119,17 @@
           "r2_delta_vs_base": 0.0007593546826548669,
           "payload_bytes": 12800.0,
           "payload_ratio": 5.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
+        "min_promotable_point": {
+          "keep_ratio": 0.1,
+          "keep_count": 400,
+          "r2": 0.999901716509904,
+          "r2_delta_vs_base": 0.0007185622536581837,
+          "payload_bytes": 6400.0,
+          "payload_ratio": 10.0,
           "r2_gate_pass": true,
           "payload_gate_pass": true,
           "promotable": true
@@ -1205,6 +1295,17 @@
           "payload_gate_pass": true,
           "promotable": true
         },
+        "min_promotable_point": {
+          "keep_ratio": 0.005,
+          "keep_count": 20,
+          "r2": 0.9997826658216307,
+          "r2_delta_vs_base": 0.00022544931305246152,
+          "payload_bytes": 320.0,
+          "payload_ratio": 200.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
         "best_point_promotable": true
       },
       "sparse_residual_escalation": {
@@ -1253,6 +1354,17 @@
           "r2_delta_vs_base": 0.0004220903598707304,
           "payload_bytes": 12800.0,
           "payload_ratio": 5.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
+        "min_promotable_point": {
+          "keep_ratio": 0.1,
+          "keep_count": 400,
+          "r2": 0.9999632883975323,
+          "r2_delta_vs_base": 0.00040607188895414037,
+          "payload_bytes": 6400.0,
+          "payload_ratio": 10.0,
           "r2_gate_pass": true,
           "payload_gate_pass": true,
           "promotable": true
@@ -1418,6 +1530,17 @@
           "payload_gate_pass": true,
           "promotable": true
         },
+        "min_promotable_point": {
+          "keep_ratio": 0.005,
+          "keep_count": 20,
+          "r2": 0.9968300626258553,
+          "r2_delta_vs_base": 0.0010504109857925048,
+          "payload_bytes": 320.0,
+          "payload_ratio": 200.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
         "best_point_promotable": true
       },
       "sparse_residual_escalation": {
@@ -1466,6 +1589,17 @@
           "r2_delta_vs_base": 0.0039071820647538225,
           "payload_bytes": 12800.0,
           "payload_ratio": 5.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
+        "min_promotable_point": {
+          "keep_ratio": 0.1,
+          "keep_count": 400,
+          "r2": 0.9994072392704947,
+          "r2_delta_vs_base": 0.0036275876304319166,
+          "payload_bytes": 6400.0,
+          "payload_ratio": 10.0,
           "r2_gate_pass": true,
           "payload_gate_pass": true,
           "promotable": true
@@ -1631,6 +1765,17 @@
           "payload_gate_pass": true,
           "promotable": true
         },
+        "min_promotable_point": {
+          "keep_ratio": 0.005,
+          "keep_count": 20,
+          "r2": 0.9987383920969817,
+          "r2_delta_vs_base": 0.0008591574346104025,
+          "payload_bytes": 320.0,
+          "payload_ratio": 200.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
         "best_point_promotable": true
       },
       "sparse_residual_escalation": {
@@ -1679,6 +1824,17 @@
           "r2_delta_vs_base": 0.0020234525846664075,
           "payload_bytes": 12800.0,
           "payload_ratio": 5.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
+        "min_promotable_point": {
+          "keep_ratio": 0.1,
+          "keep_count": 400,
+          "r2": 0.9998051403119024,
+          "r2_delta_vs_base": 0.001925905649531101,
+          "payload_bytes": 6400.0,
+          "payload_ratio": 10.0,
           "r2_gate_pass": true,
           "payload_gate_pass": true,
           "promotable": true
@@ -1844,6 +2000,17 @@
           "payload_gate_pass": true,
           "promotable": true
         },
+        "min_promotable_point": {
+          "keep_ratio": 0.005,
+          "keep_count": 20,
+          "r2": 0.999452159235735,
+          "r2_delta_vs_base": 0.00027391712361812814,
+          "payload_bytes": 320.0,
+          "payload_ratio": 200.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
         "best_point_promotable": true
       },
       "sparse_residual_escalation": {
@@ -1892,6 +2059,17 @@
           "r2_delta_vs_base": 0.0007730148750423327,
           "payload_bytes": 12800.0,
           "payload_ratio": 5.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
+        "min_promotable_point": {
+          "keep_ratio": 0.1,
+          "keep_count": 400,
+          "r2": 0.9999145880013369,
+          "r2_delta_vs_base": 0.0007363458892200025,
+          "payload_bytes": 6400.0,
+          "payload_ratio": 10.0,
           "r2_gate_pass": true,
           "payload_gate_pass": true,
           "promotable": true
@@ -2057,6 +2235,17 @@
           "payload_gate_pass": true,
           "promotable": true
         },
+        "min_promotable_point": {
+          "keep_ratio": 0.005,
+          "keep_count": 20,
+          "r2": 0.9997962771108156,
+          "r2_delta_vs_base": 0.0002295228103155189,
+          "payload_bytes": 320.0,
+          "payload_ratio": 200.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
         "best_point_promotable": true
       },
       "sparse_residual_escalation": {
@@ -2105,6 +2294,17 @@
           "r2_delta_vs_base": 0.00042300909464743075,
           "payload_bytes": 12800.0,
           "payload_ratio": 5.0,
+          "r2_gate_pass": true,
+          "payload_gate_pass": true,
+          "promotable": true
+        },
+        "min_promotable_point": {
+          "keep_ratio": 0.1,
+          "keep_count": 400,
+          "r2": 0.9999785181032698,
+          "r2_delta_vs_base": 0.000411763802769638,
+          "payload_bytes": 6400.0,
+          "payload_ratio": 10.0,
           "r2_gate_pass": true,
           "payload_gate_pass": true,
           "promotable": true
@@ -2251,9 +2451,9 @@
         {
           "dataset": "spikes",
           "terms": 32,
-          "keep_ratio": 0.2,
-          "r2": 0.9954619561163216,
-          "payload_ratio": 5.0
+          "keep_ratio": 0.1,
+          "r2": 0.9921559471029484,
+          "payload_ratio": 10.0
         }
       ]
     }
@@ -2332,9 +2532,9 @@
       {
         "dataset": "spikes",
         "terms": 32,
-        "keep_ratio": 0.2,
-        "r2": 0.9954619561163216,
-        "payload_ratio": 5.0
+        "keep_ratio": 0.1,
+        "r2": 0.9921559471029484,
+        "payload_ratio": 10.0
       }
     ]
   },

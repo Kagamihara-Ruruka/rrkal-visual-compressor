@@ -310,6 +310,7 @@ def test_sparse_residual_frontier_improves_base_reconstruction():
     assert best["r2_delta_vs_base"] > 0.0
     assert best["payload_ratio"] == 4.0
     assert best["promotable"] is True
+    assert frontier["min_promotable_point"]["keep_ratio"] == 0.25
 
 
 def test_sparse_residual_frontier_summary_keeps_best_delta():
@@ -353,10 +354,15 @@ def test_sparse_residual_escalation_tracks_rows_solved_by_larger_budget():
             "sparse_residual_frontier": {"best_point_promotable": False},
             "sparse_residual_escalation": {
                 "best_point_promotable": True,
+                "min_promotable_point": {
+                    "keep_ratio": 0.15,
+                    "r2": 0.9905,
+                    "payload_ratio": 6.67,
+                },
                 "best_point": {
-                    "keep_ratio": 0.1,
+                    "keep_ratio": 0.2,
                     "r2": 0.991,
-                    "payload_ratio": 10.0,
+                    "payload_ratio": 5.0,
                 },
             },
         },
@@ -380,7 +386,7 @@ def test_sparse_residual_escalation_tracks_rows_solved_by_larger_budget():
     assert summary["promotable_rows"] == 2
     assert len(summary["solved_by_escalation"]) == 1
     assert summary["solved_by_escalation"][0]["dataset"] == "spikes"
-    assert summary["solved_by_escalation"][0]["keep_ratio"] == 0.1
+    assert summary["solved_by_escalation"][0]["keep_ratio"] == 0.15
 
 
 def test_noise_frontier_recommendation_promotes_local_strategy_for_high_noise():

@@ -74,10 +74,10 @@
 - promotable rows = `10`
 - solved by escalation = `2`
 
-| dataset | terms | keep ratio | R2 | payload ratio |
+| dataset | terms | minimum keep ratio | R2 | payload ratio |
 | --- | ---: | ---: | ---: | ---: |
 | spikes | 16 | 0.2 | 0.99197 | 5 |
-| spikes | 32 | 0.2 | 0.995462 | 5 |
+| spikes | 32 | 0.1 | 0.992156 | 10 |
 
 - frontier strict gate = 0.99
 - frontier exploratory gate = 0.95

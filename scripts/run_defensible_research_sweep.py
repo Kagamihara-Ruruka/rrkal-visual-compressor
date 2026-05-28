@@ -249,12 +249,14 @@ def _benchmark_sparse_residual_frontier(
     promotable = [item for item in rows if item["promotable"]]
     candidates = promotable or rows
     best = max(candidates, key=lambda item: (item["r2_delta_vs_base"], item["payload_ratio"]))
+    min_promotable = min(promotable, key=lambda item: (item["keep_ratio"], -item["payload_ratio"])) if promotable else None
     return {
         "base_r2": float(base_metrics["r2"]),
         "r2_gate": float(r2_gate),
         "min_payload_ratio": float(min_payload_ratio),
         "rows": rows,
         "best_point": best,
+        "min_promotable_point": min_promotable,
         "best_point_promotable": bool(best["promotable"]),
     }
 
@@ -896,7 +898,7 @@ def _summarize_sparse_residual_escalation(rows: list[dict[str, Any]]) -> dict[st
         if escalation_ok:
             promotable_rows += 1
         if not base_ok and escalation_ok:
-            best = escalation["best_point"]
+            best = escalation.get("min_promotable_point") or escalation["best_point"]
             solved_by_escalation.append(
                 {
                     "dataset": row.get("dataset"),
@@ -1413,7 +1415,7 @@ def main() -> int:
             f"- promotable rows = `{_format_float(sparse_residual_escalation_summary['promotable_rows'])}`",
             f"- solved by escalation = `{_format_float(len(sparse_residual_escalation_summary['solved_by_escalation']))}`",
             "",
-            "| dataset | terms | keep ratio | R2 | payload ratio |",
+            "| dataset | terms | minimum keep ratio | R2 | payload ratio |",
             "| --- | ---: | ---: | ---: | ---: |",
         ]
     )
