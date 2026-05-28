@@ -18,6 +18,7 @@ from scripts.run_defensible_research_sweep import (
     _summarize_frontier_tiers_by_key,
     _summarize_frontier_tier_matrix,
     _summarize_local_strategy_probes,
+    _summarize_residual_term_sensitivity,
     _summarize_sparse_residual_escalation,
     _summarize_sparse_residual_frontiers,
     _with_gaussian_noise,
@@ -368,6 +369,30 @@ def test_residual_escalation_recommendation_flags_expensive_side_channel():
     assert result["evaluated_rows"] == 2
 
 
+def test_residual_term_sensitivity_detects_terms_reducing_residual_budget():
+    summary = _summarize_residual_term_sensitivity(
+        [
+            {
+                "dataset": "spikes",
+                "terms": 16,
+                "keep_ratio": 0.20,
+                "budget_tier": "expensive_residual",
+            },
+            {
+                "dataset": "spikes",
+                "terms": 32,
+                "keep_ratio": 0.10,
+                "budget_tier": "moderate_residual",
+            },
+        ]
+    )
+
+    assert summary["improvement_count"] == 1
+    assert summary["improvements"][0]["dataset"] == "spikes"
+    assert summary["improvements"][0]["keep_ratio_delta"] == pytest.approx(-0.10)
+    assert summary["improvements"][0]["to_budget_tier"] == "moderate_residual"
+
+
 def test_sparse_residual_escalation_tracks_rows_solved_by_larger_budget():
     rows = [
         {
@@ -415,6 +440,7 @@ def test_sparse_residual_escalation_tracks_rows_solved_by_larger_budget():
         summary["recommended_next_strategy"]["recommended_strategy"]
         == "raise_terms_or_localize_before_promoting_residual"
     )
+    assert summary["term_sensitivity"]["improvement_count"] == 0
 
 
 def test_noise_frontier_recommendation_promotes_local_strategy_for_high_noise():

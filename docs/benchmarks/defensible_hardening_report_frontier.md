@@ -76,11 +76,16 @@
 - budget tiers = `{'cheap_residual': 0, 'moderate_residual': 1, 'expensive_residual': 1}`
 - recommended strategy = `raise_terms_or_localize_before_promoting_residual`
 - rationale: some rows need more than 10% residual retention, so residuals are acting like a large side channel
+- term-sensitivity improvements = `1`
 
 | dataset | terms | minimum keep ratio | budget tier | R2 | payload ratio |
 | --- | ---: | ---: | --- | ---: | ---: |
 | spikes | 16 | 0.2 | expensive_residual | 0.99197 | 5 |
 | spikes | 32 | 0.1 | moderate_residual | 0.992156 | 10 |
+
+| dataset | from terms | to terms | keep ratio delta | budget tier change |
+| --- | ---: | ---: | ---: | --- |
+| spikes | 16 | 32 | -0.1 | expensive_residual -> moderate_residual |
 
 - frontier strict gate = 0.99
 - frontier exploratory gate = 0.95

@@ -919,6 +919,45 @@ def _recommend_residual_escalation_strategy(budget_tier_counts: dict[str, int]) 
     }
 
 
+def _summarize_residual_term_sensitivity(solved_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    tier_rank = {
+        "cheap_residual": 0,
+        "moderate_residual": 1,
+        "expensive_residual": 2,
+    }
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for row in solved_rows:
+        grouped.setdefault(str(row.get("dataset", "unknown")), []).append(row)
+
+    improvements: list[dict[str, Any]] = []
+    for dataset, items in grouped.items():
+        ordered = sorted(items, key=lambda item: float(item.get("terms", 0)))
+        for left, right in zip(ordered, ordered[1:]):
+            left_keep = float(left["keep_ratio"])
+            right_keep = float(right["keep_ratio"])
+            left_tier = str(left["budget_tier"])
+            right_tier = str(right["budget_tier"])
+            keep_improved = right_keep < left_keep
+            tier_improved = tier_rank.get(right_tier, 99) < tier_rank.get(left_tier, 99)
+            if keep_improved or tier_improved:
+                improvements.append(
+                    {
+                        "dataset": dataset,
+                        "from_terms": left["terms"],
+                        "to_terms": right["terms"],
+                        "from_keep_ratio": left_keep,
+                        "to_keep_ratio": right_keep,
+                        "from_budget_tier": left_tier,
+                        "to_budget_tier": right_tier,
+                        "keep_ratio_delta": right_keep - left_keep,
+                    }
+                )
+    return {
+        "improvement_count": len(improvements),
+        "improvements": improvements,
+    }
+
+
 def _summarize_sparse_residual_escalation(rows: list[dict[str, Any]]) -> dict[str, Any]:
     promotable_rows = 0
     solved_by_escalation: list[dict[str, Any]] = []
@@ -955,6 +994,7 @@ def _summarize_sparse_residual_escalation(rows: list[dict[str, Any]]) -> dict[st
         "solved_by_escalation": solved_by_escalation,
         "budget_tier_counts": budget_tier_counts,
         "recommended_next_strategy": _recommend_residual_escalation_strategy(budget_tier_counts),
+        "term_sensitivity": _summarize_residual_term_sensitivity(solved_by_escalation),
     }
 
 
@@ -1461,6 +1501,7 @@ def main() -> int:
             f"- budget tiers = `{sparse_residual_escalation_summary['budget_tier_counts']}`",
             f"- recommended strategy = `{sparse_residual_escalation_summary['recommended_next_strategy']['recommended_strategy']}`",
             f"- rationale: {sparse_residual_escalation_summary['recommended_next_strategy']['rationale']}",
+            f"- term-sensitivity improvements = `{_format_float(sparse_residual_escalation_summary['term_sensitivity']['improvement_count'])}`",
             "",
             "| dataset | terms | minimum keep ratio | budget tier | R2 | payload ratio |",
             "| --- | ---: | ---: | --- | ---: | ---: |",
@@ -1481,6 +1522,28 @@ def main() -> int:
             )
             + " |"
         )
+    if sparse_residual_escalation_summary["term_sensitivity"]["improvements"]:
+        lines.extend(
+            [
+                "",
+                "| dataset | from terms | to terms | keep ratio delta | budget tier change |",
+                "| --- | ---: | ---: | ---: | --- |",
+            ]
+        )
+        for item in sparse_residual_escalation_summary["term_sensitivity"]["improvements"]:
+            lines.append(
+                "| "
+                + " | ".join(
+                    [
+                        str(item["dataset"]),
+                        _format_float(item["from_terms"]),
+                        _format_float(item["to_terms"]),
+                        _format_float(item["keep_ratio_delta"]),
+                        f"{item['from_budget_tier']} -> {item['to_budget_tier']}",
+                    ]
+                )
+                + " |"
+            )
 
     if frontier is not None:
         lines.extend(

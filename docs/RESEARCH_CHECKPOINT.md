@@ -80,6 +80,7 @@ This adds:
 - residual budget tier labels:
   `cheap_residual` below 5%, `moderate_residual` from 5% through 10%, and `expensive_residual` above 10%
 - residual escalation recommendation, which turns the budget tier mix into a next experiment label without claiming the residual layer is production-ready
+- residual term-sensitivity evidence, which checks whether higher Fourier terms reduce the minimum residual budget for the same dataset
 
 ## 5) Advance / rollback rules
 
@@ -111,4 +112,5 @@ Regress immediately if:
 - inspect sparse residual escalation before changing model families; if a failed row passes only after a much larger residual budget, record the payload tradeoff explicitly
 - treat `expensive_residual` as a warning to test higher terms, local basis, wavelet, or adaptive segmentation before declaring the residual layer efficient
 - treat residual escalation recommendation as a queue pointer; verify it with the next benchmark before changing default compression behavior
+- when term sensitivity improves the same dataset, test higher terms before adding a new model family
 - prepare renderer-side benchmark: decode cost vs raster budget coupling

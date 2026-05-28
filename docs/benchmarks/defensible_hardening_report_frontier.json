@@ -2467,6 +2467,21 @@
         "recommended_strategy": "raise_terms_or_localize_before_promoting_residual",
         "rationale": "some rows need more than 10% residual retention, so residuals are acting like a large side channel",
         "evaluated_rows": 2
+      },
+      "term_sensitivity": {
+        "improvement_count": 1,
+        "improvements": [
+          {
+            "dataset": "spikes",
+            "from_terms": 16,
+            "to_terms": 32,
+            "from_keep_ratio": 0.2,
+            "to_keep_ratio": 0.1,
+            "from_budget_tier": "expensive_residual",
+            "to_budget_tier": "moderate_residual",
+            "keep_ratio_delta": -0.1
+          }
+        ]
       }
     }
   },
@@ -2560,6 +2575,21 @@
       "recommended_strategy": "raise_terms_or_localize_before_promoting_residual",
       "rationale": "some rows need more than 10% residual retention, so residuals are acting like a large side channel",
       "evaluated_rows": 2
+    },
+    "term_sensitivity": {
+      "improvement_count": 1,
+      "improvements": [
+        {
+          "dataset": "spikes",
+          "from_terms": 16,
+          "to_terms": 32,
+          "from_keep_ratio": 0.2,
+          "to_keep_ratio": 0.1,
+          "from_budget_tier": "expensive_residual",
+          "to_budget_tier": "moderate_residual",
+          "keep_ratio_delta": -0.1
+        }
+      ]
     }
   },
   "rdp_frontier": {

@@ -81,6 +81,7 @@ py scripts/run_defensible_research_sweep.py \
 - residual budget tier 標籤：
   低於 5% 是 `cheap_residual`，5% 到 10% 是 `moderate_residual`，高於 10% 是 `expensive_residual`
 - residual escalation recommendation 會把 budget tier 組合轉成下一步實驗標籤，但不宣稱 residual layer 已可 production 化
+- residual term-sensitivity evidence 會檢查同一資料集在更高 Fourier terms 下，最小 residual budget 是否下降
 
 ## 5) 推進與回退規則
 
@@ -113,4 +114,5 @@ py scripts/run_defensible_research_sweep.py \
 - 在更換模型家族前，先檢查 sparse residual escalation；如果失敗列只是在更大的 residual budget 下才通過，就要明確記錄 payload 代價
 - 把 `expensive_residual` 視為警訊：在宣稱 residual layer 有效率前，先測更高 terms、local basis、wavelet 或 adaptive segmentation
 - 將 residual escalation recommendation 視為實驗排程指標；要經過下一輪 benchmark 驗證後，才能改變預設壓縮行為
+- 如果 term sensitivity 顯示同一資料集有改善，要先測更高 terms，再新增新的模型家族
 - 準備 renderer-side benchmark：decode cost 與 raster budget 的耦合
