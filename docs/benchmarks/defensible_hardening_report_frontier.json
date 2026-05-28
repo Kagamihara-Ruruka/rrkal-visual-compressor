@@ -2462,6 +2462,11 @@
         "cheap_residual": 0,
         "moderate_residual": 1,
         "expensive_residual": 1
+      },
+      "recommended_next_strategy": {
+        "recommended_strategy": "raise_terms_or_localize_before_promoting_residual",
+        "rationale": "some rows need more than 10% residual retention, so residuals are acting like a large side channel",
+        "evaluated_rows": 2
       }
     }
   },
@@ -2550,6 +2555,11 @@
       "cheap_residual": 0,
       "moderate_residual": 1,
       "expensive_residual": 1
+    },
+    "recommended_next_strategy": {
+      "recommended_strategy": "raise_terms_or_localize_before_promoting_residual",
+      "rationale": "some rows need more than 10% residual retention, so residuals are acting like a large side channel",
+      "evaluated_rows": 2
     }
   },
   "rdp_frontier": {

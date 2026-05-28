@@ -895,6 +895,30 @@ def _residual_budget_tier(keep_ratio: float) -> str:
     return "expensive_residual"
 
 
+def _recommend_residual_escalation_strategy(budget_tier_counts: dict[str, int]) -> dict[str, Any]:
+    expensive = int(budget_tier_counts.get("expensive_residual", 0))
+    moderate = int(budget_tier_counts.get("moderate_residual", 0))
+    cheap = int(budget_tier_counts.get("cheap_residual", 0))
+    total = cheap + moderate + expensive
+    if expensive:
+        strategy = "raise_terms_or_localize_before_promoting_residual"
+        rationale = "some rows need more than 10% residual retention, so residuals are acting like a large side channel"
+    elif moderate:
+        strategy = "promote_residual_with_payload_warning"
+        rationale = "failed rows recover within 5%-10% residual retention, but the storage tradeoff must remain visible"
+    elif cheap:
+        strategy = "promote_sparse_residual_candidate"
+        rationale = "failed rows recover below 5% residual retention, which is compact enough for the next implementation checkpoint"
+    else:
+        strategy = "no_escalation_needed_or_no_recovery"
+        rationale = "no previously failed rows were recovered by the escalation budget"
+    return {
+        "recommended_strategy": strategy,
+        "rationale": rationale,
+        "evaluated_rows": total,
+    }
+
+
 def _summarize_sparse_residual_escalation(rows: list[dict[str, Any]]) -> dict[str, Any]:
     promotable_rows = 0
     solved_by_escalation: list[dict[str, Any]] = []
@@ -930,6 +954,7 @@ def _summarize_sparse_residual_escalation(rows: list[dict[str, Any]]) -> dict[st
         "promotable_rows": promotable_rows,
         "solved_by_escalation": solved_by_escalation,
         "budget_tier_counts": budget_tier_counts,
+        "recommended_next_strategy": _recommend_residual_escalation_strategy(budget_tier_counts),
     }
 
 
@@ -1434,6 +1459,8 @@ def main() -> int:
             f"- promotable rows = `{_format_float(sparse_residual_escalation_summary['promotable_rows'])}`",
             f"- solved by escalation = `{_format_float(len(sparse_residual_escalation_summary['solved_by_escalation']))}`",
             f"- budget tiers = `{sparse_residual_escalation_summary['budget_tier_counts']}`",
+            f"- recommended strategy = `{sparse_residual_escalation_summary['recommended_next_strategy']['recommended_strategy']}`",
+            f"- rationale: {sparse_residual_escalation_summary['recommended_next_strategy']['rationale']}",
             "",
             "| dataset | terms | minimum keep ratio | budget tier | R2 | payload ratio |",
             "| --- | ---: | ---: | --- | ---: | ---: |",

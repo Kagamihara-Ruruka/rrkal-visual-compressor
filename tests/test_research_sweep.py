@@ -12,6 +12,7 @@ from scripts.run_defensible_research_sweep import (
     _parse_float_list,
     _parse_string_list,
     _recommend_noise_frontier_strategy,
+    _recommend_residual_escalation_strategy,
     _residual_budget_tier,
     _summarize_frontier_by_key,
     _summarize_frontier_tiers_by_key,
@@ -354,6 +355,19 @@ def test_residual_budget_tier_labels_cost_level():
     assert _residual_budget_tier(0.15) == "expensive_residual"
 
 
+def test_residual_escalation_recommendation_flags_expensive_side_channel():
+    result = _recommend_residual_escalation_strategy(
+        {
+            "cheap_residual": 0,
+            "moderate_residual": 1,
+            "expensive_residual": 1,
+        }
+    )
+
+    assert result["recommended_strategy"] == "raise_terms_or_localize_before_promoting_residual"
+    assert result["evaluated_rows"] == 2
+
+
 def test_sparse_residual_escalation_tracks_rows_solved_by_larger_budget():
     rows = [
         {
@@ -397,6 +411,10 @@ def test_sparse_residual_escalation_tracks_rows_solved_by_larger_budget():
     assert summary["solved_by_escalation"][0]["keep_ratio"] == 0.15
     assert summary["solved_by_escalation"][0]["budget_tier"] == "expensive_residual"
     assert summary["budget_tier_counts"]["expensive_residual"] == 1
+    assert (
+        summary["recommended_next_strategy"]["recommended_strategy"]
+        == "raise_terms_or_localize_before_promoting_residual"
+    )
 
 
 def test_noise_frontier_recommendation_promotes_local_strategy_for_high_noise():

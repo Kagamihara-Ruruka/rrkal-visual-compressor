@@ -79,6 +79,7 @@ This adds:
 - sparse residual escalation diagnostic that retries failed rows with larger residual budgets, reporting the minimum promotable residual budget so we can tell whether a failure is a budget issue or a model-family issue
 - residual budget tier labels:
   `cheap_residual` below 5%, `moderate_residual` from 5% through 10%, and `expensive_residual` above 10%
+- residual escalation recommendation, which turns the budget tier mix into a next experiment label without claiming the residual layer is production-ready
 
 ## 5) Advance / rollback rules
 
@@ -109,4 +110,5 @@ Regress immediately if:
 - only promote residual retention after the sparse residual frontier reports promotable rows, not merely positive R2 delta
 - inspect sparse residual escalation before changing model families; if a failed row passes only after a much larger residual budget, record the payload tradeoff explicitly
 - treat `expensive_residual` as a warning to test higher terms, local basis, wavelet, or adaptive segmentation before declaring the residual layer efficient
+- treat residual escalation recommendation as a queue pointer; verify it with the next benchmark before changing default compression behavior
 - prepare renderer-side benchmark: decode cost vs raster budget coupling

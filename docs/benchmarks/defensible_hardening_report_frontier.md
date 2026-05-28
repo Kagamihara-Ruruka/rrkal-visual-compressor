@@ -74,6 +74,8 @@
 - promotable rows = `10`
 - solved by escalation = `2`
 - budget tiers = `{'cheap_residual': 0, 'moderate_residual': 1, 'expensive_residual': 1}`
+- recommended strategy = `raise_terms_or_localize_before_promoting_residual`
+- rationale: some rows need more than 10% residual retention, so residuals are acting like a large side channel
 
 | dataset | terms | minimum keep ratio | budget tier | R2 | payload ratio |
 | --- | ---: | ---: | --- | ---: | ---: |
