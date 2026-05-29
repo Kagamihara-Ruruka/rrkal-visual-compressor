@@ -20,3 +20,4 @@ mvp_outputs/
 *.vizasset/
 *.vizretain/
 *.vizclean/
+.pytest_cache_working/

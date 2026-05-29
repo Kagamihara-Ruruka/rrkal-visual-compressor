@@ -1,0 +1,60 @@
+name: benchmark-precheck
+
+on:
+  push:
+    paths:
+      - "docs/benchmarks/**"
+      - "scripts/**"
+      - "src/**"
+      - "tests/test_precheck_benchmarks.py"
+      - "tests/test_scan_benchmark_fields.py"
+      - "tests/test_benchmark_contracts.py"
+      - "tests/test_cli_smoke.py"
+      - "tests/test_convert_legacy_hardening_reports.py"
+      - "pyproject.toml"
+      - "requirements*"
+  pull_request:
+    paths:
+      - "docs/benchmarks/**"
+      - "scripts/**"
+      - "src/**"
+      - "tests/test_precheck_benchmarks.py"
+      - "tests/test_scan_benchmark_fields.py"
+      - "tests/test_benchmark_contracts.py"
+      - "tests/test_cli_smoke.py"
+      - "tests/test_convert_legacy_hardening_reports.py"
+      - "pyproject.toml"
+      - "requirements*"
+
+jobs:
+  precheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install package and dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then
+            python -m pip install -r requirements.txt
+          elif [ -f pyproject.toml ]; then
+            python -m pip install -e .[dev]
+          else
+            python -m pip install -e .
+          fi
+      - name: Run benchmark gate smoke tests
+        run: |
+          python -m pytest tests/test_precheck_benchmarks.py tests/test_scan_benchmark_fields.py tests/test_benchmark_contracts.py tests/test_cli_smoke.py tests/test_convert_legacy_hardening_reports.py -q
+      - name: Run benchmark precheck
+        run: |
+          python scripts/precheck_benchmarks.py \
+            --root docs/benchmarks \
+            --pattern "*.json" \
+            --scan-out docs/benchmarks/scan_report_ci.json \
+            --contract-out docs/benchmarks/contract_matrix_ci.json \
+            --fail-on-scan-warning

@@ -1,142 +1,112 @@
-# 基準測試紀錄（Benchmark Evidence）
+﻿# Benchmark Evidence（繁體中文）
 
-此資料夾放置可重複驗證的小型壓縮實驗快照（`JSON`）與對應報告（`Markdown`），用於支撐壓縮與門檻政策（gate policy）的論證。
+本目錄包含視覺壓縮 benchmark 的 JSON 報表與對應 Markdown 摘要，主要作為研究結果與回歸門檻的證據。
 
-## 藝術資源
+## 核心文件
 
-- `smooth_100k_terms_sweep.json`：100,000 點平滑訊號、頻率項 32/64/96 的 sweep。
-- `smooth_100k_terms_sweep.md`：同上 human-readable 摘要。
-- `smooth_100k_channel_k_sweep.json`：`K` 值 2/2.5/3/3.5/4 sweep。
-- `smooth_100k_channel_k_sweep.md`：同上摘要。
-- `fourier_sweep_16_32_threshold_0995.json`：10,000 點 `fourier_terms` 16 與 32，覆蓋閾值 `0.995`。
-- `fourier_sweep_16_32_threshold_0995.md`：同上摘要。
-- `fourier_sweep_10k_16_32_threshold_0995.json`：帶有額外視窗與 ε 設定的壓力測試。
-- `fourier_sweep_10k_16_32_threshold_0995.md`：同上摘要。
-- `defensible_threshold_sweep_10k_16_terms.json`：16 項 `terms` 的 coverage threshold 敏感度測試。
-- `defensible_threshold_sweep_10k_16_terms.md`：同上摘要。
-- `terms_channel_k_grid.json`：`terms` 與 `channel_k` 網格 sweep。
-- `terms_channel_k_grid.md`：同上摘要。
-- `terms_channel_k_threshold_grid.json`：`terms`×`channel_k`×`threshold` sweep。
-- `terms_channel_k_threshold_grid.md`：同上摘要。
-- `terms_channel_kind_threshold_grid.json`：多種資料型別之穩健性比較。
-- `terms_channel_kind_threshold_grid.md`：同上摘要。
-- `terms_channel_kind_threshold_grid_10k.json` / `_10k.md`：10k 點門檻資料（未加閘門）。
-- `terms_channel_kind_threshold_grid_10k_gate.json` / `_10k_gate.md`：10k 點門檻資料（加上渲染門檻）。
-- `terms_channel_kind_threshold_grid_5k_hard.json` / `_5k_hard.md`：含噪、突變、階梯的堅固訊號穩健性探測。
-- `terms_channel_kind_threshold_grid_5k_noiseclean.json` / `_5k_noiseclean.md`：`--sigma-clip 2.5 --auto-noise-layer` 的去雜訊版本。
-- `defensible_hardening_report_terms64.json` / `.md`：`16,32,64` Fourier terms 的研究強化 sweep，用來檢查更高 terms 是否能降低 sparse residual budget，再決定是否新增模型家族。
-- `README.md`：英文版。
+- `smooth_100k_terms_sweep.json` / `smooth_100k_terms_sweep.md`
+- `smooth_100k_channel_k_sweep.json` / `smooth_100k_channel_k_sweep.md`
+- `fourier_sweep_16_32_threshold_0995.json` / `fourier_sweep_16_32_threshold_0995.md`
+- `fourier_sweep_10k_16_32_threshold_0995.json` / `fourier_sweep_10k_16_32_threshold_0995.md`
+- `defensible_threshold_sweep_10k_16_terms.json` / `defensible_threshold_sweep_10k_16_terms.md`
+- `terms_channel_k_grid.json` / `terms_channel_k_grid.md`
+- `terms_channel_k_threshold_grid.json` / `terms_channel_k_threshold_grid.md`
+- `terms_channel_kind_threshold_grid.json` / `terms_channel_kind_threshold_grid.md`
+- `terms_channel_kind_threshold_grid_10k.json` / `terms_channel_kind_threshold_grid_10k.md`
+- `terms_channel_kind_threshold_grid_10k_gate.json` / `terms_channel_kind_threshold_grid_10k_gate.md`
+- `terms_channel_kind_threshold_grid_5k_hard.json` / `terms_channel_kind_threshold_grid_5k_hard.md`
+- `terms_channel_kind_threshold_grid_5k_noiseclean.json` / `terms_channel_kind_threshold_grid_5k_noiseclean.md`
+- `defensible_hardening_report_terms64.json` / `defensible_hardening_report_terms64.md`
+- `README.md`
 
-## 目前觀察重點
+## 主要欄位
 
-- `defensible_rows_count`：高保真（`R2>=0.99`）且通過通道覆蓋率閾值的候選列數。
-- `defensible_rows_ratio`：上述可用列的比例。
-- `package_wins_against_direct_svg_gzip_count`：壓縮套件比 `SVG.gz` 小的案例數。
-- `package_wins_against_source_csv_gzip_count`：壓縮套件比原始 `CSV.gz` 小的案例數。
-- `benchmark_gate.ok`：門檻是否同時通過。
-- `defensible_hardening_report_terms64` 目前顯示 spike-like 資料的 mixed evidence：
-  `spikes/16` 需要 `20%` residual、`spikes/32` 需要 `10%` residual，而 `spikes/64` 已能通過預設 `5%` sparse residual frontier。因此在新增 local model family 前，應先測更高 terms 的成本邊界。
+- `defensible_rows_count`：滿足防禦門檻（例如 R2 >= 0.99）的列數。
+- `defensible_rows_ratio`：`defensible_rows_count / high_fidelity_rows_count`。
+- `package_wins_against_direct_svg_gzip_count`：`package / direct_svg_gzip` 有優勢的列數。
+- `package_wins_against_source_csv_gzip_count`：`package / source_csv_gzip` 有優勢的列數。
+- `benchmark_gate.ok`：該報表是否通過門檻。
+- `defensible_hardening_report_terms64`：`spikes` 族群下對 `16/32/64` 項的殘差改善曲線。
 
-## 指令參考
+## 產生 benchmark 的範例
 
 ```bash
-py scripts/run_terms_channel_kind_threshold_sweep.py \
-  --sample-sizes 10000 \
-  --synthetic-kinds all \
-  --fourier-terms 16,32,64 \
-  --channel-k 2,3,4 \
-  --channel-window 16 \
-  --channel-band-epsilon 0.04 \
-  --rdp-epsilon 0.6 \
-  --thresholds 0.90,0.92,0.95,0.98 \
-  --svg-samples 240 \
-  --require-svg-gzip-win \
-  --min-defensible-ratio 0.2 \
-  --out-json docs/benchmarks/terms_channel_kind_threshold_grid_10k_gate.json \
+py scripts/run_terms_channel_kind_threshold_sweep.py `
+  --sample-sizes 10000 `
+  --synthetic-kinds all `
+  --fourier-terms 16,32,64 `
+  --channel-k 2,3,4 `
+  --channel-window 16 `
+  --channel-band-epsilon 0.04 `
+  --rdp-epsilon 0.6 `
+  --thresholds 0.90,0.92,0.95,0.98 `
+  --svg-samples 240 `
+  --require-svg-gzip-win `
+  --min-defensible-ratio 0.2 `
+  --out-json docs/benchmarks/terms_channel_kind_threshold_grid_10k_gate.json `
   --out-md docs/benchmarks/terms_channel_kind_threshold_grid_10k_gate.md
 ```
 
-### 合約驗證
-
-使用基準合約驗證器確認欄位一致性，避免不同 sweep 設定下拿到不可比對的結果：
+## 契約驗證
 
 ```bash
-py scripts/validate_benchmark_contracts.py \
-  docs/benchmarks/terms_channel_kind_threshold_grid_10k_gate.json \
+py scripts/validate_benchmark_contracts.py `
+  docs/benchmarks/terms_channel_kind_threshold_grid_10k_gate.json `
   --out docs/benchmarks/terms_channel_kind_threshold_grid_10k_gate_contract.json
 ```
 
-合約檢核包含：
+### 驗證規則（摘要）
 
-- 對固定 `(synthetic_kind, samples, channel_k)`，`fourier_r2` 不隨項數下降。
-- 覆蓋率存在時，必須落在 `[0,1]`。
-- 壓縮比欄位必須是有限且大於 0 的值。
-- summary 的行為欄位要可由 row-level 計算還原一致。
+- 相同 `(synthetic_kind, samples, channel_k)` 下，`fourier_terms` 遞增不應使 `fourier_r2` 下降。
+- `channel_coverage_ratio`（若存在）必須在 `[0, 1]`。
+- 比率欄位必須是正且有限數。
+- `summary` 與 row 級指標需一致。
 
-一次檢查整個資料夾全部 JSON：
-
-```bash
-py scripts/validate_benchmark_contracts_all.py \
-  --root docs/benchmarks \
-  --out docs/benchmarks/contract_matrix_latest.json
-```
-
-腳本會逐檔輸出 `PASS/FAIL`，有任一失敗會以非 0 離開碼回報。
-
-## 英文版
-
-See `README.md`.
-
-## 跨機器重現性檢核（推薦）
-
-建議使用 `check_benchmark_parity.py` 除了比對雜湊之外，還能比對關鍵邏輯欄位（`benchmark_gate`、`rows_by_kind`）。  
-流程：
-
-1. 於 `K:` 與 `C:` 以相同參數輸出同名 JSON（含 `--out-json`）。
-2. 再比較兩個 JSON：
+### 全域掃描與嚴格驗證
 
 ```bash
-py scripts/check_benchmark_parity.py \
-  --left docs/benchmarks/ci_terms_channel_kind_threshold_sweep_k.json \
-  --right docs/benchmarks/ci_terms_channel_kind_threshold_sweep_c.json
+py scripts/scan_benchmark_fields.py --root docs/benchmarks --pattern "*.json" --out docs/benchmarks/scan_report.json
+py scripts/validate_benchmark_contracts_all.py --root docs/benchmarks --out docs/benchmarks/contract_matrix_latest.json
 ```
 
-這個工具會輸出：
+回傳 `PASS/FAIL`，並輸出逐檔錯誤明細。
 
-- `hash: MATCH`（表示二進位完全一致）
-- `logical_signature: PASS`（表示關鍵欄位邏輯一致）
+### 遷移 legacy hardening 報告（建議先 dry-run）
 
-可用單元測試直接驗證這個比對邏輯：
+若資料夾中仍有舊版 `defensible_hardening_report*.json`，可先做一次預覽：
 
 ```bash
-py -m pytest tests/test_benchmark_parity.py
+py scripts/convert_legacy_hardening_reports.py --root docs/benchmarks --dry-run
 ```
 
-透過測試可確認：
+確認轉換行為無誤後，再移除 `--dry-run` 直接輸出對應 `*_contract.json`，並可見每列轉換結果會保留 `_legacy_source` / `_legacy_defensible` 欄位方便追溯。
 
-- 完全相同檔案會回傳 `hash: MATCH`
-- 只有 metadata 差異時仍為 `logical_signature: PASS`
-- 關鍵欄位差異會回傳 `logical_signature: FAIL`
+## 合併前 precheck（強制）
 
-### K/C 交叉比對 + 合約檢查（推薦）
-
-可用單一命令一次完成雙端輸出比對與合約檢查：
+本機進行人工推進或上傳 benchmark 成果前，必須先跑：
 
 ```bash
-py scripts/compare_terms_channel_benchmark_parity.py \
-  --left-root "K:\\Codex\\2026-05-26\\qt-vispy\\rrkal-visual-compressor" \
-  --right-root "C:\\Users\\lyn59\\Documents\\Codex\\2026-05-26\\qt-vispy\\rrkal-visual-compressor" \
-  --sample-sizes 1000 \
-  --synthetic-kinds smooth \
-  --fourier-terms 16 \
-  --channel-k 3 \
-  --channel-window 16 \
-  --channel-band-epsilon 0.04 \
-  --rdp-epsilon 0.6 \
-  --thresholds 0.90 \
-  --svg-samples 120 \
-  --left-out-json docs/benchmarks/ci_left.json \
-  --right-out-json docs/benchmarks/ci_right.json \
-  --report-json docs/benchmarks/ci_compare_report.json \
-  --validate-contract
+py scripts/precheck_benchmarks.py `
+  --root docs/benchmarks `
+  --pattern "*.json" `
+  --scan-out docs/benchmarks/scan_report.json `
+  --contract-out docs/benchmarks/contract_matrix_precheck.json `
+  --fail-on-scan-warning
 ```
+
+### precheck 輸出欄位
+
+- `scan_ok`：欄位結構掃描是否成功。
+- `contract_ok`：契約驗證是否成功。
+- `scan`：欄位掃描彙總。
+- `contract`：`failed/passed/total/status`。
+- `failed_report`：契約失敗時的報告路徑（若 `--contract-out` 啟用）。
+- `status_counts`：`PASS`/`FAIL`/`SKIP` 各類數量。
+- `skipped`：未參與嚴格驗證的非契約/legacy 檔數。
+- `skip_reasons`：`SKIP` 的原因映射。
+- `total_inputs`：本次掃描的檔案總數。
+
+## 文件對應
+
+- CI 使用流程可見 `.github/workflows/benchmarks-precheck.yml`。
+- 其他欄位定義與契約規則請同步閱讀 [docs/benchmarks/CONTRACT.zh-TW.md] 和 [docs/benchmarks/CONTRACT.md]。

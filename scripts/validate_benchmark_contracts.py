@@ -13,6 +13,10 @@ if str(PROJECT_SRC) not in os.sys.path:
 from vizcompress.benchmark_contracts import validate_benchmark_contract
 
 
+def _iter_lines_with_prefix(errors: list[str]) -> list[str]:
+    return [f"- {item}" for item in errors]
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Validate benchmark payload contracts.")
     parser.add_argument("input", type=Path, help="Benchmark JSON output path.")
@@ -51,9 +55,11 @@ def main() -> int:
         print(f"report: {out}")
 
     print("PASS" if passed else "FAIL")
+    if args.out is not None and not passed:
+        print(f"errors: {args.out}")
     if errors:
-        for item in errors:
-            print(f"- {item}")
+        for item in _iter_lines_with_prefix(errors):
+            print(item)
 
     return 0 if passed else 2
 

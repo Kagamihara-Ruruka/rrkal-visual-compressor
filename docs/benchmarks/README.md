@@ -219,14 +219,52 @@ py scripts/validate_benchmark_contracts_all.py \
   --out docs/benchmarks/contract_matrix_latest.json
 ```
 
+Legacy hardening reports can be converted to contract-shaped artifacts with this command:
+
+```bash
+py scripts/convert_legacy_hardening_reports.py --root docs/benchmarks --dry-run
+```
+
+Use without `--dry-run` only on a controlled one-off migration after review, which writes:
+
+- `<original>_contract.json` for each recognized `defensible_hardening_report*.json`.
+- rows converted into current contract fields.
+- `_legacy_source` and `_legacy_defensible` tags for provenance and audit.
+
 This prints PASS/FAIL per file and returns a non-zero exit code on any failure.
+
+Run both field scan and contract checks in one precheck command before opening
+pull requests or promoting artifacts. For local manual promotion, treat this command
+as mandatory:
+
+```bash
+py scripts/precheck_benchmarks.py \
+  --root docs/benchmarks \
+  --pattern "*.json" \
+  --scan-out docs/benchmarks/scan_report.json \
+  --contract-out docs/benchmarks/contract_matrix_precheck.json \
+  --fail-on-scan-warning
+```
+
+The precheck prints a JSON summary with:
+
+- `scan_ok`: fast field scan result.
+- `contract_ok`: strict contract result.
+- `scan.summary`: aggregated scan metrics.
+- `contract`: `failed/passed/total` counters and `status`.
+- `failed_report`: contract report path when strict checks fail.
+- `status_counts` and `skipped` (plus `skip_reasons`): non-contract payloads are reported with explicit skip reasons.
+- `total_inputs`: total files considered by the precheck run.
+
+In CI, keep `--fail-on-scan-warning` enabled so malformed benchmark JSON is
+blocked early, and keep both reports (`scan` + contract) for auditability.
 
 For K/C reproducibility plus contract safety checks in one command:
 
 ```bash
 py scripts/compare_terms_channel_benchmark_parity.py \
-  --left-root "K:\\Codex\\2026-05-26\\qt-vispy\\rrkal-visual-compressor" \
-  --right-root "C:\\Users\\lyn59\\Documents\\Codex\\2026-05-26\\qt-vispy\\rrkal-visual-compressor" \
+  --left-root "L:\\rrkal-visual-compressor" \
+  --right-root "L:\\rrkal-visual-compressor" \
   --sample-sizes 1000 \
   --synthetic-kinds smooth \
   --fourier-terms 16 \
@@ -254,6 +292,7 @@ The generated report JSON includes machine-checkable status:
 - `contract_validation.left_passed/right_passed` are boolean pass flags
 - `contract_violations` lists contract-fail summaries
 
+By default, parity contract checks are opt-in in this script.
 In CI, use a strict contract gate with:
 
 ```bash
