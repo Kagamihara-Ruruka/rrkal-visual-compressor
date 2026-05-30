@@ -473,3 +473,9 @@ py scripts/convert_legacy_hardening_reports.py --root docs/benchmarks
   - `test_summarize_rows_without_ratio_fields_returns_safe_summary`
 - Commit: `1546d0a` (`harden(benchmarks): tolerate direct ratio alias in summaries`).
 
+## Checkpoint: May 31, 2026 (benchmark summary ratio string compatibility)
+- Extended `_ratio()` in `src/vizcompress/benchmarks.py` to parse finite numeric strings, so fallback/summarization handles external payloads where ratios come as strings.
+- Added regression coverage in [tests/test_benchmark_summary.py](/L:/rrkal-visual-compressor/tests/test_benchmark_summary.py):
+  - `test_summarize_rows_accepts_numeric_ratio_strings_for_fallback_paths`
+- Commit: `b477e1e` (`harden(benchmarks): accept numeric ratio strings in summary alias path`).
+
