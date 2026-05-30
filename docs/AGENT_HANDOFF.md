@@ -416,6 +416,16 @@ py scripts/convert_legacy_hardening_reports.py --root docs/benchmarks
   - `test_selector_recommendation_keeps_string_fields_robust`
 - Next: keep contract docs/CLI coverage aligned and continue with next governance or CLI hardening slice.
 
+## Checkpoint: May 31, 2026 (selector bool ratio hardening)
+
+- Aligned selector ratio parsing with benchmark contract numeric rules:
+  - `src/vizcompress/selectors.py` now rejects bool ratio values instead of coercing `True`/`False` to `1.0`/`0.0`.
+  - Added `test_selector_recommendation_rejects_bool_ratio_fields` in `tests/test_timeseries_compression.py`.
+- Verification snapshot:
+  - `python -m pytest tests/test_timeseries_compression.py -q --maxfail=1`: `55 passed`
+  - `python -m pytest tests/test_benchmark_contracts.py tests/test_scan_benchmark_fields.py tests/test_precheck_benchmarks.py tests/test_cli_smoke.py -q --maxfail=1`: `30 passed`
+- Exchange inbox status checked at checkpoint close: `a_1_rrkal-visual-compressor.md` remains `needs-evidence`; no new response required.
+
 ## Checkpoint: May 31, 2026 (progress push)
 - Confirmed target forum rule files and inbox status.
 - Verified no `Status: new` entries for `rrkal-visual-compressor` at this checkpoint (`a_1_rrkal-visual-compressor.md` is `needs-evidence`).
