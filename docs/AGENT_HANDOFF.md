@@ -113,6 +113,24 @@ layers when available; a clean package exports only the cleaned main signal.
   - command status: pass
   - `compare` with `--baseline direct=<direct_svg>` returns baseline evidence for direct baseline
 
+## Immediate Session Update (May 31, 2026)
+
+- Re-ran MVP from repo root as a push-validation check:
+  - `python -m vizcompress.cli mvp --samples 5000 --synthetic-kind spikes --fourier-terms 64 --out MVP_CHECKPOINT`
+  - command status: pass
+  - output status: `pass` with package + benchmark evidence generated under `MVP_CHECKPOINT`
+  - validation results:
+    - `package_ok=true`
+    - `source_ok=true`
+    - `benchmark_gate.ok=true`
+  - key metrics:
+    - `fourier_r2=0.9871501503`
+    - `package_bytes=74242`
+    - `source_csv_gzip_to_package_ratio=1.0395`
+    - `direct_svg_gzip_to_package_ratio=0.38929`
+  - recommendation: `package_preferred`, `gzip_recommendation=package_beats_raw_svg_but_not_gzip`
+- No code changes required for this check; no functional regression observed.
+
 ## P1 Push Notes
 
 - Fixed benchmark contract validation for non-channel benches: `channel_k` is now optional in grouping logic (`channel_k=None` treated as 0.0).
@@ -383,3 +401,11 @@ py scripts/convert_legacy_hardening_reports.py --root docs/benchmarks
   - `py scripts/compare_terms_channel_benchmark_parity.py --help` (confirm optional contract flags presence)
   - `py -m pytest tests/test_convert_legacy_hardening_reports.py -q` (contract migration regression smoke)
   - `git status --short` (confirm only intended scope changed)
+
+## Checkpoint: May 31, 2026 (progress push)
+- Confirmed target forum rule files and inbox status.
+- Verified no `Status: new` entries for `rrkal-visual-compressor` at this checkpoint (`a_1_rrkal-visual-compressor.md` is `needs-evidence`).
+- Executed MVP pipeline once (`py -m vizcompress.cli mvp --samples 5000 --synthetic-kind spikes --fourier-terms 64 --out MVP_CHECKPOINT`) previously in this session; run passed with `fourier_r2=0.9871501503`, benchmark gate pass, and generated evidence summary in previous handoff entry.
+- Attempted to remove `L:\rrkal-visual-compressor\MVP_CHECKPOINT` for workspace hygiene, but one generated artifact `model.vizretain` is ACL-restricted (`Access is denied`) in this environment.
+- Working decision: keep artifact until environment-level permission resolution; continue implementation with code paths under `src/` and `docs/`.
+- Next: proceed with a reproducible small feature slice in `rrkal-visual-compressor` if no blocking cross-project dependency is reported.
