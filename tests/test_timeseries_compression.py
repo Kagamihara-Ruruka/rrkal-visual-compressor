@@ -832,6 +832,35 @@ def test_selector_recommends_from_benchmark_row_shape():
     ) == {"direct_svg_gzip_preferred": 1}
 
 
+def test_selector_recommends_with_gzip_only_ratio_fields():
+    row = {
+        "direct_svg_gzip_to_package_ratio": 1.8,
+        "fourier_r2": 0.99,
+        "x_domain_mode": "stored_x",
+        "x_domain_parameter_count": 2.0,
+        "fourier_parameter_count": 32,
+        "channel_coverage_ratio": 0.95,
+    }
+
+    assert recommend_benchmark_row(row) == "package_preferred"
+    assert recommend_benchmark_row_gzip(row) == "package_preferred_against_gzip"
+
+
+def test_selector_recommendation_keeps_string_fields_robust():
+    row = {
+        "direct_svg_to_package_ratio": "bad",
+        "direct_svg_gzip_to_package_ratio": "2.2",
+        "fourier_r2": 0.97,
+        "x_domain_mode": "stored_x",
+        "x_domain_parameter_count": 2.0,
+        "fourier_parameter_count": 32,
+        "channel_coverage_ratio": 0.95,
+    }
+
+    assert recommend_benchmark_row(row) == "package_smaller_but_low_fidelity"
+    assert recommend_benchmark_row_gzip(row) == "package_smaller_than_gzip_but_low_fidelity"
+
+
 def test_benchmark_can_run_all_synthetic_kinds():
     result = benchmark_synthetic_sizes(
         [1000],
