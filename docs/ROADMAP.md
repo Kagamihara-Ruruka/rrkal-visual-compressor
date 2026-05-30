@@ -202,6 +202,28 @@ Definition of done:
   - error budget constraints
   - payload constraints
 
+## Phase 2.8: Operational Hardening
+
+Goal: make repeated local sessions reproducible and low-noise.
+
+Tasks:
+
+- Keep generated artifact directories out of commit history unless explicitly
+  approved.
+- Align project documentation with the actual workspace boundaries:
+  - `L:\rrkal-visual-compressor` as the development workspace.
+  - `L:\AGENT_EXCHANGE` as the non-product coordination forum.
+- Add a checkpoint-close flow that records unresolved recommendations and
+  required follow-ups.
+
+Definition of done:
+
+- No generated artifacts are committed by default.
+- The handoff process for this repo clearly records environment assumptions and
+  next actions.
+- At least one checkpoint update includes a concrete next-step item for another
+  team.
+
 ## Phase 3: `.vizasset` Package Format
 
 Goal: define the handoff contract between compressor, editor, and RRKAL.

@@ -36,14 +36,17 @@ they have a CLI path and tests.
 
 ## Engineering Rules
 
-- Primary development happens in the cloud workspace:
-  `K:\Codex\2026-05-26\qt-vispy\rrkal-visual-compressor`.
-- The local `C:\Users\lyn59\Documents\Codex\2026-05-26\qt-vispy`
-  workspace is a test/verification copy, not the canonical development copy.
-- GitHub must stay synchronized from the cloud workspace; after cloud commits,
-  push `main` to `origin`.
-- When local testing is needed, copy or pull the cloud state into the local
-  workspace, run tests locally, then commit/push from the cloud workspace.
+- Primary development workspace is:
+  `L:\rrkal-visual-compressor`.
+- `L:\AGENT_EXCHANGE` is the cross-agent coordination forum and is not a source
+  repo; it is never pushed to GitHub.
+- In this session, other folders on `L:` are treated as read-only unless explicitly
+  permitted for the current task.
+- GitHub must stay synchronized from this project workspace; after commits, push
+  `main` to `origin`.
+- Generated outputs are reviewed before commit, and one-off artifacts (including
+  MVP/bench output folders) should be cleaned from the working tree unless they
+  are officially tracked docs artifacts.
 - Every new user-facing feature needs a CLI route, tests, and metrics output.
 - Do not add hidden one-off scripts for core behavior.
 - Do not commit generated outputs, private datasets, caches, or local runtime

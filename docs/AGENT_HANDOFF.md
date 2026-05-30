@@ -409,3 +409,12 @@ py scripts/convert_legacy_hardening_reports.py --root docs/benchmarks
 - Attempted to remove `L:\rrkal-visual-compressor\MVP_CHECKPOINT` for workspace hygiene, but one generated artifact `model.vizretain` is ACL-restricted (`Access is denied`) in this environment.
 - Working decision: keep artifact until environment-level permission resolution; continue implementation with code paths under `src/` and `docs/`.
 - Next: proceed with a reproducible small feature slice in `rrkal-visual-compressor` if no blocking cross-project dependency is reported.
+
+## Checkpoint: May 31, 2026 (workspace governance hardening)
+- Updated `docs/DEVELOPMENT_GOVERNANCE.md` to reflect the active boundary:
+  - authoritative workspace is `L:\rrkal-visual-compressor`
+  - `L:\AGENT_EXCHANGE` is non-product coordination forum and not pushed to GitHub
+  - other folders on L are treated as read-only in this session
+  - generated outputs should not be committed unless explicitly approved
+- Inserted `Phase 2.8: Operational Hardening` into `docs/ROADMAP.md` to formalize artifact cleanup and checkpoint flow as an explicit backlog item.
+- Next step: implement a CLI/utility cleanup utility or documented pre-run check for stale output directories to reduce future `Access denied`/stale artifact friction.
