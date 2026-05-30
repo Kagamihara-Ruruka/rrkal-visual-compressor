@@ -462,3 +462,14 @@ py scripts/convert_legacy_hardening_reports.py --root docs/benchmarks
 - `README.md` now documents `--clean-output` examples for `build`, `mvp`, `bench`, and `video-bench`.
 - Next: run a short sanity command path (`bench`/`video-bench`) under `PYTHONPATH=...` if environment permits, then evaluate whether `bench --clean-output` should also delete report parent directory as a unit.
 
+## Checkpoint: May 31, 2026 (benchmark summary ratio alias hardening)
+- `src/vizcompress/benchmarks.py` now tolerates missing `direct_svg_to_package_ratio` in benchmark rows by treating it as `direct_svg_gzip_to_package_ratio` in summary selection logic.
+- Added safe helpers in `_summarize_rows`:
+  - `_ratio()` for finite numeric extraction with alias fallback
+  - `_best_row()` robust selection when preferred field is absent
+  - `_row_identity()` null-safe field reads for best-row summaries
+- Added regression coverage in [tests/test_benchmark_summary.py](/L:/rrkal-visual-compressor/tests/test_benchmark_summary.py):
+  - `test_summarize_rows_uses_direct_svg_gzip_ratio_when_direct_ratio_missing`
+  - `test_summarize_rows_without_ratio_fields_returns_safe_summary`
+- Commit: `1546d0a` (`harden(benchmarks): tolerate direct ratio alias in summaries`).
+
