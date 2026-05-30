@@ -143,6 +143,11 @@ def main(argv: list[str] | None = None) -> int:
     bench.add_argument("--out", type=Path, default=Path("benchmark_outputs/size_sweep.json"), help="Benchmark JSON path.")
     bench.add_argument("--report-md", type=Path, default=None, help="Optional Markdown benchmark report path.")
     bench.add_argument(
+        "--clean-output",
+        action="store_true",
+        help="Clean/recreate benchmark output targets before writing.",
+    )
+    bench.add_argument(
         "--synthetic-kind",
         choices=(*SYNTHETIC_KINDS, "all"),
         default="smooth",
@@ -240,6 +245,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     video_bench.add_argument("--out", type=Path, default=Path("benchmark_outputs/video.json"), help="Benchmark JSON path.")
     video_bench.add_argument("--report-md", type=Path, default=None, help="Optional Markdown report path.")
+    video_bench.add_argument(
+        "--clean-output",
+        action="store_true",
+        help="Clean/recreate benchmark output targets before writing.",
+    )
 
     args = parser.parse_args(argv)
     if args.version:
@@ -422,7 +432,7 @@ def _prepare_output_directory(path: Path, *, clean: bool, label: str) -> Path:
 
     if path.is_file():
         if not clean:
-            return
+            return path
         try:
             _force_remove_file(path)
         except (OSError, PermissionError) as exc:
@@ -448,6 +458,26 @@ def _prepare_output_directory(path: Path, *, clean: bool, label: str) -> Path:
     return path
 
 
+def _prepare_output_file(path: Path, *, clean: bool, label: str) -> Path:
+    if path.exists():
+        if path.is_dir():
+            if not clean:
+                return path
+            try:
+                shutil.rmtree(path)
+            except (OSError, PermissionError) as exc:
+                return _fallback_output_file(path, f"{label}-dir", exc)
+        else:
+            if not clean:
+                return path
+            try:
+                _force_remove_file(path)
+            except (OSError, PermissionError) as exc:
+                return _fallback_output_file(path, label, exc)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path
+
+
 def _forceful_delete_directory(path: Path) -> None:
     for child in list(path.iterdir()):
         if child.is_dir() and not child.is_symlink():
@@ -456,6 +486,24 @@ def _forceful_delete_directory(path: Path) -> None:
             _force_remove_file(child)
     _set_writable(path)
     path.rmdir()
+
+
+def _fallback_output_directory(path: Path, label: str) -> Path:
+    fallback_name = f"{path.name}.retry_{int(time.time())}"
+    return path.with_name(fallback_name)
+
+
+def _fallback_output_file(path: Path, label: str, exception: BaseException) -> Path:
+    fallback_name = f"{path.stem}.retry_{int(time.time())}{path.suffix}"
+    fallback = path.with_name(fallback_name)
+    print(f"[{label}] warning: cannot clean '{path}' ({exception}). Using fallback output '{fallback}'.")
+    return fallback
+
+
+def _default_package_name(package_profile: str) -> str:
+    if package_profile == "clean":
+        return "model.vizclean"
+    return "model.vizretain"
 
 
 def _force_remove_file(path: Path) -> None:
@@ -469,11 +517,6 @@ def _set_writable(path: Path) -> None:
     except OSError:
         # Proceed with best effort. Exact failure will surface as a precise error.
         pass
-
-
-def _fallback_output_directory(path: Path, label: str) -> Path:
-    fallback_name = f"{path.name}.retry_{int(time.time())}"
-    return path.with_name(fallback_name)
 
 
 def _default_package_name(package_profile: str) -> str:
@@ -605,6 +648,13 @@ def _mvp(args: argparse.Namespace) -> int:
 
 
 def _bench(args: argparse.Namespace) -> int:
+    output_json = _prepare_output_file(args.out, clean=args.clean_output, label="bench")
+    report_md = None if args.report_md is None else _prepare_output_file(
+        args.report_md,
+        clean=args.clean_output,
+        label="bench-md",
+    )
+
     sample_sizes = parse_sample_sizes(args.synthetic_sizes)
     common = {
         "synthetic_kind": args.synthetic_kind,
@@ -689,10 +739,10 @@ def _bench(args: argparse.Namespace) -> int:
         )
     ):
         data["benchmark_gate"] = gate
-    output = write_benchmark(args.out, data)
+    output = write_benchmark(output_json, data)
     data["output"] = str(output)
-    if args.report_md is not None:
-        data["markdown_report"] = str(write_benchmark_markdown(args.report_md, data))
+    if report_md is not None:
+        data["markdown_report"] = str(write_benchmark_markdown(report_md, data))
     print(json.dumps(data, indent=2))
     return 0 if gate["ok"] else 1
 
@@ -821,6 +871,13 @@ def _video_bench(args: argparse.Namespace) -> int:
     if args.width < 1:
         raise ValueError("width must be >= 1")
 
+    output_json = _prepare_output_file(args.out, clean=args.clean_output, label="video-bench")
+    report_md = None if args.report_md is None else _prepare_output_file(
+        args.report_md,
+        clean=args.clean_output,
+        label="video-bench-md",
+    )
+
     data = benchmark_video_sweep(
         frame_counts,
         height=args.height,
@@ -830,10 +887,10 @@ def _video_bench(args: argparse.Namespace) -> int:
         noise_sigma=args.noise_sigma,
         baseline_noise_std=args.baseline_noise_std,
     )
-    output = write_video_benchmark(args.out, data)
+    output = write_video_benchmark(output_json, data)
     data["output"] = str(output)
-    if args.report_md is not None:
-        data["markdown_report"] = str(write_video_benchmark_markdown(args.report_md, data))
+    if report_md is not None:
+        data["markdown_report"] = str(write_video_benchmark_markdown(report_md, data))
     print(json.dumps(data, indent=2))
     return 0
 

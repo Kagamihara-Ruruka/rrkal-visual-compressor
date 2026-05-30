@@ -431,3 +431,9 @@ py scripts/convert_legacy_hardening_reports.py --root docs/benchmarks
 - This makes `--clean-output` robust when Windows ACL/lock prevents direct deletion of `model.vizretain` style directories.
 - Manual sanity run confirmed `--clean-output` is accepted when running from local `L:` source path (`PYTHONPATH=L:\rrkal-visual-compressor\src`).
 - Manual cleanup attempt revealed stale `tmp_cli_sanity_check/model.vizretain` may still be ACL-locked in this environment; fallback behavior is therefore the safest path to avoid hard stops.
+
+## Checkpoint: May 31, 2026 (CLI output hygiene continuity)
+- Extended `--clean-output` to `bench` and `video-bench` output targets in `src/vizcompress/cli.py`.
+- Added `_prepare_output_file(...)` and shared fallback behavior for file outputs (`.json`/`.md`) so stale or locked output artifacts do not hard-stop benchmark commands; command now transparently uses retry paths when forced cleanup fails.
+- `README.md` now documents `--clean-output` examples for `build`, `mvp`, `bench`, and `video-bench`.
+- Next: run a short sanity command path (`bench`/`video-bench`) under `PYTHONPATH=...` if environment permits, then evaluate whether `bench --clean-output` should also delete report parent directory as a unit.

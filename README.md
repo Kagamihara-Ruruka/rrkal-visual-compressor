@@ -139,6 +139,9 @@ Run the complete MVP demo pipeline:
 py -m vizcompress.cli mvp --samples 20000 --synthetic-kind spikes --fourier-terms 64 --out mvp_outputs
 ```
 
+When stale artifacts block reruns, add `--clean-output` to force a clean target
+path before generating outputs.
+
 This writes a demo asset package, preview SVGs, `demo.py`, `metrics.json`, a
 small benchmark report, and `mvp_summary.json`. The command exits successfully
 only when package validation, source reconstruction validation, and the MVP
@@ -149,6 +152,9 @@ Generate a synthetic time series, compress it with RDP and Fourier, then export 
 ```powershell
 py -m vizcompress.cli build --synthetic 100000 --fourier-terms 96 --svg-samples 1200 --out smoke_outputs
 ```
+
+Use `--clean-output` with `build` when you want each run to overwrite the output
+directory deterministically.
 
 Add `--direct-svg` when you want a traditional full-point SVG baseline in the
 same output directory:
@@ -219,6 +225,7 @@ growth:
 
 ```powershell
 py -m vizcompress.cli bench --synthetic-sizes 1000,10000,100000 --synthetic-kind spikes --fourier-terms 96 --svg-samples 1200 --channel --out benchmark_outputs/spike_sweep.json --report-md benchmark_outputs/spike_sweep.md
+py -m vizcompress.cli bench --synthetic-sizes 1000,10000,100000 --synthetic-kind spikes --fourier-terms 96 --channel --out benchmark_outputs/spike_sweep.json --report-md benchmark_outputs/spike_sweep.md --clean-output
 ```
 
 The benchmark reports direct SVG bytes, gzip-compressed direct SVG bytes,
@@ -257,6 +264,7 @@ Run a video benchmark on the new functional-video path:
 
 ```powershell
 py -m vizcompress.cli video-bench --frame-counts 120,240,480 --height 32 --width 32 --rank-values 2,4 --temporal-terms-values 8,16 --out benchmark_outputs/video.json --report-md benchmark_outputs/video.md
+py -m vizcompress.cli video-bench --frame-counts 120,240,480 --height 32 --width 32 --rank-values 2,4 --temporal-terms-values 8,16 --out benchmark_outputs/video.json --report-md benchmark_outputs/video.md --clean-output
 ```
 
 For CI or agent checkpoints, add `--require-svg-gzip-win`,
