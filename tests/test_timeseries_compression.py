@@ -861,6 +861,21 @@ def test_selector_recommendation_keeps_string_fields_robust():
     assert recommend_benchmark_row_gzip(row) == "package_preferred_against_gzip"
 
 
+def test_selector_recommendation_rejects_bool_ratio_fields():
+    row = {
+        "direct_svg_to_package_ratio": True,
+        "direct_svg_gzip_to_package_ratio": "2.2",
+        "fourier_r2": 0.97,
+        "x_domain_mode": "stored_x",
+        "x_domain_parameter_count": 2.0,
+        "fourier_parameter_count": 32,
+        "channel_coverage_ratio": 0.95,
+    }
+
+    assert recommend_benchmark_row(row) == "package_preferred"
+    assert recommend_benchmark_row_gzip(row) == "package_preferred_against_gzip"
+
+
 def test_benchmark_can_run_all_synthetic_kinds():
     result = benchmark_synthetic_sizes(
         [1000],

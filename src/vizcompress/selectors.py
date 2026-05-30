@@ -7,6 +7,8 @@ from typing import Any
 def _to_finite_ratio(value: Any) -> float | None:
     if value is None:
         return None
+    if isinstance(value, bool):
+        return None
     try:
         parsed = float(value)
     except (TypeError, ValueError):
