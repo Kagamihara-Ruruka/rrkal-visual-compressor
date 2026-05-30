@@ -857,8 +857,8 @@ def test_selector_recommendation_keeps_string_fields_robust():
         "channel_coverage_ratio": 0.95,
     }
 
-    assert recommend_benchmark_row(row) == "package_smaller_but_low_fidelity"
-    assert recommend_benchmark_row_gzip(row) == "package_smaller_than_gzip_but_low_fidelity"
+    assert recommend_benchmark_row(row) == "package_preferred"
+    assert recommend_benchmark_row_gzip(row) == "package_preferred_against_gzip"
 
 
 def test_benchmark_can_run_all_synthetic_kinds():
