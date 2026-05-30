@@ -246,15 +246,19 @@ layers when available; a clean package exports only the cleaned main signal.
 
 ## Outstanding Risks / Open Items (for next on-call window)
 
-- ✅ Decision: Precheck is mandatory for manual benchmark promotion and any local benchmark-significant workflow outside exploratory ad-hoc runs.
+- Implemented: Ratio-field compatibility for benchmark recommendations.
+  - `src/vizcompress/selectors.py` now uses `direct_svg_gzip_to_package_ratio` as a fallback target for recommendation scoring when raw ratio is missing/invalid.
+  - Added regression tests in `tests/test_timeseries_compression.py` (`test_selector_recommends_with_gzip_only_ratio_fields`, `test_selector_recommendation_keeps_string_fields_robust`).
+
+- Decision: Precheck is mandatory for manual benchmark promotion and any local benchmark-significant workflow outside exploratory ad-hoc runs.
   - Current enforcement point: CI gate + documented local promotion command.
   - Evidence target: `scripts/precheck_benchmarks.py` plus `py scripts/scan_benchmark_fields.py` / `py scripts/validate_benchmark_contracts_all.py`.
-- ✅ Decision: Keep `rows[].errors` path as the current relative/path-string form (`<path>: <error>`) for compatibility.
+- Decision: Keep `rows[].errors` path as the current relative/path-string form (`<path>: <error>`) for compatibility.
   - Avoid forcing absolute paths before adding a migration because existing tests and report diff scripts assert this contract.
-- ✅ Decision: Keep parity contract flags as opt-in flags (`--validate-contract`, `--require-contract-pass`) for now.
+- Decision: Keep parity contract flags as opt-in flags (`--validate-contract`, `--require-contract-pass`) for now.
   - CI and local review workflows should pass explicit flags in command templates where contract behavior is required.
   - Evidence target: parity docs/examples and `tests/test_compare_terms_channel_benchmark_parity.py`.
-- ✅ Decision: Windows root handling is accepted as-is while using `Path(...).expanduser().resolve()` and explicit `--left-root/--right-root`.
+- Decision: Windows root handling is accepted as-is while using `Path(...).expanduser().resolve()` and explicit `--left-root/--right-root`.
   - If root relocation issues appear, add a follow-up parity smoke test for non-`L:\` roots.
 
 ## Decision Rationale (implementation-ready)
@@ -402,6 +406,16 @@ py scripts/convert_legacy_hardening_reports.py --root docs/benchmarks
   - `py -m pytest tests/test_convert_legacy_hardening_reports.py -q` (contract migration regression smoke)
   - `git status --short` (confirm only intended scope changed)
 
+## Checkpoint: May 31, 2026 (selector ratio fallback hardening)
+
+- Stabilized benchmark recommendation scoring against ratio-field variants:
+  - `src/vizcompress/selectors.py` now parses numeric ratio values robustly and falls back to `direct_svg_gzip_to_package_ratio` when `direct_svg_to_package_ratio` is missing/invalid.
+  - `recommend_benchmark_row_gzip` now uses parsed numeric ratio checks consistently.
+- Added regression coverage in `tests/test_timeseries_compression.py`:
+  - `test_selector_recommends_with_gzip_only_ratio_fields`
+  - `test_selector_recommendation_keeps_string_fields_robust`
+- Next: keep contract docs/CLI coverage aligned and continue with next governance or CLI hardening slice.
+
 ## Checkpoint: May 31, 2026 (progress push)
 - Confirmed target forum rule files and inbox status.
 - Verified no `Status: new` entries for `rrkal-visual-compressor` at this checkpoint (`a_1_rrkal-visual-compressor.md` is `needs-evidence`).
@@ -437,3 +451,4 @@ py scripts/convert_legacy_hardening_reports.py --root docs/benchmarks
 - Added `_prepare_output_file(...)` and shared fallback behavior for file outputs (`.json`/`.md`) so stale or locked output artifacts do not hard-stop benchmark commands; command now transparently uses retry paths when forced cleanup fails.
 - `README.md` now documents `--clean-output` examples for `build`, `mvp`, `bench`, and `video-bench`.
 - Next: run a short sanity command path (`bench`/`video-bench`) under `PYTHONPATH=...` if environment permits, then evaluate whether `bench --clean-output` should also delete report parent directory as a unit.
+
