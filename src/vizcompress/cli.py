@@ -5,6 +5,7 @@ import json
 import os
 import shutil
 import stat
+import time
 from pathlib import Path
 
 from vizcompress.analyzers import analyze_time_series
@@ -283,7 +284,7 @@ def _build(args: argparse.Namespace) -> int:
         series = cleaning.cleaned
 
     out_dir: Path = args.out
-    _prepare_output_directory(out_dir, clean=args.clean_output, label="build")
+    out_dir = _prepare_output_directory(out_dir, clean=args.clean_output, label="build")
     out_dir.mkdir(parents=True, exist_ok=True)
 
     rdp = compress_rdp(series, args.rdp_epsilon)
@@ -414,10 +415,10 @@ def _is_package_output(value: str) -> bool:
     return value.endswith((".vizasset", ".vizretain", ".vizclean"))
 
 
-def _prepare_output_directory(path: Path, *, clean: bool, label: str) -> None:
+def _prepare_output_directory(path: Path, *, clean: bool, label: str) -> Path:
     if not path.exists():
         path.mkdir(parents=True, exist_ok=True)
-        return
+        return path
 
     if path.is_file():
         if not clean:
@@ -429,16 +430,22 @@ def _prepare_output_directory(path: Path, *, clean: bool, label: str) -> None:
                 f"[{label}] cannot replace file output '{path}'. "
                 "Close any file handles and rerun with --clean-output, or choose a different --out path."
             ) from exc
-        return
+        return path
 
     if not clean:
-        return
+        return path
 
     try:
         shutil.rmtree(path)
     except (OSError, PermissionError):
-        _forceful_delete_directory(path)
+        try:
+            _forceful_delete_directory(path)
+        except (OSError, PermissionError) as exc:
+            fallback = _fallback_output_directory(path, label)
+            print(f"[{label}] warning: cannot clean '{path}': {exc}. Using fallback output '{fallback}'.")
+            return fallback
     path.mkdir(parents=True, exist_ok=True)
+    return path
 
 
 def _forceful_delete_directory(path: Path) -> None:
@@ -464,6 +471,11 @@ def _set_writable(path: Path) -> None:
         pass
 
 
+def _fallback_output_directory(path: Path, label: str) -> Path:
+    fallback_name = f"{path.name}.retry_{int(time.time())}"
+    return path.with_name(fallback_name)
+
+
 def _default_package_name(package_profile: str) -> str:
     if package_profile == "clean":
         return "model.vizclean"
@@ -471,8 +483,7 @@ def _default_package_name(package_profile: str) -> str:
 
 
 def _mvp(args: argparse.Namespace) -> int:
-    out_dir: Path = args.out
-    _prepare_output_directory(out_dir, clean=args.clean_output, label="mvp")
+    out_dir: Path = _prepare_output_directory(args.out, clean=args.clean_output, label="mvp")
     build_dir = out_dir / "asset"
     benchmark_json = out_dir / "benchmark.json"
     benchmark_md = out_dir / "benchmark.md"

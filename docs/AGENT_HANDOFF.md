@@ -425,3 +425,9 @@ py scripts/convert_legacy_hardening_reports.py --root docs/benchmarks
 - `mvp` now forwards the flag into the internal build invocation so one call sequence can keep deterministic output folders.
 - This is a tooling slice aimed at reducing stale artifact lock/permission friction (e.g., `model.vizretain` access denied) and improving local session momentum.
 - Next: decide whether `bench`/`video-bench` should also support an explicit `--clean-output` mode for output JSON reuse and consistency.
+
+## Checkpoint: May 31, 2026 (resilience improvement)
+- Strengthened `src/vizcompress/cli.py` cleanup path: `_prepare_output_directory` now returns the effective directory, and when deletion cannot be forced, it falls back to an auto-named retry directory (`<out>.retry_<timestamp>`) instead of hard failing.
+- This makes `--clean-output` robust when Windows ACL/lock prevents direct deletion of `model.vizretain` style directories.
+- Manual sanity run confirmed `--clean-output` is accepted when running from local `L:` source path (`PYTHONPATH=L:\rrkal-visual-compressor\src`).
+- Manual cleanup attempt revealed stale `tmp_cli_sanity_check/model.vizretain` may still be ACL-locked in this environment; fallback behavior is therefore the safest path to avoid hard stops.
