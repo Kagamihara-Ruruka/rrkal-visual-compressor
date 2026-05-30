@@ -841,8 +841,14 @@ def _ratio(row: dict[str, Any] | None, ratio_field: str) -> float | None:
     ratio_candidates = _ratio_candidates(ratio_field)
     for candidate in ratio_candidates:
         value = row.get(candidate)
-        if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(float(value)):
-            return float(value)
+        if isinstance(value, bool):
+            continue
+        try:
+            parsed = float(value)
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(parsed):
+            return parsed
     return None
 
 
