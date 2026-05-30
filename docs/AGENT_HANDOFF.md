@@ -418,3 +418,10 @@ py scripts/convert_legacy_hardening_reports.py --root docs/benchmarks
   - generated outputs should not be committed unless explicitly approved
 - Inserted `Phase 2.8: Operational Hardening` into `docs/ROADMAP.md` to formalize artifact cleanup and checkpoint flow as an explicit backlog item.
 - Next step: implement a CLI/utility cleanup utility or documented pre-run check for stale output directories to reduce future `Access denied`/stale artifact friction.
+
+## Checkpoint: May 31, 2026 (CLI output hygiene slice)
+- Added `--clean-output` flag to `build` and `mvp` in `src/vizcompress/cli.py`.
+- Added `_prepare_output_directory()` + best-effort forced delete helpers (`_forceful_delete_directory`, `_force_remove_file`, `_set_writable`) to clean stale output directories before run.
+- `mvp` now forwards the flag into the internal build invocation so one call sequence can keep deterministic output folders.
+- This is a tooling slice aimed at reducing stale artifact lock/permission friction (e.g., `model.vizretain` access denied) and improving local session momentum.
+- Next: decide whether `bench`/`video-bench` should also support an explicit `--clean-output` mode for output JSON reuse and consistency.

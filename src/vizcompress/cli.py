@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import shutil
+import stat
 from pathlib import Path
 
 from vizcompress.analyzers import analyze_time_series
@@ -104,6 +107,11 @@ def main(argv: list[str] | None = None) -> int:
     build.add_argument("--review-max-mae", type=float, default=None, help="Review packet MAE acceptance budget.")
     build.add_argument("--review-max-error", type=float, default=None, help="Review packet max absolute error budget.")
     build.add_argument("--require-review-pass", action="store_true", help="Fail build when the generated review packet is not accepted.")
+    build.add_argument(
+        "--clean-output",
+        action="store_true",
+        help="Remove and recreate the output directory before build.",
+    )
 
     mvp = subparsers.add_parser("mvp", help="Run the MVP demo pipeline: build, verify, benchmark, summarize.")
     mvp.add_argument("--samples", type=int, default=20_000, help="Synthetic sample count for the demo asset.")
@@ -119,6 +127,11 @@ def main(argv: list[str] | None = None) -> int:
     mvp.add_argument("--review-max-mae", type=float, default=None, help="Optional review MAE gate.")
     mvp.add_argument("--review-max-error", type=float, default=None, help="Optional review max-error gate.")
     mvp.add_argument("--min-fourier-r2", type=float, default=0.95, help="Minimum Fourier R2 expected by the MVP smoke benchmark.")
+    mvp.add_argument(
+        "--clean-output",
+        action="store_true",
+        help="Remove and recreate the MVP output directory before running.",
+    )
 
     bench = subparsers.add_parser("bench", help="Benchmark direct SVG size against model-backed package size.")
     bench.add_argument(
@@ -270,6 +283,7 @@ def _build(args: argparse.Namespace) -> int:
         series = cleaning.cleaned
 
     out_dir: Path = args.out
+    _prepare_output_directory(out_dir, clean=args.clean_output, label="build")
     out_dir.mkdir(parents=True, exist_ok=True)
 
     rdp = compress_rdp(series, args.rdp_epsilon)
@@ -400,6 +414,56 @@ def _is_package_output(value: str) -> bool:
     return value.endswith((".vizasset", ".vizretain", ".vizclean"))
 
 
+def _prepare_output_directory(path: Path, *, clean: bool, label: str) -> None:
+    if not path.exists():
+        path.mkdir(parents=True, exist_ok=True)
+        return
+
+    if path.is_file():
+        if not clean:
+            return
+        try:
+            _force_remove_file(path)
+        except (OSError, PermissionError) as exc:
+            raise RuntimeError(
+                f"[{label}] cannot replace file output '{path}'. "
+                "Close any file handles and rerun with --clean-output, or choose a different --out path."
+            ) from exc
+        return
+
+    if not clean:
+        return
+
+    try:
+        shutil.rmtree(path)
+    except (OSError, PermissionError):
+        _forceful_delete_directory(path)
+    path.mkdir(parents=True, exist_ok=True)
+
+
+def _forceful_delete_directory(path: Path) -> None:
+    for child in list(path.iterdir()):
+        if child.is_dir() and not child.is_symlink():
+            _forceful_delete_directory(child)
+        else:
+            _force_remove_file(child)
+    _set_writable(path)
+    path.rmdir()
+
+
+def _force_remove_file(path: Path) -> None:
+    _set_writable(path)
+    path.unlink()
+
+
+def _set_writable(path: Path) -> None:
+    try:
+        os.chmod(path, stat.S_IREAD | stat.S_IWRITE)
+    except OSError:
+        # Proceed with best effort. Exact failure will surface as a precise error.
+        pass
+
+
 def _default_package_name(package_profile: str) -> str:
     if package_profile == "clean":
         return "model.vizclean"
@@ -408,6 +472,7 @@ def _default_package_name(package_profile: str) -> str:
 
 def _mvp(args: argparse.Namespace) -> int:
     out_dir: Path = args.out
+    _prepare_output_directory(out_dir, clean=args.clean_output, label="mvp")
     build_dir = out_dir / "asset"
     benchmark_json = out_dir / "benchmark.json"
     benchmark_md = out_dir / "benchmark.md"
@@ -447,6 +512,7 @@ def _mvp(args: argparse.Namespace) -> int:
         review_max_mae=args.review_max_mae,
         review_max_error=args.review_max_error,
         require_review_pass=False,
+        clean_output=args.clean_output,
     )
     _build(build_args)
 
