@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import math
 from pathlib import Path
 from typing import Any
 
@@ -38,14 +39,25 @@ def _extract_best_row(
     summary_by_terms_k: dict[str, Any],
     ratio_key: str,
 ) -> tuple[str, dict[str, Any]]:
-    candidates = [
-        (key, payload.get("best_rows", {}).get("direct_svg_gzip", {}))
-        for key, payload in summary_by_terms_k.items()
-    ]
-    candidates = [(key, candidate) for key, candidate in candidates if isinstance(candidate, dict) and candidate.get(ratio_key)]
+    candidates = []
+    for key, payload in summary_by_terms_k.items():
+        candidate = payload.get("best_rows", {}).get("direct_svg_gzip", {})
+        if not isinstance(candidate, dict):
+            continue
+        ratio = candidate.get(ratio_key)
+        if isinstance(ratio, bool):
+            continue
+        try:
+            ratio_value = float(ratio)
+        except (TypeError, ValueError):
+            continue
+        if not math.isfinite(ratio_value):
+            continue
+        candidates.append((key, candidate, ratio_value))
+
     if not candidates:
         return "", {}
-    key, best = max(candidates, key=lambda item: float(item[1][ratio_key]))
+    key, best, _ = max(candidates, key=lambda item: item[2])
     return key, best
 
 

@@ -1562,6 +1562,54 @@ def test_terms_channel_sweep_summary_tracks_gate_win_counts():
     assert any("did not beat source CSV.gz" in error for error in gate["errors"])
 
 
+def test_terms_channel_sweep_summary_handles_ratio_alias_and_string_ratio_values():
+    repo_root = Path(__file__).resolve().parents[1]
+    script_path = repo_root / "scripts" / "run_terms_channel_kind_threshold_sweep.py"
+    spec = importlib.util.spec_from_file_location("run_terms_channel_kind_threshold_sweep", script_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("could not load terms-channel sweep script")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    rows = [
+        {
+            "synthetic_kind": "smooth",
+            "samples": 1000,
+            "fourier_terms": 16,
+            "direct_svg_to_package_ratio": "1.35",
+            "fourier_r2": 0.999,
+            "channel_k": 2.0,
+            "source_csv_gzip_to_package_ratio": "0.8",
+            "channel_coverage_ratio": "0.95",
+        },
+    ]
+
+    summary = module._summarize_rows(rows, threshold=0.99)
+    assert summary["best_direct_svg_gzip_to_package_ratio"] == 1.35
+    assert summary["best_rows"]["direct_svg_gzip"]["ratio"] == 1.35
+    assert summary["summary_by_terms_k"]["16|2"]["best_rows"]["direct_svg_gzip"]["ratio"] == 1.35
+
+
+def test_terms_channel_grid_extract_best_row_prefers_numeric_ratio_string():
+    repo_root = Path(__file__).resolve().parents[1]
+    script_path = repo_root / "scripts" / "run_terms_channel_grid_sweep.py"
+    spec = importlib.util.spec_from_file_location("run_terms_channel_grid_sweep", script_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("could not load terms-channel grid sweep script")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    summary_by_terms_k = {
+        "16|2.0": {"best_rows": {"direct_svg_gzip": {"ratio": "0.92", "samples": 1000}}},
+        "32|2.0": {"best_rows": {"direct_svg_gzip": {"ratio": "1.10", "samples": 2000}}},
+        "48|2.0": {"best_rows": {"direct_svg_gzip": {"ratio": "bad-value", "samples": 1500}}},
+        "64|2.0": {"best_rows": {}},
+    }
+    key, row = module._extract_best_row(summary_by_terms_k, "ratio")
+    assert key == "32|2.0"
+    assert row["samples"] == 2000
+
+
 def test_cli_inspect_reports_clean_profile_without_residual_layer(tmp_path):
     subprocess.run(
         [

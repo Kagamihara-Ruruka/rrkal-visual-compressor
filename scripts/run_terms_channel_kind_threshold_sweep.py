@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import math
 from pathlib import Path
 from typing import Any
 
@@ -50,14 +51,58 @@ def _format_bool(value: Any) -> str:
     return "yes" if value else "no"
 
 
+def _ratio_from_value(value: Any) -> float | None:
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(parsed):
+        return None
+    return parsed
+
+
+def _ratio_candidates(ratio_field: str) -> tuple[str, ...]:
+    if ratio_field == "direct_svg_gzip_to_package_ratio":
+        return ("direct_svg_gzip_to_package_ratio", "direct_svg_to_package_ratio")
+    return (ratio_field,)
+
+
+def _ratio(row: dict[str, Any] | None, ratio_field: str) -> float | None:
+    if row is None:
+        return None
+    for key in _ratio_candidates(ratio_field):
+        value = _ratio_from_value(row.get(key))
+        if value is not None:
+            return value
+    return None
+
+
+def _best_row(rows: list[dict[str, Any]], ratio_field: str) -> dict[str, Any] | None:
+    candidates = [(row, value) for row in rows if (value := _ratio(row, ratio_field)) is not None]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda item: item[1])[0]
+
+
+def _meets_channel_coverage(row: dict[str, Any], threshold: float) -> bool:
+    channel_coverage = _ratio_from_value(row.get("channel_coverage_ratio"))
+    return channel_coverage is None or channel_coverage >= threshold
+
+
 def _extract_by_kind(summary_by_kind: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {
         kind: {
             "high_fidelity_rows_count": int(payload.get("high_fidelity_rows_count", 0)),
             "defensible_rows_count": int(payload.get("defensible_rows_count", 0)),
             "defensible_rows_ratio": float(payload.get("defensible_rows_ratio", 0.0)),
-            "best_ratio": (payload.get("best_rows", {}).get("direct_svg_gzip") or {}).get("ratio"),
-            "best_defensible_ratio": (payload.get("best_defensible_high_fidelity_svg_gzip_candidate") or {}).get("ratio"),
+            "best_ratio": _ratio_from_value(
+                (payload.get("best_rows", {}).get("direct_svg_gzip") or {}).get("ratio")
+            ),
+            "best_defensible_ratio": _ratio_from_value(
+                (payload.get("best_defensible_high_fidelity_svg_gzip_candidate") or {}).get("ratio")
+            ),
         }
         for kind, payload in summary_by_kind.items()
     }
@@ -121,7 +166,7 @@ def run_kind_threshold_sweep(
         by_kind = _extract_by_kind(summary.get("summary_by_kind", {}))
         by_terms_k = summary.get("summary_by_terms_k", {})
         best_cells = {
-            key: value.get("best_rows", {}).get("direct_svg_gzip", {}).get("ratio")
+            key: _ratio_from_value((value.get("best_rows", {}).get("direct_svg_gzip") or {}).get("ratio"))
             for key, value in by_terms_k.items()
         }
 
@@ -200,7 +245,7 @@ def _summarize_rows(rows: list[dict[str, Any]], threshold: float) -> dict[str, A
         by_kind[row.get("synthetic_kind")].append(row)
 
     summary = {
-        "high_fidelity_rows_count": len([row for row in rows if row["fourier_r2"] >= 0.99]),
+        "high_fidelity_rows_count": len([row for row in rows if row.get("fourier_r2", 0.0) >= 0.99]),
         "defensible_rows_count": 0,
         "defensible_rows_ratio": 0.0,
         "package_wins_against_direct_svg_gzip_count": 0,
@@ -214,54 +259,57 @@ def _summarize_rows(rows: list[dict[str, Any]], threshold: float) -> dict[str, A
         "summary_by_terms_k": {},
         "rows": rows,
     }
-    high_fidelity_rows = [row for row in rows if row["fourier_r2"] >= 0.99]
-    defensible_rows = [
-        row for row in high_fidelity_rows if (row.get("channel_coverage_ratio") is None or row["channel_coverage_ratio"] >= threshold)
-    ]
+    high_fidelity_rows = [row for row in rows if row.get("fourier_r2", 0.0) >= 0.99]
+    defensible_rows = [row for row in high_fidelity_rows if _meets_channel_coverage(row, threshold)]
     summary["defensible_rows_count"] = len(defensible_rows)
     summary["defensible_rows_ratio"] = len(defensible_rows) / len(high_fidelity_rows) if high_fidelity_rows else 0.0
 
     if rows:
-        best_global = max(rows, key=lambda row: row["direct_svg_gzip_to_package_ratio"])
-        summary["best_rows"]["direct_svg_gzip"] = {
-            "synthetic_kind": best_global["synthetic_kind"],
-            "samples": best_global["samples"],
-            "fourier_terms": best_global["fourier_terms"],
-            "channel_k": best_global.get("channel_k"),
-            "ratio": best_global["direct_svg_gzip_to_package_ratio"],
-        }
-        summary["best_direct_svg_gzip_to_package_ratio"] = best_global["direct_svg_gzip_to_package_ratio"]
-        summary["best_ratio_samples"] = best_global.get("samples")
-        summary["best_direct_svg_gzip_ratio_samples"] = best_global.get("samples")
+        best_global = _best_row(rows, "direct_svg_gzip_to_package_ratio")
+        best_global_ratio = _ratio(best_global, "direct_svg_gzip_to_package_ratio")
+        if best_global is not None:
+            summary["best_rows"]["direct_svg_gzip"] = {
+                "synthetic_kind": best_global.get("synthetic_kind"),
+                "samples": best_global.get("samples"),
+                "fourier_terms": best_global.get("fourier_terms"),
+                "channel_k": best_global.get("channel_k"),
+                "ratio": best_global_ratio,
+            }
+            summary["best_direct_svg_gzip_to_package_ratio"] = best_global_ratio
+            summary["best_ratio_samples"] = best_global.get("samples")
+            summary["best_direct_svg_gzip_ratio_samples"] = best_global.get("samples")
         summary["package_wins_against_direct_svg_gzip_count"] = len(
-            [row for row in rows if row["direct_svg_gzip_to_package_ratio"] > 1.0]
+            [row for row in rows if (_ratio(row, "direct_svg_gzip_to_package_ratio") or 0.0) > 1.0]
         )
         summary["package_wins_against_source_csv_gzip_count"] = len(
-            [row for row in rows if row["source_csv_gzip_to_package_ratio"] > 1.0]
+            [row for row in rows if (_ratio(row, "source_csv_gzip_to_package_ratio") or 0.0) > 1.0]
         )
 
     if defensible_rows:
-        best_def = max(defensible_rows, key=lambda row: row["direct_svg_gzip_to_package_ratio"])
-        summary["best_defensible_high_fidelity_svg_gzip_candidate"] = {
-            "synthetic_kind": best_def["synthetic_kind"],
-            "samples": best_def["samples"],
-            "fourier_terms": best_def["fourier_terms"],
-            "channel_k": best_def.get("channel_k"),
-            "ratio": best_def["direct_svg_gzip_to_package_ratio"],
-        }
+        best_def = _best_row(defensible_rows, "direct_svg_gzip_to_package_ratio")
+        best_def_ratio = _ratio(best_def, "direct_svg_gzip_to_package_ratio")
+        if best_def is not None:
+            summary["best_defensible_high_fidelity_svg_gzip_candidate"] = {
+                "synthetic_kind": best_def.get("synthetic_kind"),
+                "samples": best_def.get("samples"),
+                "fourier_terms": best_def.get("fourier_terms"),
+                "channel_k": best_def.get("channel_k"),
+                "ratio": best_def_ratio,
+            }
 
     for kind, items in by_kind.items():
-        hk = len([row for row in items if row["fourier_r2"] >= 0.99])
+        hk = len([row for row in items if row.get("fourier_r2", 0.0) >= 0.99])
         defensible_hk = [
-            row for row in items if row["fourier_r2"] >= 0.99 and (row.get("channel_coverage_ratio") is None or row["channel_coverage_ratio"] >= threshold)
+            row for row in items if row.get("fourier_r2", 0.0) >= 0.99 and _meets_channel_coverage(row, threshold)
         ]
+        best_kind = _best_row(items, "direct_svg_gzip_to_package_ratio")
         summary["summary_by_kind"][kind] = {
             "high_fidelity_rows_count": hk,
             "defensible_rows_count": len(defensible_hk),
             "defensible_rows_ratio": len(defensible_hk) / hk if hk else 0.0,
             "best_rows": {
                 "direct_svg_gzip": {
-                    "ratio": max((row["direct_svg_gzip_to_package_ratio"] for row in items), default=0.0)
+                    "ratio": _ratio(best_kind, "direct_svg_gzip_to_package_ratio") or 0.0,
                 }
             },
         }
@@ -272,26 +320,27 @@ def _summarize_rows(rows: list[dict[str, Any]], threshold: float) -> dict[str, A
             items = [row for row in rows if int(row["fourier_terms"]) == term and row.get("channel_k") == k_value]
             if not items:
                 continue
-            best = max(items, key=lambda row: row["direct_svg_gzip_to_package_ratio"])
-            best_h = [row for row in items if row["fourier_r2"] >= 0.99 and (row.get("channel_coverage_ratio") is None or row["channel_coverage_ratio"] >= threshold)]
+            best = _best_row(items, "direct_svg_gzip_to_package_ratio")
+            best_h = [row for row in items if row.get("fourier_r2", 0.0) >= 0.99 and _meets_channel_coverage(row, threshold)]
+            best_ratio = _ratio(best, "direct_svg_gzip_to_package_ratio")
             summary["summary_by_terms_k"][key] = {
-                "high_fidelity_rows_count": len([row for row in items if row["fourier_r2"] >= 0.99]),
+                "high_fidelity_rows_count": len([row for row in items if row.get("fourier_r2", 0.0) >= 0.99]),
                 "defensible_rows_count": len(best_h),
-                "defensible_rows_ratio": len(best_h) / len([row for row in items if row["fourier_r2"] >= 0.99]) if any(
-                    row["fourier_r2"] >= 0.99 for row in items
+                "defensible_rows_ratio": len(best_h) / len([row for row in items if row.get("fourier_r2", 0.0) >= 0.99]) if any(
+                    row.get("fourier_r2", 0.0) >= 0.99 for row in items
                 ) else 0.0,
                 "best_rows": {
                     "direct_svg_gzip": {
-                        "samples": best.get("samples"),
-                        "ratio": best.get("direct_svg_gzip_to_package_ratio"),
+                        "samples": best.get("samples") if best is not None else None,
+                        "ratio": best_ratio or 0.0,
                     }
                 },
                 "best_defensible_high_fidelity_svg_gzip_candidate": (
                     {
                         "samples": _best["samples"],
-                        "ratio": _best["direct_svg_gzip_to_package_ratio"],
+                        "ratio": _ratio(_best, "direct_svg_gzip_to_package_ratio"),
                     }
-                    if (_best := (max(best_h, key=lambda row: row["direct_svg_gzip_to_package_ratio"], default=None)))
+                    if (_best := _best_row(best_h, "direct_svg_gzip_to_package_ratio"))
                     else None
                 ),
             }
@@ -383,7 +432,9 @@ def format_markdown(result: dict[str, Any]) -> str:
             continue
         best_key = max(
             terms_k.items(),
-            key=lambda item: float((item[1].get("best_rows", {}).get("direct_svg_gzip", {}).get("ratio", 0.0) or 0.0)),
+            key=lambda item: (_ratio_from_value(
+                (item[1].get("best_rows", {}).get("direct_svg_gzip") or {}).get("ratio")
+            ) or 0.0),
         )[0]
         best_entry = terms_k[best_key]
         best_row = (best_entry.get("best_rows", {}).get("direct_svg_gzip")) or {}
