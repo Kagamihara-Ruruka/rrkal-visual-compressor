@@ -21,3 +21,8 @@ mvp_outputs/
 *.vizretain/
 *.vizclean/
 .pytest_cache_working/
+
+# Local / cloud-drive scratch artifacts (never commit)
+tmp_precheck_quick/
+tmp_cli_sanity_check/
+MVP_CHECKPOINT/
