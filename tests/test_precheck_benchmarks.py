@@ -5,10 +5,13 @@ import subprocess
 import sys
 from pathlib import Path
 
+from _test_helpers import precheck_script
+
 
 def assert_precheck_summary_shape(payload: dict) -> None:
     assert set(
         [
+            "schema_version",
             "scan_ok",
             "contract_ok",
             "scan_report",
@@ -73,9 +76,9 @@ def test_precheck_benchmarks_fails_on_scan_violation(tmp_path: Path) -> None:
     )
 
     result = subprocess.run(
-        [
-            sys.executable,
-            str(Path(__file__).resolve().parents[1] / "scripts" / "precheck_benchmarks.py"),
+    [
+        sys.executable,
+            precheck_script(),
             "--root",
             str(root),
             "--pattern",
@@ -94,6 +97,38 @@ def test_precheck_benchmarks_fails_on_scan_violation(tmp_path: Path) -> None:
     assert result.returncode == 2
     payload = json.loads(result.stdout.strip().splitlines()[-1])
     assert payload["scan_ok"] is False
+
+
+def test_precheck_benchmarks_fails_on_unreadable_scan_payload(tmp_path: Path) -> None:
+    root = tmp_path / "benchmarks"
+    root.mkdir()
+    broken = root / "bad_encoding.json"
+    broken.write_bytes(b"\xff\x00\xfe")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            precheck_script(),
+            "--root",
+            str(root),
+            "--pattern",
+            "*.json",
+            "--scan-out",
+            str(root / "scan.json"),
+            "--contract-out",
+            str(root / "contract.json"),
+            "--skip-contract",
+            "--fail-on-scan-warning",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 2
+    payload = json.loads(result.stdout.strip().splitlines()[-1])
+    assert payload["scan_ok"] is False
+    assert payload["scan"]["invalid_json"] == 1
 
 
 def test_precheck_benchmarks_summary_schema_is_stable(tmp_path: Path) -> None:
@@ -130,7 +165,7 @@ def test_precheck_benchmarks_summary_schema_is_stable(tmp_path: Path) -> None:
     result = subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).resolve().parents[1] / "scripts" / "precheck_benchmarks.py"),
+            precheck_script(),
             "--root",
             str(root),
             "--pattern",
@@ -149,6 +184,7 @@ def test_precheck_benchmarks_summary_schema_is_stable(tmp_path: Path) -> None:
     assert_precheck_summary_shape(payload)
     assert payload["scan_report"] == str(root / "scan.json")
     assert payload["contract_report"] == str(root / "contract.json")
+    assert payload["schema_version"] == "1.0"
     assert payload["skip_scan"] is False
     assert payload["skip_contract"] is False
     assert payload["contract"]["status"] == "ok"
@@ -166,7 +202,7 @@ def test_precheck_benchmarks_rejects_both_skip_flags(tmp_path: Path) -> None:
     result = subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).resolve().parents[1] / "scripts" / "precheck_benchmarks.py"),
+            precheck_script(),
             "--root",
             str(root),
             "--pattern",
@@ -221,7 +257,7 @@ def test_precheck_benchmarks_contract_failure_sets_failed_report(tmp_path: Path)
     result = subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).resolve().parents[1] / "scripts" / "precheck_benchmarks.py"),
+            precheck_script(),
             "--root",
             str(root),
             "--pattern",
@@ -278,7 +314,7 @@ def test_precheck_benchmarks_contract_success_with_skip_scan(tmp_path: Path) -> 
     result = subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).resolve().parents[1] / "scripts" / "precheck_benchmarks.py"),
+            precheck_script(),
             "--root",
             str(root),
             "--pattern",
@@ -312,7 +348,7 @@ def test_precheck_benchmarks_help_includes_benefit_flags() -> None:
     result = subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).resolve().parents[1] / "scripts" / "precheck_benchmarks.py"),
+            precheck_script(),
             "--help",
         ],
         capture_output=True,
@@ -356,7 +392,7 @@ def test_precheck_benchmarks_contract_skipped_reports_contract_defaults(tmp_path
     result = subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).resolve().parents[1] / "scripts" / "precheck_benchmarks.py"),
+            precheck_script(),
             "--root",
             str(root),
             "--pattern",
@@ -414,7 +450,7 @@ def test_precheck_benchmarks_contract_skips_row_payload_missing_row_summary_coun
     result = subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).resolve().parents[1] / "scripts" / "precheck_benchmarks.py"),
+            precheck_script(),
             "--root",
             str(root),
             "--pattern",
@@ -471,7 +507,7 @@ def test_precheck_benchmarks_contract_out_parse_failure_still_reports_failed_rep
     result = subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).resolve().parents[1] / "scripts" / "precheck_benchmarks.py"),
+            precheck_script(),
             "--root",
             str(root),
             "--pattern",
@@ -489,3 +525,4 @@ def test_precheck_benchmarks_contract_out_parse_failure_still_reports_failed_rep
     assert result.returncode == 2
     payload = json.loads(result.stdout.strip().splitlines()[-1])
     assert payload["failed_report"] == str(root)
+

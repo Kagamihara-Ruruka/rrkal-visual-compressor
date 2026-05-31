@@ -5,6 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from _test_helpers import script_path_str as _script_path
+
 
 def test_scan_benchmark_fields_returns_rows_and_unknown_summary(tmp_path: Path) -> None:
     good = {
@@ -48,7 +50,7 @@ def test_scan_benchmark_fields_returns_rows_and_unknown_summary(tmp_path: Path) 
     result = subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).resolve().parents[1] / "scripts" / "scan_benchmark_fields.py"),
+            _script_path("scan_benchmark_fields.py"),
             str(tmp_path),
             "--pattern",
             "*.json",
@@ -61,6 +63,7 @@ def test_scan_benchmark_fields_returns_rows_and_unknown_summary(tmp_path: Path) 
     )
     assert result.returncode == 0
     payload = json.loads((tmp_path / "scan.json").read_text(encoding="utf-8"))
+    assert payload["schema_version"] == "1.0"
 
     assert payload["summary"]["total"] == 2
     by_mode = payload["summary"]["mode_breakdown"]
@@ -71,6 +74,33 @@ def test_scan_benchmark_fields_returns_rows_and_unknown_summary(tmp_path: Path) 
     assert bad_file["rows"]["rows_missing_any_required"] == 1
     assert bad_file["sweep"]["buckets_missing_any_required"] == 1
     assert bad_file["sweep"]["sweep_total"] == 1
+
+
+def test_scan_benchmark_fields_marks_malformed_utf8_payload_as_invalid(tmp_path: Path) -> None:
+    bad_path = tmp_path / "bad_encoding.json"
+    bad_path.write_bytes(b"\xff\xff{ invalid json bytes")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            _script_path("scan_benchmark_fields.py"),
+            str(tmp_path),
+            "--pattern",
+            "*.json",
+            "--out",
+            str(tmp_path / "scan.json"),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    payload = json.loads((tmp_path / "scan.json").read_text(encoding="utf-8"))
+    assert payload["summary"]["total"] == 1
+    bad_file = next(item for item in payload["files"] if item["path"] == str(bad_path))
+    assert bad_file["valid_json"] is False
+    assert any("unreadable_json" in item for item in bad_file["errors"])
 
 
 def test_scan_benchmark_fields_accepts_alternative_ratio_field_name(tmp_path: Path) -> None:
@@ -93,7 +123,7 @@ def test_scan_benchmark_fields_accepts_alternative_ratio_field_name(tmp_path: Pa
     result = subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).resolve().parents[1] / "scripts" / "scan_benchmark_fields.py"),
+            _script_path("scan_benchmark_fields.py"),
             str(tmp_path),
             "--pattern",
             "*.json",
@@ -106,6 +136,7 @@ def test_scan_benchmark_fields_accepts_alternative_ratio_field_name(tmp_path: Pa
     )
     assert result.returncode == 0
     scan_payload = json.loads((tmp_path / "scan.json").read_text(encoding="utf-8"))
+    assert scan_payload["schema_version"] == "1.0"
 
     assert scan_payload["summary"]["total"] == 1
     assert scan_payload["summary"]["mode_breakdown"]["rows"] == 1
@@ -150,7 +181,7 @@ def test_scan_benchmark_fields_excludes_contract_and_parity_reports(tmp_path: Pa
     result = subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).resolve().parents[1] / "scripts" / "scan_benchmark_fields.py"),
+            _script_path("scan_benchmark_fields.py"),
             "--root",
             str(tmp_path),
             "--out",
@@ -164,6 +195,7 @@ def test_scan_benchmark_fields_excludes_contract_and_parity_reports(tmp_path: Pa
     )
     assert result.returncode == 0
     payload = json.loads((tmp_path / "scan.json").read_text(encoding="utf-8"))
+    assert payload["schema_version"] == "1.0"
 
     assert payload["summary"]["total"] == 1
     assert payload["summary"]["mode_breakdown"]["rows"] == 1
@@ -196,7 +228,7 @@ def test_scan_benchmark_fields_marks_legacy_payloads(tmp_path: Path) -> None:
     result = subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).resolve().parents[1] / "scripts" / "scan_benchmark_fields.py"),
+            _script_path("scan_benchmark_fields.py"),
             str(tmp_path),
             "--pattern",
             "*.json",

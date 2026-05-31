@@ -9,6 +9,7 @@ from pathlib import Path
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
+PRECHECK_SUMMARY_SCHEMA_VERSION = "1.0"
 
 
 def parse_args() -> argparse.Namespace:
@@ -113,7 +114,7 @@ def main() -> int:
             print(scan_result.stderr.strip())
         try:
             scan_payload = json.loads(scan_report_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
             scan_payload = None
             scan_ok = False
 
@@ -150,12 +151,13 @@ def main() -> int:
 
         try:
             contract_payload = json.loads(contract_report_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
             contract_payload = None
             contract_ok = False
             contract_failed = True
 
     summary = {
+        "schema_version": PRECHECK_SUMMARY_SCHEMA_VERSION,
         "root": str(root),
         "pattern": args.pattern,
         "scan_ok": scan_ok,
@@ -199,7 +201,7 @@ def main() -> int:
         if contract_failed and args.skip_contract is False:
             summary["failed_report"] = str(contract_report_path)
 
-    print(json.dumps(summary, ensure_ascii=False))
+    print(json.dumps(summary, ensure_ascii=False, sort_keys=True))
 
     if not scan_ok or not contract_ok:
         return 2

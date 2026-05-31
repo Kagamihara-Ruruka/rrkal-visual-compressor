@@ -12,6 +12,8 @@ if str(PROJECT_SRC) not in os.sys.path:
 
 from vizcompress.benchmark_contracts import validate_benchmark_contract
 
+BENCHMARK_CONTRACT_REPORT_SCHEMA_VERSION = "1.0"
+
 
 def _iter_lines_with_prefix(errors: list[str]) -> list[str]:
     return [f"- {item}" for item in errors]
@@ -30,10 +32,26 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def _safe_load_payload(path: Path) -> dict:
+    if not path.is_file():
+        raise FileNotFoundError(f"benchmark JSON not found: {path}")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as exc:
+        raise ValueError(f"unable to read benchmark payload: {path}: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise ValueError(f"invalid benchmark payload: not an object: {path}")
+    return payload
+
+
 def main() -> int:
     args = parse_args()
     input_path = args.input.expanduser().resolve()
-    payload = json.loads(input_path.read_text(encoding="utf-8"))
+    try:
+        payload = _safe_load_payload(input_path)
+    except (FileNotFoundError, ValueError) as exc:
+        print(str(exc))
+        return 2
 
     passed, errors = validate_benchmark_contract(
         payload,
@@ -42,6 +60,7 @@ def main() -> int:
     )
 
     report = {
+        "schema_version": BENCHMARK_CONTRACT_REPORT_SCHEMA_VERSION,
         "input": str(input_path),
         "passed": passed,
         "error_count": len(errors),
@@ -51,7 +70,7 @@ def main() -> int:
     if args.out is not None:
         out = args.out.expanduser().resolve()
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+        out.write_text(json.dumps(report, indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
         print(f"report: {out}")
 
     print("PASS" if passed else "FAIL")

@@ -14,6 +14,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 PROJECT_SRC = ROOT_DIR / "src"
 if str(PROJECT_SRC) not in sys.path:
     sys.path.insert(0, str(PROJECT_SRC))
+PARITY_REPORT_SCHEMA_VERSION = "1.0"
 
 
 IGNORED_KEYS = {
@@ -180,7 +181,10 @@ def _compare(left_payload: dict[str, Any], right_payload: dict[str, Any], precis
 def _safe_load_json(path: Path) -> dict[str, Any]:
     if not path.exists():
         raise FileNotFoundError(f"benchmark JSON not found: {path}")
-    return json.loads(path.read_text(encoding="utf-8"))
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as exc:
+        raise ValueError(f"unable to read benchmark JSON: {path}: {exc}") from exc
 
 
 def _validate_payload(path: Path, payload: dict[str, Any], precision: int) -> dict[str, Any]:
@@ -205,7 +209,14 @@ def _build_contract_checks(
     right_payload: dict[str, Any],
 ) -> tuple[dict[str, Any], list[str]]:
     validate_contract = args.validate_contract or args.require_contract_pass
-    checks: Dict[str, Any] = {"enabled": validate_contract, "enforced": args.require_contract_pass}
+    checks: Dict[str, Any] = {
+        "enabled": validate_contract,
+        "enforced": args.require_contract_pass,
+        "left_status": "not_run",
+        "right_status": "not_run",
+        "status_transition": "not_run->not_run",
+        "transition_changed": False,
+    }
 
     violations: list[str] = []
     if not validate_contract:
@@ -215,6 +226,10 @@ def _build_contract_checks(
     right_contract = _validate_payload(right_path, right_payload, args.precision)
     checks["left"] = left_contract
     checks["right"] = right_contract
+    checks["left_status"] = "ok" if left_contract["passed"] else "fail"
+    checks["right_status"] = "ok" if right_contract["passed"] else "fail"
+    checks["status_transition"] = f"{checks['left_status']}->{checks['right_status']}"
+    checks["transition_changed"] = checks["left_status"] != checks["right_status"]
     both_passed = left_contract["passed"] and right_contract["passed"]
     checks["both_passed"] = both_passed
     checks["left_passed"] = bool(left_contract["passed"])
@@ -231,7 +246,7 @@ def _build_contract_checks(
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
 
 
 def parse_args() -> argparse.Namespace:
@@ -301,8 +316,12 @@ def main() -> int:
         left_path = _run_benchmark(left_root, args, left_path)
         right_path = _run_benchmark(right_root, args, right_path)
 
-    left_payload = _safe_load_json(left_path)
-    right_payload = _safe_load_json(right_path)
+    try:
+        left_payload = _safe_load_json(left_path)
+        right_payload = _safe_load_json(right_path)
+    except (FileNotFoundError, ValueError) as exc:
+        print(str(exc))
+        return 2
 
     contract_checks, contract_violations = _build_contract_checks(
         args,
@@ -331,6 +350,7 @@ def main() -> int:
     match = _compare(left_payload, right_payload, args.precision)
 
     report = {
+        "schema_version": PARITY_REPORT_SCHEMA_VERSION,
         "left": str(left_path),
         "right": str(right_path),
         "left_hash": left_hash,
@@ -344,7 +364,9 @@ def main() -> int:
         "status": "ok",
     }
 
-    if contract_violations:
+    if contract_checks.get("transition_changed"):
+        report["status"] = "contract_status_transition_changed"
+    elif contract_violations:
         report["status"] = "contract_failed"
     elif not match:
         report["status"] = "signature_mismatch"
@@ -361,7 +383,7 @@ def main() -> int:
     _write_json(report_path, report)
     print(f"wrote {report_path}")
 
-    if contract_violations:
+    if contract_violations or contract_checks.get("transition_changed"):
         return 2
     return 0 if match and parity_ok else 2
 

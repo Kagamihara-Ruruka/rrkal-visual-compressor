@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from vizcompress.benchmark_contracts import validate_benchmark_contract
+from _test_helpers import script_path as _script_path
 
 
 def _fixture_payload() -> dict:
@@ -309,7 +310,6 @@ def test_validate_benchmark_contract_allows_missing_summary():
 
 
 def test_validate_benchmark_contract_script(tmp_path: Path):
-    root = Path(__file__).resolve().parents[1]
     payload = _fixture_payload()
     in_json = tmp_path / "bench.json"
     report = tmp_path / "contract.json"
@@ -318,7 +318,7 @@ def test_validate_benchmark_contract_script(tmp_path: Path):
     result = subprocess.run(
         [
             sys.executable,
-            str(root / "scripts" / "validate_benchmark_contracts.py"),
+            str(_script_path("validate_benchmark_contracts.py")),
             str(in_json),
             "--out",
             str(report),
@@ -331,13 +331,13 @@ def test_validate_benchmark_contract_script(tmp_path: Path):
     )
     assert result.returncode == 0
     data = json.loads(report.read_text(encoding="utf-8"))
+    assert data["schema_version"] == "1.0"
     assert data["input"] == str(in_json)
     assert data["passed"] is True
     assert data["error_count"] == 0
 
 
 def test_validate_benchmark_contract_script_reports_field_path(tmp_path: Path):
-    root = Path(__file__).resolve().parents[1]
     payload = {
         "benchmark": "unit_test_cli_output_path",
         "rows": [
@@ -358,7 +358,7 @@ def test_validate_benchmark_contract_script_reports_field_path(tmp_path: Path):
     result = subprocess.run(
         [
             sys.executable,
-            str(root / "scripts" / "validate_benchmark_contracts.py"),
+            str(_script_path("validate_benchmark_contracts.py")),
             str(in_json),
         ],
         capture_output=True,
@@ -371,6 +371,25 @@ def test_validate_benchmark_contract_script_reports_field_path(tmp_path: Path):
         "row[0].direct_svg_to_package_ratio" in result.stdout
         or "row[0].direct_svg_gzip_to_package_ratio" in result.stdout
     )
+
+
+def test_validate_benchmark_contract_script_rejects_malformed_payload(tmp_path: Path) -> None:
+    in_json = tmp_path / "bench_invalid.json"
+    in_json.write_bytes(b"\xff\x00\xffbad json")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(_script_path("validate_benchmark_contracts.py")),
+            str(in_json),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 2
+    assert "unable to read benchmark payload" in (result.stdout + result.stderr)
 
 
 def test_validate_benchmark_contract_reports_sweep_field_path():
@@ -428,7 +447,6 @@ def test_validate_benchmark_contract_reports_invalid_sweep_counts_with_bool():
 
 
 def test_validate_benchmark_contracts_all_script(tmp_path: Path):
-    root = Path(__file__).resolve().parents[1] / "docs" / "benchmarks"
     bad = tmp_path / "bad.json"
     good = tmp_path / "good.json"
     good.write_text(
@@ -501,7 +519,7 @@ def test_validate_benchmark_contracts_all_script(tmp_path: Path):
     result = subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).resolve().parents[1] / "scripts" / "validate_benchmark_contracts_all.py"),
+            str(_script_path("validate_benchmark_contracts_all.py")),
             "--root",
             str(tmp_path),
             "--out",
@@ -513,6 +531,7 @@ def test_validate_benchmark_contracts_all_script(tmp_path: Path):
     )
     assert result.returncode == 2
     report = json.loads((tmp_path / "all_contracts.json").read_text(encoding="utf-8"))
+    assert report["schema_version"] == "1.0"
     assert report["total_inputs"] == 2
     assert report["total"] == 2
     assert report["failed"] == 1
@@ -583,7 +602,7 @@ def test_validate_benchmark_contracts_all_script_skips_legacy_row_payload_withou
     result = subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).resolve().parents[1] / "scripts" / "validate_benchmark_contracts_all.py"),
+            str(_script_path("validate_benchmark_contracts_all.py")),
             "--root",
             str(tmp_path),
             "--out",
@@ -595,6 +614,7 @@ def test_validate_benchmark_contracts_all_script_skips_legacy_row_payload_withou
     )
     assert result.returncode == 0
     report = json.loads((tmp_path / "all_contracts_legacy.json").read_text(encoding="utf-8"))
+    assert report["schema_version"] == "1.0"
     assert report["total_inputs"] == 2
     assert report["total"] == 1
     assert report["failed"] == 0
@@ -671,7 +691,7 @@ def test_validate_benchmark_contracts_all_script_ignores_generated_report_names(
     result = subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).resolve().parents[1] / "scripts" / "validate_benchmark_contracts_all.py"),
+            str(_script_path("validate_benchmark_contracts_all.py")),
             "--root",
             str(tmp_path),
             "--out",
@@ -684,6 +704,7 @@ def test_validate_benchmark_contracts_all_script_ignores_generated_report_names(
 
     assert result.returncode == 0
     report = json.loads((tmp_path / "all_contracts_ignore_generated.json").read_text(encoding="utf-8"))
+    assert report["schema_version"] == "1.0"
     assert report["total_inputs"] == 2
     assert report["total"] == 1
     assert report["failed"] == 0
@@ -752,7 +773,7 @@ def test_validate_benchmark_contracts_all_script_reports_sweep_path(tmp_path: Pa
     result = subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).resolve().parents[1] / "scripts" / "validate_benchmark_contracts_all.py"),
+            str(_script_path("validate_benchmark_contracts_all.py")),
             "--root",
             str(tmp_path),
             "--out",
@@ -816,7 +837,7 @@ def test_validate_benchmark_contracts_all_script_skips_non_benchmark_payload(tmp
     result = subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).resolve().parents[1] / "scripts" / "validate_benchmark_contracts_all.py"),
+            str(_script_path("validate_benchmark_contracts_all.py")),
             "--root",
             str(tmp_path),
             "--out",
@@ -832,3 +853,5 @@ def test_validate_benchmark_contracts_all_script_skips_non_benchmark_payload(tmp
     assert report["skipped"] == 1
     assert report["status_counts"]["PASS"] == 1
     assert report["status_counts"]["SKIP"] == 1
+
+

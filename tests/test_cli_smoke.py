@@ -1,40 +1,18 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import os
-import sys
 from pathlib import Path
 from typing import Any
+import sys
+import subprocess
+from _test_helpers import run_cli as _run_cli_impl
 
 from vizcompress.benchmark_contracts import validate_benchmark_contract
 
 
 def _run_cli(*args: str) -> subprocess.CompletedProcess:
-    root = Path(__file__).resolve().parents[1]
-    env = os.environ.copy()
-    src_path = str(root / "src")
-    pythonpath = env.get("PYTHONPATH", "")
-    if pythonpath:
-        env["PYTHONPATH"] = src_path + os.pathsep + pythonpath
-    else:
-        env["PYTHONPATH"] = src_path
     cmd = [sys.executable, "-m", "vizcompress.cli", *args]
-    result = subprocess.run(
-        cmd,
-        cwd=root,
-        capture_output=True,
-        text=True,
-        check=False,
-        env=env,
-    )
-    if result.returncode != 0:
-        raise RuntimeError(
-            "CLI command failed"
-            f"\ncmd: {' '.join(cmd)}\nstdout: {result.stdout}\nstderr: {result.stderr}"
-        )
-    return result
-
+    return _run_cli_impl(cmd, capture_output=True, text=True, check=False)
 
 def test_bench_command_writes_contract_json_and_markdown(tmp_path: Path) -> None:
     out_json = tmp_path / "bench.json"

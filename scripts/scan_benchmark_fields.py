@@ -6,6 +6,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+SCAN_REPORT_SCHEMA_VERSION = "1.0"
 
 REQUIRED_ROW_FIELDS = (
     "synthetic_kind",
@@ -167,7 +168,7 @@ def _scan_payload(path: Path) -> dict[str, Any]:
 
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError) as exc:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as exc:
         result["valid_json"] = False
         result["errors"] = [f"unreadable_json: {exc}"]
         return result
@@ -237,6 +238,7 @@ def main() -> int:
         raise ValueError("one of positional path or --root is required")
     root = args.root if args.root is not None else args.path
     report = {
+        "schema_version": SCAN_REPORT_SCHEMA_VERSION,
         "root": str(root.resolve()),
         "pattern": args.pattern,
         "files": [],
@@ -259,7 +261,7 @@ def main() -> int:
         "mode_breakdown": _sorted_counts(mode_counter),
     }
 
-    json_payload = json.dumps(report, ensure_ascii=False, indent=2)
+    json_payload = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True)
     if args.out is not None:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(json_payload, encoding="utf-8")

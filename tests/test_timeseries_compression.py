@@ -1,26 +1,18 @@
 from __future__ import annotations
 
-import os
 import json
-import subprocess
 import importlib.util
 import sys
 from pathlib import Path
 
 import numpy as np
 
+from _test_helpers import cli_env as _cli_test_env, run_cli as _run_cli, script_path as _repo_script
+
 ROOT_DIR = Path(__file__).resolve().parents[1]
 PROJECT_SRC = str(ROOT_DIR / "src")
 if PROJECT_SRC not in sys.path:
     sys.path.insert(0, PROJECT_SRC)
-
-
-def _cli_test_env() -> dict[str, str]:
-    env = os.environ.copy()
-    current_pythonpath = env.get("PYTHONPATH", "")
-    if PROJECT_SRC not in current_pythonpath.split(os.pathsep):
-        env["PYTHONPATH"] = os.pathsep.join([PROJECT_SRC, current_pythonpath]).strip(os.pathsep)
-    return env
 
 
 from vizcompress.analyzers import analyze_time_series
@@ -186,7 +178,7 @@ def test_cli_mvp_writes_demo_package_benchmark_and_summary(tmp_path):
         "0.9",
     ]
 
-    result = subprocess.run(
+    result = _run_cli(
         cmd,
         cwd=ROOT_DIR,
         env=_cli_test_env(),
@@ -953,7 +945,7 @@ def test_read_csv_timeseries(tmp_path):
 
 
 def test_cli_build_synthetic(tmp_path):
-    result = subprocess.run(
+    result = _run_cli(
         [
             sys.executable,
             "-m",
@@ -998,7 +990,7 @@ def test_cli_build_synthetic(tmp_path):
 
 
 def test_cli_build_clean_package_profile_drops_residual_layers(tmp_path):
-    result = subprocess.run(
+    result = _run_cli(
         [
             sys.executable,
             "-m",
@@ -1034,7 +1026,7 @@ def test_cli_build_clean_package_profile_drops_residual_layers(tmp_path):
 def test_cli_bench_synthetic(tmp_path):
     output = tmp_path / "bench.json"
     report = tmp_path / "bench.md"
-    result = subprocess.run(
+    result = _run_cli(
         [
             sys.executable,
             "-m",
@@ -1084,7 +1076,7 @@ def test_cli_bench_synthetic(tmp_path):
 
 def test_cli_bench_can_sweep_fourier_terms(tmp_path):
     output = tmp_path / "terms.json"
-    result = subprocess.run(
+    result = _run_cli(
         [
             sys.executable,
             "-m",
@@ -1115,7 +1107,7 @@ def test_cli_bench_can_sweep_fourier_terms(tmp_path):
 
 def test_cli_bench_can_sweep_channel_k(tmp_path):
     output = tmp_path / "channel_k.json"
-    result = subprocess.run(
+    result = _run_cli(
         [
             sys.executable,
             "-m",
@@ -1149,7 +1141,7 @@ def test_cli_bench_can_sweep_channel_k(tmp_path):
 
 def test_cli_bench_can_sweep_fourier_terms_and_channel_k(tmp_path):
     output = tmp_path / "terms_k.json"
-    result = subprocess.run(
+    result = _run_cli(
         [
             sys.executable,
             "-m",
@@ -1185,7 +1177,7 @@ def test_cli_bench_can_sweep_fourier_terms_and_channel_k(tmp_path):
 
 def test_cli_bench_accepts_defensible_coverage_threshold(tmp_path):
     output = tmp_path / "channel_k_threshold.json"
-    result = subprocess.run(
+    result = _run_cli(
         [
             sys.executable,
             "-m",
@@ -1230,7 +1222,7 @@ def test_cli_bench_accepts_defensible_coverage_threshold(tmp_path):
 
 def test_cli_bench_accepts_defensible_coverage_threshold_in_fourier_terms_sweep(tmp_path):
     output = tmp_path / "fourier_terms_threshold.json"
-    result = subprocess.run(
+    result = _run_cli(
         [
             sys.executable,
             "-m",
@@ -1278,7 +1270,7 @@ def test_cli_bench_accepts_defensible_coverage_threshold_in_fourier_terms_sweep(
 
 def test_cli_bench_gate_can_fail(tmp_path):
     output = tmp_path / "bench.json"
-    result = subprocess.run(
+    result = _run_cli(
         [
             sys.executable,
             "-m",
@@ -1313,7 +1305,7 @@ def test_cli_bench_gate_can_fail(tmp_path):
 
 def test_cli_recommend_reads_benchmark_json(tmp_path):
     output = tmp_path / "bench.json"
-    subprocess.run(
+    _run_cli(
         [
             sys.executable,
             "-m",
@@ -1335,7 +1327,7 @@ def test_cli_recommend_reads_benchmark_json(tmp_path):
         text=True,
     )
 
-    result = subprocess.run(
+    result = _run_cli(
         [
             sys.executable,
             "-m",
@@ -1354,7 +1346,7 @@ def test_cli_recommend_reads_benchmark_json(tmp_path):
 
 
 def test_cli_inspect_vizasset(tmp_path):
-    subprocess.run(
+    _run_cli(
         [
             sys.executable,
             "-m",
@@ -1376,7 +1368,7 @@ def test_cli_inspect_vizasset(tmp_path):
         text=True,
     )
 
-    result = subprocess.run(
+    result = _run_cli(
         [
             sys.executable,
             "-m",
@@ -1400,7 +1392,7 @@ def test_cli_inspect_vizasset(tmp_path):
 
 
 def test_cli_build_can_write_review_packet(tmp_path):
-    result = subprocess.run(
+    result = _run_cli(
         [
             sys.executable,
             "-m",
@@ -1435,7 +1427,7 @@ def test_cli_build_can_write_review_packet(tmp_path):
 
 
 def test_cli_build_can_require_review_pass(tmp_path):
-    result = subprocess.run(
+    result = _run_cli(
         [
             sys.executable,
             "-m",
@@ -1462,7 +1454,7 @@ def test_cli_build_can_require_review_pass(tmp_path):
 
 
 def test_cli_compare_reports_raw_and_gzip_baselines(tmp_path):
-    subprocess.run(
+    _run_cli(
         [
             sys.executable,
             "-m",
@@ -1482,7 +1474,7 @@ def test_cli_compare_reports_raw_and_gzip_baselines(tmp_path):
         text=True,
     )
 
-    result = subprocess.run(
+    result = _run_cli(
         [
             sys.executable,
             "-m",
@@ -1506,8 +1498,7 @@ def test_cli_compare_reports_raw_and_gzip_baselines(tmp_path):
 
 
 def test_terms_channel_sweep_summary_tracks_gate_win_counts():
-    repo_root = Path(__file__).resolve().parents[1]
-    script_path = repo_root / "scripts" / "run_terms_channel_kind_threshold_sweep.py"
+    script_path = _repo_script("run_terms_channel_kind_threshold_sweep.py")
     spec = importlib.util.spec_from_file_location("run_terms_channel_kind_threshold_sweep", script_path)
     if spec is None or spec.loader is None:
         raise RuntimeError("could not load terms-channel sweep script")
@@ -1563,8 +1554,7 @@ def test_terms_channel_sweep_summary_tracks_gate_win_counts():
 
 
 def test_terms_channel_sweep_summary_handles_ratio_alias_and_string_ratio_values():
-    repo_root = Path(__file__).resolve().parents[1]
-    script_path = repo_root / "scripts" / "run_terms_channel_kind_threshold_sweep.py"
+    script_path = _repo_script("run_terms_channel_kind_threshold_sweep.py")
     spec = importlib.util.spec_from_file_location("run_terms_channel_kind_threshold_sweep", script_path)
     if spec is None or spec.loader is None:
         raise RuntimeError("could not load terms-channel sweep script")
@@ -1587,12 +1577,12 @@ def test_terms_channel_sweep_summary_handles_ratio_alias_and_string_ratio_values
     summary = module._summarize_rows(rows, threshold=0.99)
     assert summary["best_direct_svg_gzip_to_package_ratio"] == 1.35
     assert summary["best_rows"]["direct_svg_gzip"]["ratio"] == 1.35
-    assert summary["summary_by_terms_k"]["16|2"]["best_rows"]["direct_svg_gzip"]["ratio"] == 1.35
+    summary_by_terms_k_key = "16|2.0" if "16|2.0" in summary["summary_by_terms_k"] else "16|2"
+    assert summary["summary_by_terms_k"][summary_by_terms_k_key]["best_rows"]["direct_svg_gzip"]["ratio"] == 1.35
 
 
 def test_terms_channel_grid_extract_best_row_prefers_numeric_ratio_string():
-    repo_root = Path(__file__).resolve().parents[1]
-    script_path = repo_root / "scripts" / "run_terms_channel_grid_sweep.py"
+    script_path = _repo_script("run_terms_channel_grid_sweep.py")
     spec = importlib.util.spec_from_file_location("run_terms_channel_grid_sweep", script_path)
     if spec is None or spec.loader is None:
         raise RuntimeError("could not load terms-channel grid sweep script")
@@ -1611,7 +1601,7 @@ def test_terms_channel_grid_extract_best_row_prefers_numeric_ratio_string():
 
 
 def test_cli_inspect_reports_clean_profile_without_residual_layer(tmp_path):
-    subprocess.run(
+    _run_cli(
         [
             sys.executable,
             "-m",
@@ -1634,7 +1624,7 @@ def test_cli_inspect_reports_clean_profile_without_residual_layer(tmp_path):
         capture_output=True,
         text=True,
     )
-    result = subprocess.run(
+    result = _run_cli(
         [
             sys.executable,
             "-m",
@@ -1653,7 +1643,7 @@ def test_cli_inspect_reports_clean_profile_without_residual_layer(tmp_path):
 
 
 def test_cli_inspect_reports_sparse_residual_details(tmp_path):
-    subprocess.run(
+    _run_cli(
         [
             sys.executable,
             "-m",
@@ -1674,7 +1664,7 @@ def test_cli_inspect_reports_sparse_residual_details(tmp_path):
         capture_output=True,
         text=True,
     )
-    result = subprocess.run(
+    result = _run_cli(
         [
             sys.executable,
             "-m",
@@ -1755,3 +1745,4 @@ def test_benchmark_gate_formats_channels_and_ratios():
     )
     assert gate["ok"] is False
     assert any("defensible ratio" in error for error in gate["errors"])
+

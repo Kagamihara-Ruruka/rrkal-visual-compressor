@@ -60,12 +60,56 @@ jobs:
             --contract-out docs/benchmarks/contract_matrix_ci.json \
             --fail-on-scan-warning \
             | tee /tmp/precheck_summary_ci.json
+      - name: Run parity smoke between copied benchmark artifacts
+        run: |
+          set -o pipefail
+          if [ ! -f docs/benchmarks/terms_channel_kind_threshold_grid_10k_gate.json ]; then
+            echo "missing parity fixture: docs/benchmarks/terms_channel_kind_threshold_grid_10k_gate.json"
+            exit 1
+          fi
+          cp docs/benchmarks/terms_channel_kind_threshold_grid_10k_gate.json docs/benchmarks/terms_channel_parity_left_ci.json
+          cp docs/benchmarks/terms_channel_kind_threshold_grid_10k_gate.json docs/benchmarks/terms_channel_parity_right_ci.json
+          python scripts/compare_terms_channel_benchmark_parity.py \
+            --left-root . \
+            --right-root . \
+            --left-out-json docs/benchmarks/terms_channel_parity_left_ci.json \
+            --right-out-json docs/benchmarks/terms_channel_parity_right_ci.json \
+            --report-json docs/benchmarks/terms_channel_benchmark_parity_report_ci.json \
+            --skip-run \
+            --validate-contract \
+            --require-contract-pass \
+            | tee /tmp/parity_smoke_summary_ci.json
+      - name: Validate parity smoke schema and contract status transition
+        run: |
+          python - <<'PY'
+          import json
+          with open('docs/benchmarks/terms_channel_benchmark_parity_report_ci.json', 'r', encoding='utf-8') as handle:
+              payload = json.load(handle)
+          for key in ("schema_version", "left", "right", "status", "contract_validation"):
+              if key not in payload:
+                  raise SystemExit(f"parity report missing key: {key}")
+          if payload["schema_version"] != "1.0":
+              raise SystemExit("parity report schema_version must be 1.0")
+          contract_validation = payload["contract_validation"]
+          if contract_validation.get("status_transition") != "ok->ok":
+              raise SystemExit("parity contract status transition must remain ok->ok")
+          if contract_validation.get("transition_changed") is not False:
+              raise SystemExit("parity contract status transition unexpectedly changed")
+          if payload.get("status") != "ok":
+              raise SystemExit(f"parity smoke status must be ok, got {payload.get('status')!r}")
+          if payload.get("parity_ok") is not True:
+              raise SystemExit("parity_ok must be true")
+          if payload.get("logical_signature_match") is not True:
+              raise SystemExit("logical_signature_match must be true")
+          print("parity smoke schema validated")
+          PY
       - name: Validate precheck summary schema
         run: |
           python - <<'PY'
           import json
           summary = json.loads(open('/tmp/precheck_summary_ci.json', 'r', encoding='utf-8').read().strip().splitlines()[-1])
           required_keys = {
+              'schema_version',
               'root',
               'pattern',
               'scan_ok',
@@ -100,6 +144,8 @@ jobs:
               raise SystemExit('status_counts must be an object')
           if not isinstance(summary.get('skip_reasons'), dict):
               raise SystemExit('skip_reasons must be an object')
+          if not isinstance(summary.get('schema_version'), str) or not summary['schema_version']:
+              raise SystemExit('schema_version must be a non-empty string')
           if not summary['scan_report'].endswith('scan_report_ci.json'):
               raise SystemExit('scan_report path mismatch')
           if not summary['contract_report'].endswith('contract_matrix_ci.json'):

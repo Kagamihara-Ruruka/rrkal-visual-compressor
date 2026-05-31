@@ -5,6 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from _test_helpers import script_path as _script_path
+
 
 def _legacy_report(path: Path) -> None:
     path.write_text(
@@ -49,7 +51,7 @@ def _legacy_report(path: Path) -> None:
 
 
 def _run_convert(args: list[str]) -> subprocess.CompletedProcess:
-    script = Path(__file__).resolve().parents[1] / "scripts" / "convert_legacy_hardening_reports.py"
+    script = _script_path("convert_legacy_hardening_reports.py")
     return subprocess.run(
         [sys.executable, str(script), *args],
         capture_output=True,
@@ -107,3 +109,5 @@ def test_convert_legacy_hardening_reports_no_input(tmp_path: Path) -> None:
     ])
     assert result.returncode == 1
     assert "no legacy files found" in result.stdout
+
+

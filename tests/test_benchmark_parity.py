@@ -5,6 +5,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+from _test_helpers import script_path as _repo_script_path
+
+
+def _script_path() -> Path:
+    return _repo_script_path("check_benchmark_parity.py")
+
 
 def _fixture_payload() -> dict:
     return {
@@ -62,7 +68,7 @@ def test_benchmark_parity_matches_identical_payload(tmp_path: Path):
     result = subprocess.run(
         [
             sys.executable,
-            str(root / "scripts" / "check_benchmark_parity.py"),
+            str(_script_path()),
             "--left",
             str(left),
             "--right",
@@ -91,7 +97,7 @@ def test_benchmark_parity_tolerates_metadata_only_diff(tmp_path: Path):
     result = subprocess.run(
         [
             sys.executable,
-            str(root / "scripts" / "check_benchmark_parity.py"),
+            str(_script_path()),
             "--left",
             str(left),
             "--right",
@@ -120,7 +126,7 @@ def test_benchmark_parity_detects_key_delta(tmp_path: Path):
     result = subprocess.run(
         [
             sys.executable,
-            str(root / "scripts" / "check_benchmark_parity.py"),
+            str(_script_path()),
             "--left",
             str(left),
             "--right",
@@ -134,3 +140,4 @@ def test_benchmark_parity_detects_key_delta(tmp_path: Path):
     assert result.returncode == 2
     assert "logical_signature: FAIL" in result.stdout
     assert "high_fidelity_rows_count" in result.stdout
+

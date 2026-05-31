@@ -295,10 +295,14 @@ The generated report JSON includes machine-checkable status:
 - `status: contract_failed` contract gate failed
 - `status: signature_mismatch` semantic signature mismatch while hash differs
 - `status: parity_failed` hash mismatches after tolerances
+- `status: contract_status_transition_changed` left/right contract status changed
 - `contract_validation.enabled` indicates contract checking mode
 - `contract_validation.enforced` is true only with `--require-contract-pass`
 - `contract_validation.left/right` summarize per-side contract outcomes
+- `contract_validation.left_status/right_status` are `ok`/`fail`/`not_run`
+- `contract_validation.status_transition` shows transition string e.g. `ok->ok`
 - `contract_validation.left_passed/right_passed` are boolean pass flags
+- `contract_validation.transition_changed` is true when `status_transition` is not `ok->ok` or `fail->fail`
 - `contract_violations` lists contract-fail summaries
 
 By default, parity contract checks are opt-in in this script.
@@ -306,6 +310,22 @@ In CI, use a strict contract gate with:
 
 ```bash
 py scripts/compare_terms_channel_benchmark_parity.py ... --validate-contract --require-contract-pass
+```
+
+For CI smoke using copied artifacts, prefer:
+
+```bash
+cp docs/benchmarks/terms_channel_kind_threshold_grid_10k_gate.json docs/benchmarks/terms_channel_parity_left_ci.json
+cp docs/benchmarks/terms_channel_kind_threshold_grid_10k_gate.json docs/benchmarks/terms_channel_parity_right_ci.json
+py scripts/compare_terms_channel_benchmark_parity.py \
+  --left-root . \
+  --right-root . \
+  --left-out-json docs/benchmarks/terms_channel_parity_left_ci.json \
+  --right-out-json docs/benchmarks/terms_channel_parity_right_ci.json \
+  --report-json docs/benchmarks/terms_channel_benchmark_parity_report_ci.json \
+  --skip-run \
+  --validate-contract \
+  --require-contract-pass
 ```
 
 ### Hard-signal behavior note

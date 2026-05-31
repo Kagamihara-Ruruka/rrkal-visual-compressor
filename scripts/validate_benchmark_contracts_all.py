@@ -13,6 +13,8 @@ if str(PROJECT_SRC) not in os.sys.path:
 
 from vizcompress.benchmark_contracts import validate_benchmark_contract
 
+CONTRACT_REPORT_SCHEMA_VERSION = "1.0"
+
 
 _BENCHMARK_EXCLUDED_EXACT = {"terms_channel_benchmark_parity_report.json"}
 _CONTRACT_SWEEP_REQUIRED_FIELDS = (
@@ -39,10 +41,8 @@ def _safe_load_json(path: Path) -> dict[str, object]:
         raise ValueError(f"benchmark JSON is not a file: {path}")
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as exc:
         raise ValueError(f"invalid benchmark JSON: {path}: {exc}") from exc
-    except OSError as exc:
-        raise OSError(f"benchmark JSON unreadable: {path}: {exc}") from exc
     if not isinstance(payload, dict):
         raise TypeError(f"benchmark payload must be a JSON object: {path}")
     return payload
@@ -197,6 +197,7 @@ def main() -> int:
             break
 
     summary = {
+        "schema_version": CONTRACT_REPORT_SCHEMA_VERSION,
         "root": str(root),
         "pattern": args.pattern,
         "total": len(by_status["PASS"]) + len(by_status["FAIL"]),
@@ -212,7 +213,7 @@ def main() -> int:
     if args.out is not None:
         out = args.out.expanduser().resolve()
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
+        out.write_text(json.dumps(summary, indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
         print(f"summary: {out}")
         if summary["failed"] > 0:
             print(f"failed_report: {out}")
