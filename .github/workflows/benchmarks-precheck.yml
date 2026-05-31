@@ -52,9 +52,61 @@ jobs:
           python -m pytest tests/test_precheck_benchmarks.py tests/test_scan_benchmark_fields.py tests/test_benchmark_contracts.py tests/test_cli_smoke.py tests/test_convert_legacy_hardening_reports.py -q
       - name: Run benchmark precheck
         run: |
+          set -o pipefail
           python scripts/precheck_benchmarks.py \
             --root docs/benchmarks \
             --pattern "*.json" \
             --scan-out docs/benchmarks/scan_report_ci.json \
             --contract-out docs/benchmarks/contract_matrix_ci.json \
-            --fail-on-scan-warning
+            --fail-on-scan-warning \
+            | tee /tmp/precheck_summary_ci.json
+      - name: Validate precheck summary schema
+        run: |
+          python - <<'PY'
+          import json
+          summary = json.loads(open('/tmp/precheck_summary_ci.json', 'r', encoding='utf-8').read().strip().splitlines()[-1])
+          required_keys = {
+              'root',
+              'pattern',
+              'scan_ok',
+              'contract_ok',
+              'scan_report',
+              'contract_report',
+              'skip_scan',
+              'skip_contract',
+              'scan',
+              'contract',
+              'failed_report',
+              'status_counts',
+              'skipped',
+              'skip_reasons',
+              'total_inputs',
+          }
+          missing = sorted(required_keys - set(summary.keys()))
+          if missing:
+              raise SystemExit(f"precheck summary missing keys: {', '.join(missing)}")
+          if not isinstance(summary['scan'], dict):
+              raise SystemExit('scan summary must be an object')
+          if not isinstance(summary['contract'], dict):
+              raise SystemExit('contract summary must be an object')
+          if 'status' not in summary['contract']:
+              raise SystemExit('contract.status is required')
+          if summary['contract']['status'] not in {'ok', 'fail', 'not_run'}:
+              raise SystemExit('contract.status must be one of: ok, fail, not_run')
+          for key in ('total_inputs', 'skipped'):
+              if not isinstance(summary.get(key), int):
+                  raise SystemExit(f'{key} must be an integer')
+          if not isinstance(summary.get('status_counts'), dict):
+              raise SystemExit('status_counts must be an object')
+          if not isinstance(summary.get('skip_reasons'), dict):
+              raise SystemExit('skip_reasons must be an object')
+          if not summary['scan_report'].endswith('scan_report_ci.json'):
+              raise SystemExit('scan_report path mismatch')
+          if not summary['contract_report'].endswith('contract_matrix_ci.json'):
+              raise SystemExit('contract_report path mismatch')
+          if summary.get('skip_scan') is None:
+              raise SystemExit('skip_scan field missing')
+          if summary.get('skip_contract') is None:
+              raise SystemExit('skip_contract field missing')
+          print('precheck summary schema validated')
+          PY

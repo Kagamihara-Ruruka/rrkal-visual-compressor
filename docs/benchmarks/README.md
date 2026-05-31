@@ -256,6 +256,15 @@ The precheck prints a JSON summary with:
 - `status_counts` and `skipped` (plus `skip_reasons`): non-contract payloads are reported with explicit skip reasons.
 - `total_inputs`: total files considered by the precheck run.
 
+`validate_benchmark_contracts_all.py` also treats legacy/non-contract row payloads
+as `SKIP` (not hard failure) and records:
+
+- `status_counts.SKIP`
+- `skipped`
+- `skip_reasons.legacy_or_non_contract_payload`
+- `rows[].skip_reason`
+`scan_report*.json` and `contract_matrix*.json` are excluded from batch inputs by default.
+
 In CI, keep `--fail-on-scan-warning` enabled so malformed benchmark JSON is
 blocked early, and keep both reports (`scan` + contract) for auditability.
 

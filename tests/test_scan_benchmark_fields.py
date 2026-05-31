@@ -70,6 +70,48 @@ def test_scan_benchmark_fields_returns_rows_and_unknown_summary(tmp_path: Path) 
     bad_file = next(item for item in payload["files"] if item["path"] == str(bad_path))
     assert bad_file["rows"]["rows_missing_any_required"] == 1
     assert bad_file["sweep"]["buckets_missing_any_required"] == 1
+    assert bad_file["sweep"]["sweep_total"] == 1
+
+
+def test_scan_benchmark_fields_accepts_alternative_ratio_field_name(tmp_path: Path) -> None:
+    payload = {
+        "benchmark": "gzip_ratio_alias",
+        "rows": [
+            {
+                "synthetic_kind": "spikes",
+                "samples": 1000,
+                "fourier_terms": 16,
+                "fourier_r2": 0.99,
+                "direct_svg_gzip_to_package_ratio": 1.1,
+                "source_csv_gzip_to_package_ratio": 1.0,
+            }
+        ],
+    }
+    input_path = tmp_path / "alias.json"
+    input_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(Path(__file__).resolve().parents[1] / "scripts" / "scan_benchmark_fields.py"),
+            str(tmp_path),
+            "--pattern",
+            "*.json",
+            "--out",
+            str(tmp_path / "scan.json"),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0
+    scan_payload = json.loads((tmp_path / "scan.json").read_text(encoding="utf-8"))
+
+    assert scan_payload["summary"]["total"] == 1
+    assert scan_payload["summary"]["mode_breakdown"]["rows"] == 1
+    scanned = next(item for item in scan_payload["files"] if item["path"] == str(input_path))
+    assert scanned["rows"]["rows_missing_any_required"] == 0
+    assert scanned["rows"]["rows_total"] == 1
 
 
 def test_scan_benchmark_fields_excludes_contract_and_parity_reports(tmp_path: Path) -> None:

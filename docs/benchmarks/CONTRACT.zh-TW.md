@@ -1,30 +1,55 @@
-# Benchmark Contract（繁體中文）
+# Benchmark 合約
 
-本文件是 CI 與可重現報表的契約規範（資料品質與門檻）。
+本頁定義可重複驗證的規約，作為 CI 與研究成果報告的品質底線。
 
-## 核心規則
+## 核心條件
 
-對固定 `(synthetic_kind, samples, channel_k)` 與 profile，較高的 Fourier 項目數不應降低 R²：
+固定 `（synthetic_kind, samples, channel_k）` 與同一 profile 下，增大 Fourier 項數不應降低保真度：
 
 $$
 \forall t_1 < t_2,\quad R^2(t_2)+\epsilon \ge R^2(t_1)
 $$
 
-其中 `R^2` 指每列 benchmark 的傅立葉保真度。
+其中 `R²` 指每列 row 的 Fourier 擬合分數。
 
-驗證器同時檢查：
+驗證器也會檢查：
 
-- `channel_coverage_ratio`（若提供）必須在 `[0, 1]`。
-- 比率欄位為正且有限數。
-- `summary` 欄位的計數/比值與逐列資料需一致。
-- 錯誤訊息包含欄位路徑，例如
-  - `row[3].direct_svg_to_package_ratio: must be > 0, got -1.0`
-  - `sweep[1].high_fidelity_rows_count: missing`
-  - `.../bad.json: row[0].samples: must be a positive integer`
+- `channel_coverage_ratio` 若存在，需落在 `[0,1]`。
+- 各壓縮比欄位為正數且有限值。
+- summary 的各類計數要和 row 級結果一致。
+- 每筆錯誤都會附上欄位路徑前綴，例如：
+  - `row[<index>].<field>: <訊息>`
+  - `sweep[<index>].<field>: <訊息>`
 
-## 風險範圍
+範例：
 
-- 目標為「目前規格產生的 benchmark JSON」；不作為所有歷史/外部格式的通用驗證器。
+- `row[3].direct_svg_to_package_ratio: must be >0, got -1.0`
+- `row[3].direct_svg_gzip_to_package_ratio: must be >0, got -1.0`
+- `sweep[1].high_fidelity_rows_count: missing`
+- `docs/benchmarks/.../bad.json: row[0].samples: must be a positive integer, got -1`
+
+批次輸入驗證器（`validate_benchmark_contracts_all.py`）額外支援
+`--out`，當任一檔案失敗時會在輸出 JSON 寫入 `failed_report`。
+
+在 `status` 聚合上，`validate_benchmark_contracts_all.py` 將無合約 / legacy 內容判定為 `SKIP`（非 fail）：
+
+- `total_inputs`: 掃描到的輸入檔數
+- `total` / `passed` / `failed` / `skipped`：依 row 狀態彙總
+- `status_counts`: `PASS`、`FAIL`、`SKIP` 次數
+- `skip_reasons`: 目前僅使用 `legacy_or_non_contract_payload`
+- `rows[].skip_reason`: legacy 或非合約 row 的原因
+
+`rows[].status` 在以下情況會是 `SKIP`：summary 缺少 `high_fidelity_rows_count` 或 `defensible_rows_count`。
+
+預設會排除以下報告檔案名稱，避免掃描到歷史輸出：
+
+- `scan_report*.json`
+- `contract_matrix*.json`
+
+## 使用範圍
+
+- 輸入為本專案目前 sweep 腳本輸出的 benchmark JSON。
+- 這是**可重現性/一致性**合約，不是通用數學普適性保證。
 
 ## CLI
 
@@ -41,27 +66,17 @@ py scripts/precheck_benchmarks.py \
   --fail-on-scan-warning
 ```
 
-退出碼：`0` = PASS，`2` = FAIL。
+回傳值：
 
-`validate_benchmark_contracts_all.py` 亦支援 `--out`，失敗時輸出 `failed_report`。
+- `0`: PASS
+- `2`: FAIL
 
-`scan_benchmark_fields.py` 提供結構掃描，輸出 mixed/rows/sweep 欄位型態彙整。
+## 為什麼要做
 
-`precheck_benchmarks.py` 的回傳 JSON summary 包含：
+完整流程：
+1. 定義壓縮表示族群
+2. 指定可量測收斂條件
+3. 執行可重現 sweep
+4. 對 JSON 做合約驗證
 
-- `scan_ok`
-- `contract_ok`
-- `scan`（掃描彙總）
-- `contract`（`failed/passed/total/status`）
-- `failed_report`
-- `status_counts`、`skipped`、`skip_reasons`
-- `total_inputs`
-
-## 文件治理
-
-推薦流程：
-
-1. 定義/更新 sweep 腳本與參數
-2. 產生 benchmark artifacts
-3. 執行 scan 與契約驗證
-4. 先預檢，再提交
+能避免本機與雲端/遠端節點對同一資料有不同解讀。

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -11,6 +12,13 @@ from vizcompress.benchmark_contracts import validate_benchmark_contract
 
 def _run_cli(*args: str) -> subprocess.CompletedProcess:
     root = Path(__file__).resolve().parents[1]
+    env = os.environ.copy()
+    src_path = str(root / "src")
+    pythonpath = env.get("PYTHONPATH", "")
+    if pythonpath:
+        env["PYTHONPATH"] = src_path + os.pathsep + pythonpath
+    else:
+        env["PYTHONPATH"] = src_path
     cmd = [sys.executable, "-m", "vizcompress.cli", *args]
     result = subprocess.run(
         cmd,
@@ -18,6 +26,7 @@ def _run_cli(*args: str) -> subprocess.CompletedProcess:
         capture_output=True,
         text=True,
         check=False,
+        env=env,
     )
     if result.returncode != 0:
         raise RuntimeError(

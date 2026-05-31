@@ -33,6 +33,7 @@ from vizcompress.packages import (
     reconstruct_noise_layer,
     reconstruct_retained_signal,
     reconstruct_sparse_residual,
+    _validate_manifest_shape,
     validate_vizasset,
     validate_vizasset_source,
     write_vizasset,
@@ -749,6 +750,13 @@ def _bench(args: argparse.Namespace) -> int:
 
 def _inspect(args: argparse.Namespace) -> int:
     manifest = load_vizasset_manifest(args.package)
+    manifest_errors: list[str] = []
+    manifest_warnings: list[str] = []
+    _validate_manifest_shape(manifest, manifest_errors, manifest_warnings)
+    if manifest_errors:
+        raise SystemExit(
+            f"{args.package}: manifest validation failed: " + "; ".join(manifest_errors)
+        )
     reconstructed = reconstruct_fourier(args.package, samples=args.samples)
     has_channel = manifest["model"]["primary_method"] == "fourier_channel"
     channel_summary = None

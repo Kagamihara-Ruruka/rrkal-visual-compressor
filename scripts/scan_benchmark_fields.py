@@ -12,12 +12,19 @@ REQUIRED_ROW_FIELDS = (
     "samples",
     "fourier_terms",
     "fourier_r2",
-    "direct_svg_to_package_ratio",
-    "direct_svg_gzip_to_package_ratio",
     "source_csv_gzip_to_package_ratio",
 )
 
-OPTIONAL_ROW_FIELDS = ("channel_k", "channel_coverage_ratio", "source_csv_to_package_ratio")
+OPTIONAL_RATIO_FIELDS = (
+    "direct_svg_to_package_ratio",
+    "direct_svg_gzip_to_package_ratio",
+)
+
+OPTIONAL_ROW_FIELDS = (
+    "channel_k",
+    "channel_coverage_ratio",
+    "source_csv_to_package_ratio",
+) + OPTIONAL_RATIO_FIELDS
 
 REQUIRED_SWEEP_FIELDS = (
     "high_fidelity_rows_count",
@@ -80,6 +87,8 @@ def _sorted_counts(counter: Counter[str]) -> dict[str, int]:
 
 
 def _scan_row_bucket(rows: list[Any]) -> dict[str, Any]:
+    required_fields = set(REQUIRED_ROW_FIELDS)
+    optional_fields = set(OPTIONAL_ROW_FIELDS)
     missing = Counter[str]()
     unexpected = Counter[str]()
     non_dict_rows = 0
@@ -90,18 +99,27 @@ def _scan_row_bucket(rows: list[Any]) -> dict[str, Any]:
             non_dict_rows += 1
             continue
         keys = set(row.keys())
-        present = keys.intersection(REQUIRED_ROW_FIELDS)
-        if len(present) != len(REQUIRED_ROW_FIELDS):
-            missing_any += 1
-            for field in REQUIRED_ROW_FIELDS:
+        row_missing_any = False
+        present = keys.intersection(required_fields)
+        if len(present) != len(required_fields):
+            row_missing_any = True
+            for field in required_fields:
                 if field not in row:
                     missing[field] += 1
 
-        for key in keys - set(REQUIRED_ROW_FIELDS) - set(OPTIONAL_ROW_FIELDS):
+        if not any(field in keys for field in OPTIONAL_RATIO_FIELDS):
+            row_missing_any = True
+            missing["direct_svg_ratio"] += 1
+
+        if row_missing_any:
+            missing_any += 1
+
+        for key in keys - required_fields - optional_fields:
             unexpected[key] += 1
 
     return {
         "count": len(rows),
+        "rows_total": len(rows),
         "non_dict_rows": non_dict_rows,
         "rows_missing_any_required": missing_any,
         "missing_required": _sorted_counts(missing),
@@ -130,6 +148,7 @@ def _scan_sweep_bucket(sweep: list[Any]) -> dict[str, Any]:
 
     return {
         "count": len(sweep),
+        "sweep_total": len(sweep),
         "non_dict_buckets": non_dict_rows,
         "buckets_missing_any_required": missing_any,
         "missing_required": _sorted_counts(missing),

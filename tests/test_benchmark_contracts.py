@@ -513,18 +513,184 @@ def test_validate_benchmark_contracts_all_script(tmp_path: Path):
     )
     assert result.returncode == 2
     report = json.loads((tmp_path / "all_contracts.json").read_text(encoding="utf-8"))
+    assert report["total_inputs"] == 2
     assert report["total"] == 2
     assert report["failed"] == 1
     assert "FAIL" in result.stdout
-    assert (
-        "row[0].direct_svg_to_package_ratio" in result.stdout
-        or "row[0].direct_svg_gzip_to_package_ratio" in result.stdout
+    assert "failed=1" in result.stdout
+    assert "status_counts" in report
+    assert report["status_counts"]["PASS"] == 1
+    assert report["status_counts"]["FAIL"] == 1
+
+
+def test_validate_benchmark_contracts_all_script_skips_legacy_row_payload_without_summary_counters(tmp_path: Path) -> None:
+    legacy = tmp_path / "legacy_rows.json"
+    contract = tmp_path / "contract.json"
+    legacy.write_text(
+        json.dumps(
+            {
+                "benchmark": "legacy_rows_only",
+                "rows": [
+                    {
+                        "synthetic_kind": "spikes",
+                        "samples": 1000,
+                        "fourier_terms": 16,
+                        "channel_k": 3.0,
+                        "fourier_r2": 0.99,
+                        "direct_svg_to_package_ratio": 1.1,
+                        "source_csv_gzip_to_package_ratio": 1.0,
+                        "direct_svg_gzip_to_package_ratio": 1.0,
+                    }
+                ],
+                "summary": {
+                    "observed_break_even_samples": 1000,
+                },
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
     )
-    assert any(
-        "row[0].direct_svg_to_package_ratio" in err or "row[0].direct_svg_gzip_to_package_ratio" in err
-        for row in report["rows"]
-        for err in row["errors"]
+    contract.write_text(
+        json.dumps(
+            {
+                "benchmark": "contract_rows",
+                "rows": [
+                    {
+                        "synthetic_kind": "spikes",
+                        "samples": 1000,
+                        "fourier_terms": 16,
+                        "channel_k": 3.0,
+                        "fourier_r2": 0.99,
+                        "direct_svg_to_package_ratio": 1.1,
+                        "source_csv_gzip_to_package_ratio": 1.0,
+                        "direct_svg_gzip_to_package_ratio": 1.0,
+                    }
+                ],
+                "summary": {
+                    "high_fidelity_rows_count": 1,
+                    "defensible_rows_count": 0,
+                    "defensible_rows_ratio": 0.0,
+                    "defensible_channel_coverage_threshold": 0.95,
+                },
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
     )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(Path(__file__).resolve().parents[1] / "scripts" / "validate_benchmark_contracts_all.py"),
+            "--root",
+            str(tmp_path),
+            "--out",
+            str(tmp_path / "all_contracts_legacy.json"),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0
+    report = json.loads((tmp_path / "all_contracts_legacy.json").read_text(encoding="utf-8"))
+    assert report["total_inputs"] == 2
+    assert report["total"] == 1
+    assert report["failed"] == 0
+    assert report["skipped"] == 1
+    assert report["status_counts"]["SKIP"] == 1
+    assert report["status_counts"]["PASS"] == 1
+    legacy_row = next(row for row in report["rows"] if row["input"] == str(legacy))
+    assert legacy_row["status"] == "SKIP"
+    assert legacy_row["skip_reason"] == "legacy_or_non_contract_payload"
+
+
+def test_validate_benchmark_contracts_all_script_ignores_generated_report_names(tmp_path: Path) -> None:
+    good = tmp_path / "good.json"
+    legacy = tmp_path / "legacy_rows.json"
+    scan = tmp_path / "scan_report.json"
+    matrix = tmp_path / "contract_matrix_precheck.json"
+
+    good.write_text(
+        json.dumps(
+            {
+                "benchmark": "contract_rows",
+                "rows": [
+                    {
+                        "synthetic_kind": "spikes",
+                        "samples": 1024,
+                        "fourier_terms": 16,
+                        "channel_k": 3.0,
+                        "fourier_r2": 0.99,
+                        "direct_svg_to_package_ratio": 1.1,
+                        "source_csv_gzip_to_package_ratio": 1.0,
+                        "direct_svg_gzip_to_package_ratio": 1.0,
+                    }
+                ],
+                "summary": {
+                    "high_fidelity_rows_count": 1,
+                    "defensible_rows_count": 0,
+                    "defensible_rows_ratio": 0.0,
+                    "defensible_channel_coverage_threshold": 0.95,
+                },
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    legacy.write_text(
+        json.dumps(
+            {
+                "benchmark": "legacy_rows",
+                "rows": [
+                    {
+                        "synthetic_kind": "spikes",
+                        "samples": 1024,
+                        "fourier_terms": 16,
+                        "channel_k": 3.0,
+                        "fourier_r2": 0.99,
+                        "direct_svg_to_package_ratio": 1.1,
+                        "source_csv_gzip_to_package_ratio": 1.0,
+                        "direct_svg_gzip_to_package_ratio": 1.0,
+                    }
+                ],
+                "summary": {
+                    "observed_break_even_samples": 1000,
+                },
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    scan.write_text("{}", encoding="utf-8")
+    matrix.write_text("{}", encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(Path(__file__).resolve().parents[1] / "scripts" / "validate_benchmark_contracts_all.py"),
+            "--root",
+            str(tmp_path),
+            "--out",
+            str(tmp_path / "all_contracts_ignore_generated.json"),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    report = json.loads((tmp_path / "all_contracts_ignore_generated.json").read_text(encoding="utf-8"))
+    assert report["total_inputs"] == 2
+    assert report["total"] == 1
+    assert report["failed"] == 0
+    assert report["skipped"] == 1
+    observed_inputs = {row["input"] for row in report["rows"]}
+    assert str(scan) not in observed_inputs
+    assert str(matrix) not in observed_inputs
 
 
 def test_validate_benchmark_contracts_all_script_reports_sweep_path(tmp_path: Path):

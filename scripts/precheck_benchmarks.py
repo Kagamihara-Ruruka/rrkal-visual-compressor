@@ -80,6 +80,10 @@ def main() -> int:
     args = parse_args()
     root = args.root.expanduser().resolve()
 
+    if args.skip_scan and args.skip_contract:
+        print("cannot skip both scan and contract validation")
+        return 2
+
     scan_report_path = args.scan_out or (root / "scan_report.json")
     contract_report_path = args.contract_out or (root / "contract_matrix_precheck.json")
     scan_script = ROOT_DIR / "scripts" / "scan_benchmark_fields.py"
@@ -117,6 +121,7 @@ def main() -> int:
             if args.fail_on_scan_warning and _has_scan_violations(scan_payload):
                 scan_ok = False
 
+    contract_failed = False
     if not args.skip_contract:
         env = os.environ.copy()
         existing_path = env.get("PYTHONPATH", "")
@@ -130,8 +135,13 @@ def main() -> int:
             args.pattern,
             "--out",
             str(contract_report_path),
+            "--exclude",
+            str(scan_report_path),
+            "--exclude",
+            str(contract_report_path),
         ]
         contract_result = _run_command(contract_cmd, env=env)
+        contract_failed = contract_result.returncode != 0
         if contract_result.returncode != 0:
             contract_ok = False
             print(f"contract validation command failed rc={contract_result.returncode}")
@@ -143,15 +153,29 @@ def main() -> int:
         except (OSError, json.JSONDecodeError):
             contract_payload = None
             contract_ok = False
+            contract_failed = True
 
     summary = {
         "root": str(root),
         "pattern": args.pattern,
         "scan_ok": scan_ok,
         "contract_ok": contract_ok,
+        "scan_report": str(scan_report_path),
+        "contract_report": str(contract_report_path),
         "skip_scan": args.skip_scan,
         "skip_contract": args.skip_contract,
         "failed_report": None,
+        "scan": {},
+        "contract": {
+            "status": "not_run",
+            "failed": 0,
+            "passed": 0,
+            "total": 0,
+        },
+        "status_counts": {},
+        "skipped": 0,
+        "skip_reasons": {},
+        "total_inputs": 0,
     }
 
     if scan_payload is not None:
@@ -168,8 +192,11 @@ def main() -> int:
         summary["skipped"] = contract_payload.get("skipped", 0)
         summary["skip_reasons"] = contract_payload.get("skip_reasons", {})
         summary["total_inputs"] = contract_payload.get("total_inputs", summary["contract"]["total"])
-        if (failed > 0
-                and args.skip_contract is False):
+        if (failed > 0 or contract_failed) and args.skip_contract is False:
+            summary["failed_report"] = str(contract_report_path)
+    else:
+        summary["total_inputs"] = scan_payload.get("summary", {}).get("total", 0) if scan_payload is not None else 0
+        if contract_failed and args.skip_contract is False:
             summary["failed_report"] = str(contract_report_path)
 
     print(json.dumps(summary, ensure_ascii=False))

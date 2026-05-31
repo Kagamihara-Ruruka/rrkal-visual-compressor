@@ -82,6 +82,15 @@ Quick structural scan:
 - `status_counts` and `skipped` with `skip_reasons` for non-contract/legacy snapshots
 - `total_inputs`: total files scanned by the directory pass.
 
+`validate_benchmark_contracts_all.py` marks non-contract/legacy row payloads as `SKIP`
+(not failure) when `summary` missing both:
+
+- `high_fidelity_rows_count`
+- `defensible_rows_count`
+
+In this case `rows[].status` is `SKIP` and `skip_reasons.legacy_or_non_contract_payload` is populated.
+Report files like `scan_report*.json` / `contract_matrix*.json` are ignored by default in batch runs.
+
 ## Why this matters
 
 The sequence is:
