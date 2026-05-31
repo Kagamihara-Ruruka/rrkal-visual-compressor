@@ -46,6 +46,7 @@ from vizcompress.video_benchmarks import (
     write_video_benchmark,
     write_video_benchmark_markdown,
 )
+from vizcompress.bench_precheck import precheck_benchmarks
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -252,6 +253,49 @@ def main(argv: list[str] | None = None) -> int:
         help="Clean/recreate benchmark output targets before writing.",
     )
 
+    precheck = subparsers.add_parser(
+        "precheck-benchmarks",
+        help="Run benchmark prechecks: field scan + contract validation.",
+    )
+    precheck.add_argument(
+        "--root",
+        type=Path,
+        default=Path("docs") / "benchmarks",
+        help="Benchmark directory.",
+    )
+    precheck.add_argument(
+        "--pattern",
+        default="*.json",
+        help="File glob pattern for benchmark JSON inputs.",
+    )
+    precheck.add_argument(
+        "--scan-out",
+        type=Path,
+        default=None,
+        help="Path to write scan JSON report.",
+    )
+    precheck.add_argument(
+        "--contract-out",
+        type=Path,
+        default=None,
+        help="Path to write contract validation summary JSON.",
+    )
+    precheck.add_argument(
+        "--skip-scan",
+        action="store_true",
+        help="Skip structural field scan.",
+    )
+    precheck.add_argument(
+        "--skip-contract",
+        action="store_true",
+        help="Skip strict contract validation.",
+    )
+    precheck.add_argument(
+        "--fail-on-scan-warning",
+        action="store_true",
+        help="Fail precheck if scan detects missing/invalid fields.",
+    )
+
     args = parser.parse_args(argv)
     if args.version:
         from vizcompress import __version__
@@ -274,8 +318,28 @@ def main(argv: list[str] | None = None) -> int:
         return _compare(args)
     if args.command == "video-bench":
         return _video_bench(args)
+    if args.command == "precheck-benchmarks":
+        return _precheck_benchmarks(args)
     parser.print_help()
     return 0
+
+
+def _precheck_benchmarks(args: argparse.Namespace) -> int:
+    root = args.root.expanduser().resolve()
+    if args.skip_scan and args.skip_contract:
+        print("cannot skip both scan and contract validation")
+        return 2
+    rc, summary = precheck_benchmarks(
+        root=root,
+        pattern=args.pattern,
+        scan_out=args.scan_out,
+        contract_out=args.contract_out,
+        skip_scan=args.skip_scan,
+        skip_contract=args.skip_contract,
+        fail_on_scan_warning=args.fail_on_scan_warning,
+    )
+    print(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+    return rc
 
 
 def _build(args: argparse.Namespace) -> int:

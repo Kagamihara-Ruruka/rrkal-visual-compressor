@@ -5,7 +5,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-from _test_helpers import precheck_script
+from _test_helpers import run_cli
+
+
+def _run_precheck(argv: list[str], **kwargs: object) -> subprocess.CompletedProcess:
+    cmd = [sys.executable, "-m", "vizcompress.cli", "precheck-benchmarks", *argv]
+    return run_cli(cmd, **kwargs)
 
 
 def assert_precheck_summary_shape(payload: dict) -> None:
@@ -75,10 +80,8 @@ def test_precheck_benchmarks_fails_on_scan_violation(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    result = subprocess.run(
-    [
-        sys.executable,
-            precheck_script(),
+    result = _run_precheck(
+        [
             "--root",
             str(root),
             "--pattern",
@@ -105,10 +108,8 @@ def test_precheck_benchmarks_fails_on_unreadable_scan_payload(tmp_path: Path) ->
     broken = root / "bad_encoding.json"
     broken.write_bytes(b"\xff\x00\xfe")
 
-    result = subprocess.run(
+    result = _run_precheck(
         [
-            sys.executable,
-            precheck_script(),
             "--root",
             str(root),
             "--pattern",
@@ -162,10 +163,8 @@ def test_precheck_benchmarks_summary_schema_is_stable(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    result = subprocess.run(
+    result = _run_precheck(
         [
-            sys.executable,
-            precheck_script(),
             "--root",
             str(root),
             "--pattern",
@@ -199,10 +198,8 @@ def test_precheck_benchmarks_rejects_both_skip_flags(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    result = subprocess.run(
+    result = _run_precheck(
         [
-            sys.executable,
-            precheck_script(),
             "--root",
             str(root),
             "--pattern",
@@ -254,10 +251,8 @@ def test_precheck_benchmarks_contract_failure_sets_failed_report(tmp_path: Path)
         encoding="utf-8",
     )
 
-    result = subprocess.run(
+    result = _run_precheck(
         [
-            sys.executable,
-            precheck_script(),
             "--root",
             str(root),
             "--pattern",
@@ -311,10 +306,8 @@ def test_precheck_benchmarks_contract_success_with_skip_scan(tmp_path: Path) -> 
         encoding="utf-8",
     )
 
-    result = subprocess.run(
+    result = _run_precheck(
         [
-            sys.executable,
-            precheck_script(),
             "--root",
             str(root),
             "--pattern",
@@ -345,10 +338,8 @@ def test_precheck_benchmarks_contract_success_with_skip_scan(tmp_path: Path) -> 
 
 
 def test_precheck_benchmarks_help_includes_benefit_flags() -> None:
-    result = subprocess.run(
+    result = _run_precheck(
         [
-            sys.executable,
-            precheck_script(),
             "--help",
         ],
         capture_output=True,
@@ -389,10 +380,8 @@ def test_precheck_benchmarks_contract_skipped_reports_contract_defaults(tmp_path
         encoding="utf-8",
     )
 
-    result = subprocess.run(
+    result = _run_precheck(
         [
-            sys.executable,
-            precheck_script(),
             "--root",
             str(root),
             "--pattern",
@@ -447,10 +436,8 @@ def test_precheck_benchmarks_contract_skips_row_payload_missing_row_summary_coun
         encoding="utf-8",
     )
 
-    result = subprocess.run(
+    result = _run_precheck(
         [
-            sys.executable,
-            precheck_script(),
             "--root",
             str(root),
             "--pattern",
@@ -504,10 +491,8 @@ def test_precheck_benchmarks_contract_out_parse_failure_still_reports_failed_rep
         encoding="utf-8",
     )
 
-    result = subprocess.run(
+    result = _run_precheck(
         [
-            sys.executable,
-            precheck_script(),
             "--root",
             str(root),
             "--pattern",
