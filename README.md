@@ -137,14 +137,24 @@ If this environment may have multiple `rrkal-visual-compressor` workspaces, use 
 py scripts/run_vizcompress_cli.py reconstruct --help
 ```
 
-When running commands from the repository root, this workspace also includes a local
-`vizcompress/__main__.py` shim so `python -m vizcompress.cli ...` resolves the
-module from `L:\rrkal-visual-compressor\src` first. For normal agent/test
-flows, avoid manual `PYTHONPATH` edits and use the included helper:
+Canonical implementation stays in `src/vizcompress`. For repository-root development,
+this repo officially supports:
+
+- `python -m vizcompress`
+- `python -m vizcompress.cli`
+
+This workspace includes a local `vizcompress/__main__.py` shim as a developer
+convenience entrypoint so these commands resolve to `src/vizcompress` first.
+For normal agent/test flows, avoid manual `PYTHONPATH` edits and use repo-root
+entrypoints:
 
 ```powershell
 python -m vizcompress.cli reconstruct --help
 ```
+
+`PYTHONPATH=L:\rrkal-visual-compressor\src` or `pip install -e .` remains an
+optional advanced setup path and does not replace the repo-root shim workflow.
+This policy is scoped to local development convenience and does not imply RendererSkinAsset / SkinAsset integration approval.
 
 ## First Working Command
 

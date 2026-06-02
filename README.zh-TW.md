@@ -103,7 +103,13 @@ If this environment has multiple `rrkal-visual-compressor` workspaces, use the l
 py scripts/run_vizcompress_cli.py reconstruct --help
 ```
 
-From repository root, `python -m vizcompress.cli ...` is backed by a local shim and will resolve to the local `src` package path first. Use this entry path in normal work, and avoid manual `PYTHONPATH` edits in routine agent/test flows.
+From repository root, canonical developer entrypoints are:
+- `python -m vizcompress`
+- `python -m vizcompress.cli`
+
+Both are backed by a local shim that resolves to the local `src` package path first; the canonical implementation remains under `src/vizcompress`. Use these repo-root entrypoints for normal work, and avoid manual `PYTHONPATH` edits in routine agent/test flows.
+
+Advanced paths (`PYTHONPATH=L:\rrkal-visual-compressor\src` or editable install) are still supported when needed, but are optional and scoped to environment setup. This policy does not imply RendererSkinAsset / SkinAsset integration approval.
 
 ## 第一個可執行命令
 
