@@ -1,4 +1,4 @@
-# Benchmark Evidence
+﻿# Benchmark Evidence
 
 This folder stores small, reviewable benchmark artifacts that can be rerun from
 the CLI. These files are not raw datasets; they are compact evidence snapshots
@@ -60,7 +60,7 @@ residual retention, `spikes/32` needs `10%`, and `spikes/64` passes the default
 `5%` sparse residual frontier. This supports testing higher terms before
 promoting a separate local model family.
 
-### Defensive Evidence Pattern (中文同義: 防禦式證據)
+### Defensive Evidence Pattern (銝剜??儔: ?脩戌撘???
 
 Each benchmark summary now includes two gate counters:
 
@@ -70,8 +70,8 @@ Each benchmark summary now includes two gate counters:
 
 This lets you report both:
 
-- 壓縮率的最佳候選 (best ratio),
-- 以及在重建保真門檻下可被採信的比例 (defensible ratio).
+- 憯葬???雿喳 (best ratio),
+- 隞亙??券?撱箔???瑼颱??航◤?∩縑??靘?(defensible ratio).
 
 ```bash
 py -m vizcompress.cli bench \
@@ -123,7 +123,7 @@ py scripts/run_defensible_threshold_sweep.py \
   --out-md docs/benchmarks/defensible_threshold_sweep_10k_16_terms.md
 ```
 
-For two-dimensional frontiers (terms × channel K):
+For two-dimensional frontiers (terms ? channel K):
 
 ```bash
 py scripts/run_terms_channel_grid_sweep.py \
@@ -139,7 +139,7 @@ py scripts/run_terms_channel_grid_sweep.py \
   --out-md docs/benchmarks/terms_channel_k_grid.md
 ```
 
-For stability of defensibility (terms × channel K × threshold):
+For stability of defensibility (terms ? channel K ? threshold):
 
 ```bash
 py scripts/run_terms_channel_threshold_sweep.py \
@@ -330,9 +330,9 @@ py scripts/compare_terms_channel_benchmark_parity.py \
 
 ### Hard-signal behavior note
 
-In `5k_hard`, `noisy` and `spikes` rows show little or no high-fidelity coverage (`R²>=0.99`) at this scale, while `steps` remains stable and yields the best ratio.
+In `5k_hard`, `noisy` and `spikes` rows show little or no high-fidelity coverage (`R簡>=0.99`) at this scale, while `steps` remains stable and yields the best ratio.
 
-In `5k_noiseclean` (`sigma_clip + auto_noise_layer`) this tendency persists, indicating that the current residual defaults still underperform for this dataset family under the strictness of the existing `R²` gate and require either:
+In `5k_noiseclean` (`sigma_clip + auto_noise_layer`) this tendency persists, indicating that the current residual defaults still underperform for this dataset family under the strictness of the existing `R簡` gate and require either:
 
 - stronger denoising before modeling,
 - a relaxed fidelity gate for this domain,
@@ -387,3 +387,13 @@ If hashes differ, it is usually one of:
 
 `C:` workspace should be aligned to the same commit as `K:` before taking an
 evidence claim.
+
+## Workspace Candidate Scan (ACL/lock recovery)
+
+If precheck is failing due to stale output or ACL permission issues, run once before retry:
+
+```powershell
+py scripts/report_workspace_candidates.py --root . --max-depth 4 --out docs/benchmarks/workspace_candidates.json
+```
+
+The report scans common stale-output patterns (`tmp_*`, `tmp-*`, `smoke*`, `*smoke*`, `*model.vizretain*`, `*retry*`, `*artifact*`) and flags unreadable paths.

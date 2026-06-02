@@ -71,6 +71,18 @@ py scripts/precheck_benchmarks.py \
 - `0`: PASS
 - `2`: FAIL
 
+`precheck_benchmarks.py` ??????????
+
+- `scan_ok`
+- `contract_ok`
+- `scan`??????
+- `contract`?pass/fail/total/status?
+- `failed_report`
+- `status_counts`
+- `skipped`
+- `skip_reasons`
+- `total_inputs`
+
 ## 為什麼要做
 
 完整流程：
@@ -80,3 +92,23 @@ py scripts/precheck_benchmarks.py \
 4. 對 JSON 做合約驗證
 
 能避免本機與雲端/遠端節點對同一資料有不同解讀。
+
+
+## 工作區候選清理檢查（ACL/鎖定恢復）
+
+如果 precheck 因為舊輸出殘留或 ACL 權限異常失敗，請先執行一次：
+
+```powershell
+py scripts/report_workspace_candidates.py --root . --max-depth 4 --out docs/benchmarks/workspace_candidates.json
+```
+
+
+此報告會掃描常見舊輸出名稱（	mp_*, 	mp-*, smoke*, *smoke*, *model.vizretain*, *retry*, *artifact*），並標示不可讀目錄。
+
+## Workspace Candidate Scan (ACL/lock recovery)
+
+If precheck is failing due to stale output or ACL permission issues, run:
+
+```powershell
+py scripts/report_workspace_candidates.py --root . --max-depth 4 --out docs/benchmarks/workspace_candidates.json
+```

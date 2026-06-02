@@ -22,7 +22,28 @@ mvp_outputs/
 *.vizclean/
 .pytest_cache_working/
 
+tmp_cli_launcher/
 # Local / cloud-drive scratch artifacts (never commit)
 tmp_precheck_quick/
 tmp_cli_sanity_check/
 MVP_CHECKPOINT/
+_tmp*/
+tmp_cli_smoke*/
+tmp_verify_smoke*/
+smoke_work*/
+smoke_work2/
+*retry*/
+vizcompress/__pycache__/
+smoke_end_to_end_0000/
+smoke_end_to_end_0000*.json
+tmp_0000_checkpoint/
+tmp_0000_checkpoint*/
+tmp_0000_checkpoint2/
+tmp_0000_checkpoint2*/
+0000_checkpoint_report.json
+0000_checkpoint_replay_report.json
+tmp_0000_checkpoint_replay_report.json
+docs/benchmarks/scan_report.json
+docs/benchmarks/contract_matrix_precheck.json
+docs/benchmarks/workspace_candidates.json
+docs/benchmarks/workspace_cleanup_report.json

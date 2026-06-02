@@ -20,6 +20,13 @@ Build a small, testable visual compression engine before expanding scope.
 - Other folders on `L:\` are considered read-only unless explicitly requested.
 - Do not modify other project folders unless explicitly approved in-session.
 - Push cloud-workspace commits to GitHub `origin/main`.
+- If multiple `rrkal-visual-compressor` copies are present, prefer repo-local entry points:
+  - `python -m vizcompress.cli ...` from `L:\rrkal-visual-compressor` (resolved by `vizcompress/__main__.py` shim),
+  - or `py scripts/run_vizcompress_cli.py ...` (explicit launcher).
+- Do not rely on manual `PYTHONPATH` edits for routine CLI/test invocations.
+- Use shared helper plumbing (`_test_helpers.cli_env()` and
+  `scripts/run_vizcompress_cli.py`) for stable module resolution and cleaner
+  handoff evidence.
 
 ## Current Status
 
@@ -261,6 +268,11 @@ layers when available; a clean package exports only the cleaned main signal.
 - Decision: Windows root handling is accepted as-is while using `Path(...).expanduser().resolve()` and explicit `--left-root/--right-root`.
   - If root relocation issues appear, add a follow-up parity smoke test for non-`L:\` roots.
 
+- Status (2026-06-02):
+  - Implemented items: ratio-field compatibility and precheck mandatory workflow checks are fully covered by tests and docs.
+  - Decision items (rows[].errors format / parity opt-in flags / Windows root handling) remain intentionally deferred as design choices, with explicit rationale and test coverage retained.
+  - No new open blockers were added in this continuation window.
+
 ## Decision Rationale (implementation-ready)
 
 - Keep optional contract flags for parity commands to preserve backward compatibility with existing ad-hoc reproducibility scripts.
@@ -291,6 +303,7 @@ layers when available; a clean package exports only the cleaned main signal.
 
 5. Open items closure
 - Resolve or escalate the four risk bullets above (especially local promotion mandatory gates) before declaring the benchmark governance loop stable.
+- Add/refresh `docs/RENDERER_SKIN_ASSET_COMPATIBILITY_NOTES.zh-TW.md` as the entry-point memo for RendererSkinAsset compatibility and RRKAL runtime handoff assumptions before handing this phase to the next cycle.
 
 ## Local Benchmark Promotion SOP (mandatory from this session)
 
@@ -406,6 +419,58 @@ py scripts/convert_legacy_hardening_reports.py --root docs/benchmarks
   - `py -m pytest tests/test_convert_legacy_hardening_reports.py -q` (contract migration regression smoke)
   - `git status --short` (confirm only intended scope changed)
 
+## Á∫åÊé•‰∫§Êé•Ë≠âÊìöÊ®°ÊùøÔºàÂèØÁõ¥Êé•Ë≤ºÂõûÂ†±Ôºâ
+
+```text
+Êé•ÊâãÊôÇÈñì (Asia/Taipei):
+ËÆäÊõ¥Ê™îÊ°à:
+- docs/AGENT_HANDOFF.md
+- scripts/precheck_benchmarks.py
+- scripts/report_workspace_candidates.py
+
+ÂëΩ‰ª§ÊëòË¶Å:
+- python scripts/precheck_benchmarks.py --root docs/benchmarks --pattern "*.json" --scan-out docs/benchmarks/scan_report.json --contract-out docs/benchmarks/contract_matrix_precheck.json --fail-on-scan-warning
+- python scripts/report_workspace_candidates.py --root <repo_root> --max-depth 4
+
+Ëº∏Âá∫ÊëòË¶Å:
+- scan_ok / contract_ok
+- contract.status / contract.failed / contract.passed
+- scan: total / invalid_json
+- status_counts / skipped / skip_reasons / total_inputs / failed_report
+
+È¢®Èö™ÈòªÂ°û:
+- tmp_* / smoke_* / model.vizretain* È°ûËàäÁõÆÈåÑÂ¶Ç‰ªç‰øùÁïô‰∏î ACL Ê¨äÈôê‰∏çË∂≥ÔºåÊúÉÈÄ†ÊàêÂæåÁ∫åÂëΩ‰ª§ÂØ´Âá∫Â§±Êïó„ÄÇ
+- ÈúÄÁ¢∫Ë™ç Cloud(ËàäË≥áÊñôÂ§æ)ËàáÊú¨Âú∞ Git Â∑•‰ΩúÁõÆÈåÑÊúÄÂæåÂÖ±Ë≠òÁâàÊú¨ÂÜçÁπºÁ∫åÂ¢ûÈáè‰øÆÊîπ„ÄÇ
+
+‰∏ã‰∏ÄÊ≠• (Êé•ÊâãËÄÖÂèØÁõ¥Êé•Âü∑Ë°å):
+1. Ê™¢Ê†∏ git status ËàáÈÅ†Á´Ø‰∏ªÁ∑öÂ∞çÈΩä„ÄÇ
+2. Âü∑Ë°å precheck ÂëΩ‰ª§ÔºåÁ¢∫Ë™ç summary Ê¨Ñ‰Ωç„ÄÇ
+3. Ëã• precheck Áï∞Â∏∏ÔºåÂÖàÂü∑Ë°å workspace_candidate ÂëΩ‰ª§‰∏¶Ê∏ÖÁêÜÂèØÁñëÁõÆÈåÑ„ÄÇ
+4. ‰æùÁÖßÁèæÊúâÊ™¢Êü•Ê∏ÖÂñÆÂÆåÊàê PR È¢®Èö™È†ÖÁõÆÊõ¥Êñ∞„ÄÇ
+```
+## Checkpoint: Jun 02, 2026 (pytest resilience after locked temp outputs)
+
+- Performed end-to-end CLI smoke validation (`build -> inspect -> verify -> reconstruct`) on a short synthetic sample.
+- Confirmed `--clean-output` fallback works when stale output directories are ACL-blocked:
+  - command logs `warning: cannot clean '<out>': <permission denied>` and writes to `<out>.retry_<timestamp>`.
+- Added broader pytest recursion exclusion in [pytest.ini](/L:/rrkal-visual-compressor/pytest.ini) to prevent locked temporary package folders (`tmp_*`, `_tmp*`, `*model.vizretain*`) from breaking collection.
+- Revalidated full suite:
+  - `python -m pytest -q`
+  - result: `157 passed`
+
+Outstanding residual:
+- `_tmp_progress_small/model.vizretain` and `_tmp_progress_small.retry_* /model.vizretain` remain ACL-blocked in this environment and should be cleaned by platform storage permission fix before attempting raw directory deletion.
+- Secondary cleanup attempt via `icacls /reset` / `icacls /grant <user>:F /T` on `_tmp_progress_small` confirmed same `Access is denied` on nested `model.vizretain`; classify as external ACL ownership issue and avoid touching these paths in-session.
+
+## Checkpoint: Jun 01, 2026 (renderer compatibility notes handoff)
+
+- Added `docs/RENDERER_SKIN_ASSET_COMPATIBILITY_NOTES.zh-TW.md` to define explicit P5/P6-facing bridge assumptions:
+  - compatibility schema expectations (`compatibility` block)
+  - review / verify gate mapping
+  - recommended ingestion flow for registry/runtime consumers
+- Scope still excludes cross-repo implementation; this repo remains the contract author for `.vizasset` and compatibility metadata.
+- Next: bind runtime contract with RRKAL Core/RendererSkinAsset consumers in their owning repos, then return to update this handoff with verified loader behavior and runtime-native acceptance criteria.
+
 ## Checkpoint: May 31, 2026 (selector ratio fallback hardening)
 
 - Stabilized benchmark recommendation scoring against ratio-field variants:
@@ -479,3 +544,131 @@ py scripts/convert_legacy_hardening_reports.py --root docs/benchmarks
   - `test_summarize_rows_accepts_numeric_ratio_strings_for_fallback_paths`
 - Commit: `b477e1e` (`harden(benchmarks): accept numeric ratio strings in summary alias path`).
 
+
+
+## Precheck Failure Recovery (shared SOP)
+
+When `scripts/precheck_benchmarks.py` returns non-zero:
+
+- Run candidate scan immediately:
+
+```powershell
+py scripts/report_workspace_candidates.py --root . --max-depth 4 --out docs/benchmarks/workspace_candidates.json
+```
+
+- Remove only confirmed stale candidate directories, then rerun the precheck command.
+- For batch-safe cleanup, use:
+
+```powershell
+python scripts/cleanup_workspace_outputs.py --root . --max-depth 4 --out docs/benchmarks/workspace_cleanup_report.json
+```
+
+The report marks `model.vizretain` entries that are ACL-blocked as `manual_unlock`, and will not attempt to force-delete those paths.
+
+- Keep a cleanup note in handoff evidence if any directory required manual intervention.
+## 0000 Progress Log (2026-06-02 Asia/Taipei)
+
+- K º—§w©w¶Ï¨∞ `K:\rrkal_workspace\rrkal-visual-compressor`°]`git status` clean°^°AHEAD = `03d7232`°]2026-05-28°^°C
+- L º— `L:\rrkal-visual-compressor` HEAD = `e1fc225`°]2026-05-31°Afeat(cli): add precheck-benchmarks command°^°C
+- ®‚¥ æ§ÒπÔµ≤™G°G`only_in_L = 12`°A`only_in_K = 0`°AL ¶≥ 12 ≠”√B•~™©•ª¿…°]ßt `.github/workflows/benchmarks-precheck.yml`°B`scripts/precheck_benchmarks.py`°B`scripts/scan_benchmark_fields.py`°B`tests/*precheck*` µ•°^°C
+- §w¶A¶∏≈Á√“°G`py -m pytest -q` •˛≥°≥qπL°]`157 passed`°^°C
+- §w¶A¶∏≈Á√“°G`scripts/precheck_benchmarks.py` ¶b `docs/benchmarks` §U¨∞ `PASS`°]`scan_ok=true`, `contract_ok=true`, `PASS=9`, `SKIP=4`, `FAIL=0`°^°C
+- ∏…ªÙ `git status` ≈v≠≠™˝∂ÎπÔ¿≥≤M≤z°G`tmp_cli_smoke*`, `smoke_work*`, `tmp_verify_smoke*`, `tmp_cli_launcher` √˛ scratch •ÿø˝Ø«§J `.gitignore`°A®æ§Ó `permission denied` §z¬Z°C
+- K ΩL≥¯ßi¨yµ{°G`scripts/report_workspace_candidates.py --root K:\rrkal_workspace\rrkal-visual-compressor --max-depth 4` §w•i∂]°Aº»¶s≠‘øÔ¶≥ 4 ≠”°]•˛≥°•i≈™•iºg°^°A§wßYÆ…≤M∞£º»¶s≥¯ßi¿…°C
+## 0000 Progress Log (2026-06-02 Evening) - End-to-end smoke sweep
+
+- Executed an end-to-end smoke sweep from one-shot script style using `scripts`-local CLI env (`L:\rrkal-visual-compressor` root):
+  - `mvp --samples 5000 --synthetic-kind spikes --fourier-terms 64 --svg-samples 240`
+  - `build --synthetic 4000 --synthetic-kind spikes --fourier-terms 48 --svg-samples 320 --channel --auto-noise-layer --package --direct-svg`
+  - `inspect`, `verify`, `reconstruct` (center + retained), `compare` baseline, and `bench`
+- Result summary: all commands completed successfully (`overall_ok: true`), with generated package validation and benchmark artifacts present.
+- MVP payload key evidence:
+  - `status: pass`
+  - `validation.package_ok: true`
+  - `validation.source_ok: true`
+  - `benchmark_gate.ok: true`
+  - `evidence.recommendation: package_preferred`
+- Build+inspect+verify chain key signals:
+  - `inspect.package_profile` and `schema_version` valid (`0.2`)
+  - `verify.ok: true` and source fidelity fields populated
+  - reconstruct payload returned finite sample summaries and sample override worked (`retained` 128)
+- Bench payload present and contract-valid (one-row synthetic spikes sample output produced successfully).
+- Follow-up cleanup: `smoke_end_to_end_0000*` is now ignored as non-committed scratch (`.gitignore`) due occasional ACL lock (`WinError 5`) on legacy `model.vizretain` artifacts.
+
+## 0000 Progress Log (2026-06-02 Taipei - continuation)
+- Ran `python scripts/precheck_benchmarks.py --root docs/benchmarks --pattern "*.json" --scan-out docs/benchmarks/scan_report.json --contract-out docs/benchmarks/contract_matrix_precheck.json --fail-on-scan-warning`.
+  - Result: PASS (scan_ok=true, contract_ok=true).
+  - Summary: PASS=9, SKIP=5, FAIL=0, status_counts { PASS: 9, SKIP: 5, FAIL: 0 }.
+  - Scan breakdown: legacy=1, rows=6, sweep=7; legacy skip reasons=5.
+- Ran `python scripts/report_workspace_candidates.py --root . --max-depth 4 --out docs/benchmarks/workspace_candidates.json`.
+  - Result: 4 candidate paths detected, mainly `tmp_0000_checkpoint` and `smoke_end_to_end_0000`.
+- Local scratch artifacts are now covered by `.gitignore` entries to avoid accidental commit noise:
+  - `tmp_0000_checkpoint*`, `smoke_end_to_end_0000*`, generated precheck/workspace report JSON files.
+- Cleanup follow-up: `scripts/cleanup_workspace_outputs.py --root . --max-depth 4 --execute --out ...` reported 2 hard failures (permission/OS errors) and one manual-unlock candidate:
+  - failed to remove `tmp_0000_checkpoint\mvp\asset\model.vizretain` (WinError 5 / ACL)
+  - failed to remove nested `smoke_end_to_end_0000\mvp` (WinError 145)
+
+## 0000 Progress Log (2026-06-02 Taipei - replay)
+- Ran a fresh end-to-end smoke replay on clean path `tmp_0000_checkpoint2` using `scripts/run_vizcompress_cli.py`:
+  - mvp °˜ build °˜ inspect °˜ verify °˜ reconstruct(center/retained) °˜ compare(direct) °˜ bench.
+  - Result: `0000 checkpoint replay: ok`.
+  - `overall_ok=true`, `failed_commands=[]` in replay report.
+- Replay artifact generated at `docs/benchmarks/0000_checkpoint_replay_report.json` and classified as scratch (`.gitignore`): no commit.
+- ACL reality remains unchanged:
+  - `tmp_0000_checkpoint\mvp\asset\model.vizretain` still reports `WinError 5`.
+  - `smoke_end_to_end_0000\mvp` still reports `WinError 145` on direct deletion path.
+- Command alignment remains unchanged; next move is continue with next feature slice once you confirm whether to proceed with precheck/cleanup hardening in session-wide mode.
+## 0000 Progress Log (2026-06-02 Taipei - resumed replay)
+- Re-ran `python scripts/run_0000_smoke_checkpoint.py --workspace-root . --output-dir tmp_0000_checkpoint --report-path tmp_0000_checkpoint_replay_report.json` in one pass:
+  - Exit: `0`.
+  - `overall_ok=true`.
+  - `failed_commands=[]`.
+- Latest report generated at `tmp_0000_checkpoint_replay_report.json` (same-root scratch output).
+- Ran full benchmark precheck:
+  - `python scripts/precheck_benchmarks.py --root docs/benchmarks --pattern "*.json" --scan-out docs/benchmarks/scan_report.json --contract-out docs/benchmarks/contract_matrix_precheck.json --fail-on-scan-warning`
+  - Result: `PASS` (`contract_ok=true`, `scan_ok=true`, `FAIL=0`, `PASS=9`, `SKIP=6`).
+- Workspace artifacts scan:
+  - `smoke_end_to_end_0000*`, `tmp_0000_checkpoint*`, and `tmp_0000_checkpoint2*` are still the remaining large candidates.
+  - Cleanup failure count is expected and attributable to directory locks/deep path state:
+    - `WinError 145` on stale checkpoint folder removal.
+    - `model.vizretain` entries are intentionally skipped by policy unless explicitly unlocked.## 0000 Progress Log (2026-06-02 Taipei - verification sweep)
+- Ran `python scripts/run_0000_smoke_checkpoint.py --workspace-root . --output-dir tmp_0000_checkpoint --report-path tmp_0000_checkpoint_replay_report.json`.
+  - Result: `exit 0`, `overall_ok=true`, `failed_commands=[]`.
+- Ran benchmark precheck:
+  - `python scripts/precheck_benchmarks.py --root docs/benchmarks --pattern "*.json" --scan-out docs/benchmarks/scan_report.json --contract-out docs/benchmarks/contract_matrix_precheck.json --fail-on-scan-warning`
+  - Result: PASS (`contract_ok=true`, `scan_ok=true`, `FAIL=0`, `PASS=9`, `SKIP=6`).
+- Ran workspace scanning and cleanup:
+  - `scripts/report_workspace_candidates.py --root . --max-depth 4 --out docs/benchmarks/workspace_candidates.json`
+  - `scripts/cleanup_workspace_outputs.py --root . --max-depth 4 --execute --out docs/benchmarks/workspace_cleanup_report.json`
+  - Result: `deleted=1`, `failed=6`, `manual_unlock=1`, `skipped=10`, `to_remove=7`.
+  - Remaining blockers are expected WinError ACL/path-lock artifacts in previous `tmp_0000_checkpoint*` and `tmp_0000_checkpoint2` runs.
+- 0000 checkpoint remains green for functionality; open operational debt is only stale workspace artifact deletion constraints.## 0000 Progress Log (2026-06-02 Taipei - cross-cwd replay check)
+- Re-ran checkpoint via absolute paths from `C:\Users\lyn59`:
+  - `python L:\rrkal-visual-compressor\scripts\run_0000_smoke_checkpoint.py --workspace-root L:\rrkal-visual-compressor --output-dir tmp_0000_checkpoint --report-path L:\rrkal-visual-compressor\tmp_0000_checkpoint_replay_report.json`
+  - Result: `0000 checkpoint: ok`.
+- Re-ran benchmark precheck from external cwd with absolute `--root`/`--scan-out`/`--contract-out`:
+  - Result: `PASS` (`contract_ok=true`, `scan_ok=true`, `FAIL=0`, `PASS=9`, `SKIP=6`).
+- Confirms helper scripts are cwd-independent for command dispatch and report generation.## 0000 Progress Log (2026-06-02 Taipei - cleanup hardening)
+- Upgraded `scripts/cleanup_workspace_outputs.py` with:
+  - retry attempts for deletion failures
+  - best-effort permission clearing before retries
+  - `manual_unlock_required` classification for known ACL/lock errors (WinError 5/145)
+- Executed with new behavior:
+  - `python scripts/cleanup_workspace_outputs.py --root . --max-depth 4 --execute --out docs/benchmarks/workspace_cleanup_report.json`
+  - Result: `deleted=1`, `manual_unlock=6`, `failed=0`, `skipped=7`, `to_remove=7`.
+- Net effect: stale workspace blockers now consistently surfaced as actionable manual-unlock items in report, reducing ambiguous failure noise for iteration loops.## 0000 Progress Log (2026-06-02 Taipei - verification refresh)
+- Re-ran end-to-end 0000 replay using current scripts:
+  - `python scripts/run_0000_smoke_checkpoint.py --workspace-root . --output-dir tmp_0000_checkpoint --report-path tmp_0000_checkpoint_replay_report.json`
+  - Result: `0000 checkpoint: ok`.
+- Re-ran benchmark precheck:
+  - `python scripts/precheck_benchmarks.py --root docs/benchmarks --pattern "*.json" --scan-out docs/benchmarks/scan_report.json --contract-out docs/benchmarks/contract_matrix_precheck.json --fail-on-scan-warning`
+  - Result: `PASS` (`contract_ok=true`, `scan_ok=true`, `FAIL=0`, `PASS=9`, `SKIP=6`).## 0000 Progress Log (2026-06-02 Taipei - coordination policy update)
+- Implemented policy direction update in repo docs:
+  - Primary coordination is Notion (`AgentsË®éË´ñÂçÄ`) with these spaces:
+    - `04_Agent_Inbox` for status/handoff/relay
+    - `03_OAI_Review_Requests` for o_1 review requests
+    - `02_Decision_Log` for accepted decisions
+    - `06_n1_SOP` for n_1 operations
+  - `L:\AGENT_EXCHANGE` is treated as archive/history only.
+  - Cloud-drive exchange is no longer used as primary output path for agent mail.
+- Current repository scan shows no remaining code-paths that write new agent coordination messages to cloud drive under project workspace (`AGENT_EXCHANGE` appears only in historical references).

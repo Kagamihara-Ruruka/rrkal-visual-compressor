@@ -131,6 +131,21 @@ py -m pytest
 vizcompress --help
 ```
 
+If this environment may have multiple `rrkal-visual-compressor` workspaces, use the repo-local launcher to avoid picking the wrong module:
+
+```powershell
+py scripts/run_vizcompress_cli.py reconstruct --help
+```
+
+When running commands from the repository root, this workspace also includes a local
+`vizcompress/__main__.py` shim so `python -m vizcompress.cli ...` resolves the
+module from `L:\rrkal-visual-compressor\src` first. For normal agent/test
+flows, avoid manual `PYTHONPATH` edits and use the included helper:
+
+```powershell
+python -m vizcompress.cli reconstruct --help
+```
+
 ## First Working Command
 
 Run the complete MVP demo pipeline:
@@ -298,6 +313,14 @@ basic reconstruction path:
 
 ```powershell
 py -m vizcompress.cli verify channel_outputs/model.vizretain --samples 1024
+```
+
+Reconstruct a package and print reconstruction summaries (including optional channel,
+sparse residual, noise layer, and retained signal details):
+
+```powershell
+py -m vizcompress.cli reconstruct channel_outputs/model.vizretain --samples 1200
+py -m vizcompress.cli reconstruct channel_outputs/model.vizretain --signal retained --samples 64 --no-noise-layer
 ```
 
 When the original source is available, verify decoded fidelity against the

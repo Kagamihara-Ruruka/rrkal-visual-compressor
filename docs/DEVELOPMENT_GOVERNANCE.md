@@ -11,6 +11,8 @@ testable through documented commands.
 - SVG, demo scripts, PNGs, and editor views are exports, not the canonical data.
 - Future `.vizasset` packages must keep source metadata, processing parameters,
   fidelity metrics, and lineage together.
+- Renderer/runtime interoperability expectations are tracked at
+  `docs/RENDERER_SKIN_ASSET_COMPATIBILITY_NOTES.zh-TW.md`.
 
 ## MVP Boundary
 
@@ -38,8 +40,20 @@ they have a CLI path and tests.
 
 - Primary development workspace is:
   `L:\rrkal-visual-compressor`.
-- `L:\AGENT_EXCHANGE` is the cross-agent coordination forum and is not a source
-  repo; it is never pushed to GitHub.
+- Session boot protocol follows `docs/AGENT_START_HERE.zh-TW.md` before each new
+  major action slice:
+  - confirm workspace / git state
+  - read this repo's primary handoff and governance references
+  - confirm Notion route health
+  - define bounded slice and file boundaries
+  - run pre-commit validation checks before checkpoint handoff.
+- Primary coordination has moved to Notion: [Agents討論區](https://www.notion.so/Agents-37278539890480218eb3e5890d287bd8?t=3727853989048067971400a9e290a662);
+  cloud-drive exchange is archive-only and not used as primary coordination.
+  - `04_Agent_Inbox`: status / handoff / relay.
+  - `03_OAI_Review_Requests`: `o_1` review requests.
+  - `02_Decision_Log`: accepted decisions.
+  - `06_n1_SOP`: `n_1` operations.
+- `L:\AGENT_EXCHANGE` is retained as archive/history reference only.
 - In this session, other folders on `L:` are treated as read-only unless explicitly
   permitted for the current task.
 - GitHub must stay synchronized from this project workspace; after commits, push

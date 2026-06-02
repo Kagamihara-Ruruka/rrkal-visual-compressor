@@ -97,6 +97,14 @@ py -m pytest
 vizcompress --help
 ```
 
+If this environment has multiple `rrkal-visual-compressor` workspaces, use the local launcher to avoid loading the wrong module:
+
+```powershell
+py scripts/run_vizcompress_cli.py reconstruct --help
+```
+
+From repository root, `python -m vizcompress.cli ...` is backed by a local shim and will resolve to the local `src` package path first. Use this entry path in normal work, and avoid manual `PYTHONPATH` edits in routine agent/test flows.
+
 ## 第一個可執行命令
 
 執行完整 MVP demo pipeline：

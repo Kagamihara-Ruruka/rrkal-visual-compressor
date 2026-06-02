@@ -8,6 +8,7 @@ import subprocess
 from _test_helpers import run_cli as _run_cli_impl
 
 from vizcompress.benchmark_contracts import validate_benchmark_contract
+from vizcompress.cli import PackageConfig
 
 
 def _run_cli(*args: str) -> subprocess.CompletedProcess:
@@ -82,6 +83,16 @@ def test_build_inspect_and_verify_cycle(tmp_path: Path) -> None:
     assert verify_payload["errors"] == []
 
 
+def test_package_config_type_allows_reconstruct_options():
+    config = PackageConfig(package=Path("demo.vizasset"))
+    assert config.package == Path("demo.vizasset")
+    assert config.samples == 1200
+    assert config.include_channel is True
+    assert config.include_sparse_residual is True
+    assert config.include_noise_layer is True
+    assert config.include_retained is True
+
+
 def test_compare_command_reports_baseline_evidence(tmp_path: Path) -> None:
     out_dir = tmp_path / "compare_smoke"
     package_name = "model.vizretain"
@@ -122,3 +133,33 @@ def test_compare_command_reports_baseline_evidence(tmp_path: Path) -> None:
     direct_evidence = compare_payload["baseline_evidence"]["direct"]
     assert direct_evidence["present"] is True
     assert direct_evidence["bytes"] > 0
+
+
+def test_reconstruct_command_supports_signal_and_sample_overrides(tmp_path: Path) -> None:
+    out_dir = tmp_path / "reconstruct_smoke"
+    package_name = "model.vizretain"
+    package_dir = out_dir / package_name
+
+    _run_cli(
+        "build",
+        "--synthetic",
+        "128",
+        "--synthetic-kind",
+        "spikes",
+        "--fourier-terms",
+        "16",
+        "--package",
+        "--out",
+        str(out_dir),
+        "--package-name",
+        package_name,
+        "--channel",
+    )
+
+    center = _parse_json_stdout(_run_cli("reconstruct", str(package_dir)))
+    assert center["reconstructed"]["samples"] == 1200
+    assert center["reconstructed"]["y_max"] >= center["reconstructed"]["y_min"]
+
+    retained = _parse_json_stdout(_run_cli("reconstruct", str(package_dir), "--signal", "retained", "--samples", "64"))
+    assert retained["reconstructed"]["samples"] == 64
+    assert retained["reconstructed"]["y_max"] >= retained["reconstructed"]["y_min"]

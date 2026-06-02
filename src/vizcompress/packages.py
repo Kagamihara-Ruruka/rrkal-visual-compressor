@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import shutil
+from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -13,9 +14,11 @@ from vizcompress.analyzers import analyze_time_series
 from vizcompress.core import CompressionReport, TimeSeries
 from vizcompress.domains import encode_x_domain, reconstruct_x_domain
 from vizcompress.metrics import regression_metrics
+from vizcompress import __version__ as _PACKAGE_VERSION
 
 
-ASSET_SCHEMA_VERSION = "0.1"
+ASSET_SCHEMA_VERSION = "0.2"
+COMPATIBILITY_SCHEMA = "rrkal_visual_compressor.package_profile.v0"
 
 
 @dataclass(frozen=True)
@@ -48,6 +51,7 @@ def write_vizasset(
     x_domain_policy: str = "preserve",
     x_domain_epsilon: float = 0.002,
     x_domain_max_error: float = 1e-4,
+    review_json: str | Path | None = None,
 ) -> Path:
     output = Path(path)
     output.mkdir(parents=True, exist_ok=True)
@@ -70,6 +74,14 @@ def write_vizasset(
     shutil.copyfile(metrics_json, metrics_path)
     shutil.copyfile(demo_py, demo_path)
 
+    _append_reconstruction_metrics(
+        metrics_path=metrics_path,
+        series=series,
+        package_dir=output,
+        report=report,
+    )
+
+    review_path = Path(review_json) if review_json is not None else None
     manifest = _build_manifest(
         series=series,
         report=report,
@@ -82,6 +94,12 @@ def write_vizasset(
             "demo": demo_path,
         },
     )
+    if review_path is not None and review_path.exists():
+        manifest["files"]["review"] = {
+            "path": review_path.name,
+            "sha256": _sha256(review_path),
+            "bytes": review_path.stat().st_size,
+        }
     asset_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     return output
 
@@ -374,6 +392,13 @@ def _build_manifest(
     return {
         "schema_version": ASSET_SCHEMA_VERSION,
         "asset_type": "rrkal.visual_compressor.timeseries",
+        "generated_by": {
+            "tool": "rrkal.visual_compressor",
+            "version": _PACKAGE_VERSION,
+            "source": "vizcompress",
+        },
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "compatibility": _default_compatibility_profile(package_profile),
         "package_profile": package_profile,
         "source": {
             "kind": series.source,
@@ -387,6 +412,7 @@ def _build_manifest(
         "model": {
             "type": "time_series",
             "primary_method": "fourier_channel" if report.channel is not None else "fourier",
+            "profile": _infer_model_profile(report),
             "methods": _method_summary(report),
             "file": files["model"].name,
         },
@@ -404,6 +430,89 @@ def _build_manifest(
             "note": "Raw input is not embedded; this package stores compact reconstruction parameters and exports.",
         },
     }
+
+
+def _default_compatibility_profile(package_profile: str) -> dict[str, Any]:
+    return {
+        "schema": COMPATIBILITY_SCHEMA,
+        "package_kind": "vizasset",
+        "renderability": {
+            "preview_only": True,
+            "reconstructable": True,
+            "renderer_native": False,
+        },
+        "requires": {
+            "numpy": True,
+            "displaytools": False,
+            "rrkal_core": False,
+            "rrkal_visual_compressor": True,
+        },
+    }
+
+
+def _infer_model_profile(report: CompressionReport) -> str:
+    if report.channel is not None:
+        if report.sparse_residual is not None:
+            return "fourier_channel+sparse_residual"
+        if report.noise is not None:
+            return "fourier_channel+fourier_noise"
+        return "fourier_channel"
+    if report.sparse_residual is not None:
+        return "fourier+sparse_residual"
+    if report.noise is not None:
+        return "fourier+fourier_noise"
+    return "fourier"
+
+
+def _append_reconstruction_metrics(
+    metrics_path: Path,
+    *,
+    series: TimeSeries,
+    package_dir: Path,
+    report: CompressionReport,
+) -> None:
+    metrics_payload: dict[str, Any] = json.loads(metrics_path.read_text(encoding="utf-8"))
+    original_size_bytes = int(series.x.nbytes + series.y.nbytes)
+    model_path = package_dir / "model.npz"
+    model_size_bytes = int(model_path.stat().st_size) if model_path.exists() else 0
+    package_size_bytes = _directory_size(package_dir)
+    reconstruction_finite = False
+    max_abs_error = float("nan")
+    rmse = float("nan")
+    mae = float("nan")
+    p95_error = float("nan")
+    try:
+        reconstructed = reconstruct_retained_signal(package_dir, samples=series.sample_count)
+        reconstructed_y = reconstructed.y
+        if np.isfinite(reconstructed_y).all() and np.isfinite(reconstructed.x).all():
+            reconstruction_finite = True
+            errors = np.abs(series.y - reconstructed_y[: series.sample_count])
+            max_abs_error = float(np.max(errors))
+            rmse = float(float(np.sqrt(np.mean(errors**2))))
+            mae = float(np.mean(errors))
+            p95_error = float(np.percentile(errors, 95))
+    except Exception:
+        reconstruction_finite = False
+    metrics_payload.update(
+        {
+            "original_size_bytes": original_size_bytes,
+            "package_size_bytes": package_size_bytes,
+            "model_size_bytes": model_size_bytes,
+            "sample_count": report.input_samples,
+            "retained_count": report.input_samples,
+            "reconstruction_finite": reconstruction_finite,
+            "max_abs_error": max_abs_error,
+            "rmse": rmse,
+            "mae": mae,
+            "p95_error": p95_error,
+            "compression_ratio": original_size_bytes / float(max(package_size_bytes, 1)),
+        }
+    )
+    metrics_path.write_text(json.dumps(metrics_payload, indent=2), encoding="utf-8")
+
+
+def _directory_size(path: Path) -> int:
+    return int(sum(candidate.stat().st_size for candidate in path.rglob("*") if candidate.is_file()))
 
 
 def _method_summary(report: CompressionReport) -> list[dict[str, Any]]:
@@ -449,12 +558,52 @@ def _load_manifest_for_validation(package: Path, errors: list[str]) -> dict[str,
 
 
 def _validate_manifest_shape(manifest: dict[str, Any], errors: list[str], warnings: list[str]) -> None:
-    required = ("schema_version", "asset_type", "package_profile", "source", "model", "metrics", "files")
+    required = (
+        "schema_version",
+        "asset_type",
+        "generated_by",
+        "compatibility",
+        "package_profile",
+        "source",
+        "model",
+        "metrics",
+        "files",
+    )
     for key in required:
         if key not in manifest:
             errors.append(f"manifest missing required field: {key}")
     if manifest.get("schema_version") != ASSET_SCHEMA_VERSION:
         errors.append(f"unsupported schema_version: {manifest.get('schema_version')!r}")
+    generated_by = manifest.get("generated_by")
+    if not isinstance(generated_by, dict):
+        errors.append("generated_by must be an object")
+    else:
+        if not generated_by.get("tool"):
+            warnings.append("generated_by.tool should be set")
+        if not generated_by.get("version"):
+            warnings.append("generated_by.version should be set")
+
+    compatibility = manifest.get("compatibility")
+    if not isinstance(compatibility, dict):
+        errors.append("compatibility must be an object")
+    else:
+        compatibility_schema = compatibility.get("schema")
+        if compatibility_schema != COMPATIBILITY_SCHEMA:
+            errors.append(
+                f"incompatible compatibility schema: {compatibility_schema!r}"
+            )
+        if compatibility.get("package_kind") != "vizasset":
+            warnings.append(f"compatibility package_kind is not vizasset: {compatibility.get('package_kind')!r}")
+        renderability = compatibility.get("renderability")
+        if not isinstance(renderability, dict):
+            errors.append("compatibility.renderability must be an object")
+        else:
+            for key in ("preview_only", "reconstructable", "renderer_native"):
+                if not isinstance(renderability.get(key), bool):
+                    errors.append(f"compatibility.renderability.{key} must be boolean")
+        requirements = compatibility.get("requires")
+        if requirements is not None and not isinstance(requirements, dict):
+            errors.append("compatibility.requires must be an object")
     if manifest.get("asset_type") != "rrkal.visual_compressor.timeseries":
         errors.append(f"unsupported asset_type: {manifest.get('asset_type')!r}")
     if manifest.get("package_profile") not in {"retain-residual", "clean"}:
@@ -491,7 +640,8 @@ def _validate_manifest_files(
     if not isinstance(files, dict):
         errors.append("files must be an object")
         return
-    for key in ("model", "preview", "metrics", "demo"):
+    required_keys = ("model", "preview", "metrics", "demo")
+    for key in required_keys:
         entry = files.get(key)
         if not isinstance(entry, dict):
             errors.append(f"files.{key} must be an object")
@@ -513,7 +663,32 @@ def _validate_manifest_files(
             errors.append(f"files.{key}.sha256 must be a 64-character hex digest")
         elif _sha256(file_path) != expected_sha:
             errors.append(f"files.{key}.sha256 mismatch")
-    extra_keys = sorted(set(files) - {"model", "preview", "metrics", "demo"})
+
+    if "review" in files:
+        entry = files["review"]
+        if not isinstance(entry, dict):
+            errors.append("files.review must be an object")
+        else:
+            rel_path = entry.get("path")
+            if not isinstance(rel_path, str) or not rel_path:
+                errors.append("files.review.path must be a non-empty string")
+            else:
+                file_path = package / rel_path
+                if not file_path.exists():
+                    errors.append(f"files.review.path missing: {rel_path}")
+                else:
+                    expected_bytes = int(entry.get("bytes") or -1)
+                    actual_bytes = file_path.stat().st_size
+                    if expected_bytes != actual_bytes:
+                        errors.append(
+                            f"files.review.bytes mismatch: manifest={expected_bytes} actual={actual_bytes}"
+                        )
+                    expected_sha = str(entry.get("sha256") or "")
+                    if len(expected_sha) != 64:
+                        errors.append("files.review.sha256 must be a 64-character hex digest")
+                    elif _sha256(file_path) != expected_sha:
+                        errors.append("files.review.sha256 mismatch")
+    extra_keys = sorted(set(files) - (set(required_keys) | {"review"}))
     if extra_keys:
         warnings.append(f"manifest has extra file entries: {', '.join(extra_keys)}")
 

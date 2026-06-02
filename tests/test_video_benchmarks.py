@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import json
-import os
-import subprocess
 import sys
 from pathlib import Path
+
+from _test_helpers import run_cli
 
 from vizcompress.video_benchmarks import (
     parse_int_list,
@@ -79,11 +79,9 @@ def test_video_benchmark_artifacts_are_stable(tmp_path: Path):
 
 
 def test_cli_video_bench_executes_and_emits_json_and_markdown(tmp_path: Path):
-    env = os.environ.copy()
-    env["PYTHONPATH"] = str(Path(__file__).resolve().parents[1] / "src")
     cli_out = tmp_path / "video_cli.json"
     cli_md = tmp_path / "video_cli.md"
-    result = subprocess.run(
+    result = run_cli(
         [
             sys.executable,
             "-m",
@@ -107,7 +105,6 @@ def test_cli_video_bench_executes_and_emits_json_and_markdown(tmp_path: Path):
         check=True,
         capture_output=True,
         text=True,
-        env=env,
     )
     payload = json.loads(result.stdout)
     assert payload["benchmark"] == "video_bench_sweep"

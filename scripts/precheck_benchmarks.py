@@ -1,15 +1,40 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import argparse
 import json
 import os
-import subprocess
 import sys
 from pathlib import Path
-
+from typing import Any
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
-PRECHECK_SUMMARY_SCHEMA_VERSION = "1.0"
+
+PROJECT_SRC = ROOT_DIR / "src"
+if str(PROJECT_SRC) not in os.sys.path:
+    os.sys.path.insert(0, str(PROJECT_SRC))
+
+from vizcompress.bench_precheck import precheck_benchmarks
+
+
+def _print_failure_hints(root: Path, summary: dict[str, Any]) -> None:
+    if summary.get("scan_ok") and summary.get("contract_ok"):
+        return
+
+    print("Precheck failed.", file=sys.stderr)
+    if summary.get("failed_report"):
+        print(f"failed_report: {summary['failed_report']}", file=sys.stderr)
+
+    candidate_script = ROOT_DIR / "scripts" / "report_workspace_candidates.py"
+    workspace_root = root if root != (ROOT_DIR / "docs" / "benchmarks") else ROOT_DIR
+    if candidate_script.exists():
+        print("If failures may be caused by stale output directories with ACL lock issues, run:", file=sys.stderr)
+        print(
+            f'  python "{candidate_script}" --root "{workspace_root}" --max-depth 4 --out "{workspace_root / "tmp" / "workspace_candidates.json"}"',
+            file=sys.stderr,
+        )
+        print("Common candidates: tmp_*, tmp-*, smoke_*, *smoke*, *model.vizretain*", file=sys.stderr)
+    else:
+        print(f"candidate helper missing: {candidate_script}", file=sys.stderr)
 
 
 def parse_args() -> argparse.Namespace:
@@ -55,157 +80,36 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _run_command(cmd: list[str], env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(cmd, capture_output=True, text=True, check=False, env=env)
-
-
-def _has_scan_violations(scan_report: dict) -> bool:
-    if scan_report.get("summary", {}).get("invalid_json", 0) > 0:
-        return True
-
-    for item in scan_report.get("files", []):
-        if not item.get("valid_json", True):
-            return True
-        rows = item.get("rows")
-        if isinstance(rows, dict):
-            if rows.get("rows_missing_any_required", 0) > 0:
-                return True
-        sweep = item.get("sweep")
-        if isinstance(sweep, dict):
-            if sweep.get("buckets_missing_any_required", 0) > 0:
-                return True
-    return False
-
-
 def main() -> int:
     args = parse_args()
     root = args.root.expanduser().resolve()
+
+    if not root.exists():
+        print(f"benchmark root does not exist: {root}")
+        return 2
+    if not root.is_dir():
+        print(f"benchmark root is not a directory: {root}")
+        return 2
 
     if args.skip_scan and args.skip_contract:
         print("cannot skip both scan and contract validation")
         return 2
 
-    scan_report_path = args.scan_out or (root / "scan_report.json")
-    contract_report_path = args.contract_out or (root / "contract_matrix_precheck.json")
-    scan_script = ROOT_DIR / "scripts" / "scan_benchmark_fields.py"
-    validate_all_script = ROOT_DIR / "scripts" / "validate_benchmark_contracts_all.py"
-
-    scan_ok = True
-    contract_ok = True
-    scan_payload: dict | None = None
-    contract_payload: dict | None = None
-
-    if not args.skip_scan:
-        scan_cmd = [
-            sys.executable,
-            str(scan_script),
-            "--root",
-            str(root),
-            "--pattern",
-            args.pattern,
-            "--out",
-            str(scan_report_path),
-        ]
-        scan_result = _run_command(scan_cmd)
-        if scan_result.returncode != 0:
-            scan_ok = False
-            print(f"scan command failed rc={scan_result.returncode}")
-            print(scan_result.stdout.strip())
-            print(scan_result.stderr.strip())
-        try:
-            scan_payload = json.loads(scan_report_path.read_text(encoding="utf-8"))
-        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-            scan_payload = None
-            scan_ok = False
-
-        if scan_payload is not None:
-            if args.fail_on_scan_warning and _has_scan_violations(scan_payload):
-                scan_ok = False
-
-    contract_failed = False
-    if not args.skip_contract:
-        env = os.environ.copy()
-        existing_path = env.get("PYTHONPATH", "")
-        env["PYTHONPATH"] = os.pathsep.join(p for p in (str(ROOT_DIR / "src"), existing_path) if p)
-        contract_cmd = [
-            sys.executable,
-            str(validate_all_script),
-            "--root",
-            str(root),
-            "--pattern",
-            args.pattern,
-            "--out",
-            str(contract_report_path),
-            "--exclude",
-            str(scan_report_path),
-            "--exclude",
-            str(contract_report_path),
-        ]
-        contract_result = _run_command(contract_cmd, env=env)
-        contract_failed = contract_result.returncode != 0
-        if contract_result.returncode != 0:
-            contract_ok = False
-            print(f"contract validation command failed rc={contract_result.returncode}")
-            print(contract_result.stdout.strip())
-            print(contract_result.stderr.strip())
-
-        try:
-            contract_payload = json.loads(contract_report_path.read_text(encoding="utf-8"))
-        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-            contract_payload = None
-            contract_ok = False
-            contract_failed = True
-
-    summary = {
-        "schema_version": PRECHECK_SUMMARY_SCHEMA_VERSION,
-        "root": str(root),
-        "pattern": args.pattern,
-        "scan_ok": scan_ok,
-        "contract_ok": contract_ok,
-        "scan_report": str(scan_report_path),
-        "contract_report": str(contract_report_path),
-        "skip_scan": args.skip_scan,
-        "skip_contract": args.skip_contract,
-        "failed_report": None,
-        "scan": {},
-        "contract": {
-            "status": "not_run",
-            "failed": 0,
-            "passed": 0,
-            "total": 0,
-        },
-        "status_counts": {},
-        "skipped": 0,
-        "skip_reasons": {},
-        "total_inputs": 0,
-    }
-
-    if scan_payload is not None:
-        summary["scan"] = scan_payload.get("summary", {})
-    if contract_payload is not None:
-        failed = contract_payload.get("failed", 0)
-        summary["contract"] = {
-            "failed": failed,
-            "passed": contract_payload.get("passed", 0),
-            "total": contract_payload.get("total", 0),
-            "status": "fail" if failed else "ok",
-        }
-        summary["status_counts"] = contract_payload.get("status_counts", {})
-        summary["skipped"] = contract_payload.get("skipped", 0)
-        summary["skip_reasons"] = contract_payload.get("skip_reasons", {})
-        summary["total_inputs"] = contract_payload.get("total_inputs", summary["contract"]["total"])
-        if (failed > 0 or contract_failed) and args.skip_contract is False:
-            summary["failed_report"] = str(contract_report_path)
-    else:
-        summary["total_inputs"] = scan_payload.get("summary", {}).get("total", 0) if scan_payload is not None else 0
-        if contract_failed and args.skip_contract is False:
-            summary["failed_report"] = str(contract_report_path)
-
+    rc, summary = precheck_benchmarks(
+        root=root,
+        pattern=args.pattern,
+        scan_out=args.scan_out,
+        contract_out=args.contract_out,
+        skip_scan=args.skip_scan,
+        skip_contract=args.skip_contract,
+        fail_on_scan_warning=args.fail_on_scan_warning,
+    )
     print(json.dumps(summary, ensure_ascii=False, sort_keys=True))
 
-    if not scan_ok or not contract_ok:
-        return 2
-    return 0
+    if rc != 0:
+        _print_failure_hints(root, summary)
+
+    return rc
 
 
 if __name__ == "__main__":

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+from dataclasses import dataclass
 import json
 import os
 import shutil
@@ -47,6 +49,358 @@ from vizcompress.video_benchmarks import (
     write_video_benchmark_markdown,
 )
 from vizcompress.bench_precheck import precheck_benchmarks
+
+
+@dataclass(frozen=True)
+class BuildConfig:
+    synthetic: int | None
+    csv: Path | None
+    synthetic_kind: str = "smooth"
+    x_column: str = "time"
+    y_column: str = "value"
+    out: Path = Path("vizcompress_outputs")
+    rdp_epsilon: float = 0.012
+    fourier_terms: int = 96
+    svg_samples: int = 2400
+    smooth_window: int = 1
+    sigma_clip: float | None = None
+    noise_layer_terms: int = 0
+    auto_noise_layer: bool = False
+    direct_svg: bool = False
+    channel: bool = False
+    channel_band: str = "rolling_std"
+    channel_window: int = 501
+    channel_k: float = 3.0
+    channel_band_epsilon: float = 0.01
+    package: bool = False
+    package_profile: str = "retain-residual"
+    package_name: str | None = None
+    x_domain_policy: str = "preserve"
+    x_domain_epsilon: float = 0.002
+    x_domain_max_error: float = 1e-4
+    review_packet: bool = False
+    review_source: str = "model-input"
+    review_max_rmse: float | None = None
+    review_max_mae: float | None = None
+    review_max_error: float | None = None
+    require_review_pass: bool = False
+    clean_output: bool = False
+
+
+@dataclass(frozen=True)
+class InspectConfig:
+    package: Path
+    samples: int = 1200
+
+
+@dataclass(frozen=True)
+class VerifyConfig:
+    package: Path
+    samples: int = 1024
+    synthetic: int | None = None
+    csv: Path | None = None
+    synthetic_kind: str = "smooth"
+    x_column: str = "time"
+    y_column: str = "value"
+    signal: str = "retained"
+    max_rmse: float | None = None
+    max_mae: float | None = None
+    max_error: float | None = None
+    max_x_error: float | None = 1e-9
+
+
+@dataclass(frozen=True)
+class PackageConfig:
+    package: Path
+    samples: int = 1200
+    include_channel: bool = True
+    include_sparse_residual: bool = True
+    include_noise_layer: bool = True
+    include_retained: bool = True
+
+
+@dataclass(frozen=True)
+class ReconstructConfig(PackageConfig):
+    signal: str = "center"
+
+
+def _series_summary(series: object) -> dict[str, float | int]:
+    return {
+        "samples": int(series.sample_count),  # type: ignore[attr-defined]
+        "x_min": float(series.x.min()),  # type: ignore[attr-defined]
+        "x_max": float(series.x.max()),  # type: ignore[attr-defined]
+        "y_min": float(series.y.min()),  # type: ignore[attr-defined]
+        "y_max": float(series.y.max()),  # type: ignore[attr-defined]
+    }
+
+
+def run_build(config: BuildConfig) -> dict[str, object]:
+    if config.synthetic is not None:
+        series = make_synthetic_dataset(config.synthetic, kind=config.synthetic_kind)
+    elif config.csv is not None:
+        series = read_csv_timeseries(config.csv, config.x_column, config.y_column)
+    else:
+        raise ValueError("build requires --synthetic or --csv input")
+
+    raw_series = series
+    cleaning_steps = []
+    if config.sigma_clip is not None:
+        cleaning = sigma_clip_time_series(series, config.sigma_clip)
+        cleaning_steps.append(cleaning.metadata())
+        series = cleaning.cleaned
+    if config.smooth_window > 1:
+        cleaning = smooth_time_series(series, config.smooth_window)
+        cleaning_steps.append(cleaning.metadata())
+        series = cleaning.cleaned
+
+    out_dir: Path = config.out
+    out_dir = _prepare_output_directory(out_dir, clean=config.clean_output, label="build")
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    rdp = compress_rdp(series, config.rdp_epsilon)
+    fourier = compress_fourier(series, config.fourier_terms)
+    noise = None
+    sparse_residual = None
+    residual_profile = None
+    if config.noise_layer_terms > 0:
+        if not cleaning_steps:
+            raise ValueError("--noise-layer-terms requires --sigma-clip or --smooth-window")
+        residual = residual_time_series(raw_series, series)
+        residual_profile = analyze_residual(raw_series, residual).as_dict()
+        noise = compress_fourier(residual, config.noise_layer_terms)
+    elif config.auto_noise_layer and cleaning_steps:
+        residual = residual_time_series(raw_series, series)
+        residual_profile = analyze_residual(raw_series, residual).as_dict()
+        if residual_profile["recommended_strategy"] == "fourier_residual_layer":
+            noise = compress_fourier(residual, max(16, config.fourier_terms // 2))
+        elif residual_profile["recommended_strategy"] == "sparse_outlier_layer":
+            sparse_residual = compress_sparse_residual(residual)
+    profile = analyze_time_series(series).as_dict()
+    if cleaning_steps:
+        profile["cleaning"] = cleaning_steps
+    channel = None
+    if config.channel:
+        channel = compress_fourier_channel(
+            series,
+            config.fourier_terms,
+            band_method=config.channel_band,
+            window=config.channel_window,
+            k=config.channel_k,
+            band_epsilon=config.channel_band_epsilon,
+        )
+    report = CompressionReport(
+        input_samples=series.sample_count,
+        rdp=rdp,
+        fourier=fourier,
+        channel=channel,
+        input_profile=profile,
+        noise=noise,
+        sparse_residual=sparse_residual,
+        residual_profile=residual_profile,
+    )
+
+    rdp_svg = write_rdp_svg(out_dir / "rdp_vectorized.svg", series, rdp)
+    fourier_svg = write_fourier_svg(
+        out_dir / "fourier_vectorized.svg",
+        series,
+        fourier,
+        config.svg_samples,
+    )
+    outputs = []
+    baseline_files = {}
+    if config.direct_svg:
+        direct_svg = write_direct_svg(out_dir / "direct.svg", series)
+        outputs.append(direct_svg.name)
+        baseline_files["direct_svg"] = direct_svg
+    outputs.extend([rdp_svg.name, fourier_svg.name])
+    if channel is not None:
+        channel_svg = write_channel_svg(
+            out_dir / "fourier_channel.svg",
+            series,
+            channel,
+            config.svg_samples,
+        )
+        outputs.append(channel_svg.name)
+    demo = write_demo(out_dir / "demo.py", series.sample_count, config.fourier_terms)
+    outputs.append(demo.name)
+    metrics = write_metrics(
+        out_dir / "metrics.json",
+        report,
+        [*outputs, "metrics.json"],
+    )
+    if config.package:
+        package_report = report
+        if config.package_profile == "clean":
+            package_report = CompressionReport(
+                input_samples=report.input_samples,
+                rdp=report.rdp,
+                fourier=report.fourier,
+                channel=report.channel,
+                input_profile=report.input_profile,
+                residual_profile=report.residual_profile,
+            )
+        preview = out_dir / ("fourier_channel.svg" if channel is not None else "fourier_vectorized.svg")
+        package_name = config.package_name or _default_package_name(config.package_profile)
+        package = write_vizasset(
+            out_dir / package_name,
+            series=series,
+            report=package_report,
+            preview_svg=preview,
+            metrics_json=metrics,
+            demo_py=demo,
+            package_profile=config.package_profile,
+            x_domain_policy=config.x_domain_policy,
+            x_domain_epsilon=config.x_domain_epsilon,
+            x_domain_max_error=config.x_domain_max_error,
+        )
+        outputs.append(str(package))
+        if config.review_packet:
+            review_source = raw_series if config.review_source == "raw-input" else series
+            review = write_review_packet(
+                package / "review.json",
+                package,
+                review_source,
+                baseline_files=baseline_files,
+                max_rmse=config.review_max_rmse,
+                max_mae=config.review_max_mae,
+                max_error=config.review_max_error,
+            )
+            outputs.append(str(Path(package.name) / review.name))
+            manifest = load_vizasset_manifest(package)
+            manifest_files = manifest.setdefault("files", {})
+            manifest_files["review"] = {
+                "path": review.name,
+                "sha256": hashlib.sha256(review.read_bytes()).hexdigest(),
+                "bytes": review.stat().st_size,
+            }
+            (package / "asset.json").write_text(
+                json.dumps(manifest, indent=2), encoding="utf-8"
+            )
+            if config.require_review_pass:
+                review_data = json.loads(review.read_text(encoding="utf-8"))
+                if not bool(review_data.get("accepted")):
+                    raise ValueError(f"review packet did not pass verification: {review}")
+
+    summary = report.as_dict()
+    rendered_outputs = [
+        str(name) if _is_package_output(str(name)) else str(out_dir / name)
+        for name in outputs
+    ]
+    summary["outputs"] = rendered_outputs + [str(metrics)]
+    return summary
+
+
+def run_inspect(config: InspectConfig) -> dict[str, object]:
+    data = run_reconstruct(
+        ReconstructConfig(
+            package=config.package,
+            samples=config.samples,
+            signal="retained",
+        )
+    )
+    return {
+        "package": data["package"],
+        "asset_type": data["manifest"]["asset_type"],
+        "schema_version": data["manifest"]["schema_version"],
+        "package_profile": data["manifest"].get("package_profile", "unknown"),
+        "source": data["manifest"]["source"],
+        "primary_method": data["manifest"]["model"]["primary_method"],
+        "contains_noise_layer": "noise_layer" in data["manifest"].get("metrics", {}),
+        "contains_sparse_residual_layer": "sparse_residual_layer" in data["manifest"].get("metrics", {}),
+        "reconstructed": data["reconstructed"],
+        "retained": data["retained"],
+        "channel": data["channel"],
+        "sparse_residual": data["sparse_residual"],
+        "noise_layer": data["noise_layer"],
+        "files": data["manifest"]["files"],
+    }
+
+
+def run_verify(config: VerifyConfig) -> dict[str, object]:
+    if config.synthetic is not None:
+        source = make_synthetic_dataset(config.synthetic, kind=config.synthetic_kind)
+        result = validate_vizasset_source(
+            config.package,
+            source,
+            signal=config.signal,
+            max_rmse=config.max_rmse,
+            max_mae=config.max_mae,
+            max_error=config.max_error,
+            max_x_error=config.max_x_error,
+        )
+    elif config.csv is not None:
+        source = read_csv_timeseries(config.csv, config.x_column, config.y_column)
+        result = validate_vizasset_source(
+            config.package,
+            source,
+            signal=config.signal,
+            max_rmse=config.max_rmse,
+            max_mae=config.max_mae,
+            max_error=config.max_error,
+            max_x_error=config.max_x_error,
+        )
+    else:
+        result = validate_vizasset(config.package, reconstruction_samples=config.samples)
+    return result.as_dict()
+
+
+def run_reconstruct(config: ReconstructConfig) -> dict[str, object]:
+    manifest = load_vizasset_manifest(config.package)
+    manifest_errors: list[str] = []
+    manifest_warnings: list[str] = []
+    _validate_manifest_shape(manifest, manifest_errors, manifest_warnings)
+    if manifest_errors:
+        raise ValueError(
+            f"{config.package}: manifest validation failed: " + "; ".join(manifest_errors)
+        )
+
+    if config.signal == "center":
+        reconstructed = reconstruct_fourier(config.package, samples=config.samples)
+    elif config.signal == "retained":
+        reconstructed = reconstruct_retained_signal(config.package, samples=config.samples)
+    else:
+        raise ValueError(f"unsupported reconstruct signal: {config.signal!r}")
+    has_channel = manifest["model"]["primary_method"] == "fourier_channel"
+    channel_summary = None
+    if config.include_channel and has_channel:
+        channel = reconstruct_channel(config.package, samples=config.samples)
+        channel_summary = {
+            "samples": int(channel["x"].shape[0]),
+            "upper_max": float(channel["upper_y"].max()),
+            "lower_min": float(channel["lower_y"].min()),
+        }
+    sparse_summary = None
+    if config.include_sparse_residual and "sparse_residual_layer" in manifest.get("metrics", {}):
+        sparse = reconstruct_sparse_residual(config.package)
+        sparse_summary = {
+            "points": int(sparse["indices"].shape[0]),
+            "max_abs_delta": float(abs(sparse["delta_y"]).max()) if sparse["delta_y"].size else 0.0,
+        }
+    noise_summary = None
+    if config.include_noise_layer and "noise_layer" in manifest.get("metrics", {}):
+        noise = reconstruct_noise_layer(config.package, samples=config.samples)
+        noise_summary = {
+            "samples": noise.sample_count,
+            "max_abs": float(abs(noise.y).max()),
+        }
+    retained_summary = None
+    if config.include_retained:
+        retained = reconstruct_retained_signal(config.package, samples=config.samples)
+        retained_summary = {
+            "samples": retained.sample_count,
+            "y_min": float(retained.y.min()),
+            "y_max": float(retained.y.max()),
+        }
+    return {
+        "package": str(config.package),
+        "manifest": manifest,
+        "manifest_warnings": manifest_warnings,
+        "reconstructed": _series_summary(reconstructed),
+        "retained": retained_summary,
+        "channel": channel_summary,
+        "sparse_residual": sparse_summary,
+        "noise_layer": noise_summary,
+    }
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -195,6 +549,40 @@ def main(argv: list[str] | None = None) -> int:
     inspect.add_argument("package", type=Path, help=".vizasset package directory.")
     inspect.add_argument("--samples", type=int, default=1200, help="Reconstruction sample count.")
 
+    reconstruct = subparsers.add_parser("reconstruct", help="Reconstruct a .vizasset package and report outputs.")
+    reconstruct.add_argument("package", type=Path, help=".vizasset package directory.")
+    reconstruct.add_argument("--samples", type=int, default=1200, help="Reconstruction sample count.")
+    reconstruct.add_argument(
+        "--signal",
+        choices=["center", "retained"],
+        default="center",
+        help="Reconstruction signal to return: center or retained.",
+    )
+    reconstruct.add_argument(
+        "--no-channel",
+        dest="include_channel",
+        action="store_false",
+        help="Skip channel reconstruction details.",
+    )
+    reconstruct.add_argument(
+        "--no-sparse-residual",
+        dest="include_sparse_residual",
+        action="store_false",
+        help="Skip sparse residual reconstruction details.",
+    )
+    reconstruct.add_argument(
+        "--no-noise-layer",
+        dest="include_noise_layer",
+        action="store_false",
+        help="Skip noise-layer reconstruction details.",
+    )
+    reconstruct.add_argument(
+        "--no-retained",
+        dest="include_retained",
+        action="store_false",
+        help="Skip retained reconstruction summary.",
+    )
+
     verify = subparsers.add_parser("verify", help="Validate a .vizasset/.vizretain/.vizclean package.")
     verify.add_argument("package", type=Path, help="Package directory to validate.")
     verify.add_argument("--samples", type=int, default=1024, help="Reconstruction sample count used by validation.")
@@ -310,6 +698,8 @@ def main(argv: list[str] | None = None) -> int:
         return _bench(args)
     if args.command == "inspect":
         return _inspect(args)
+    if args.command == "reconstruct":
+        return _reconstruct(args)
     if args.command == "verify":
         return _verify(args)
     if args.command == "recommend":
@@ -343,145 +733,45 @@ def _precheck_benchmarks(args: argparse.Namespace) -> int:
 
 
 def _build(args: argparse.Namespace) -> int:
-    if args.synthetic is not None:
-        series = make_synthetic_dataset(args.synthetic, kind=args.synthetic_kind)
-    else:
-        series = read_csv_timeseries(args.csv, args.x_column, args.y_column)
-    raw_series = series
-    cleaning_steps = []
-    if args.sigma_clip is not None:
-        cleaning = sigma_clip_time_series(series, args.sigma_clip)
-        cleaning_steps.append(cleaning.metadata())
-        series = cleaning.cleaned
-    if args.smooth_window > 1:
-        cleaning = smooth_time_series(series, args.smooth_window)
-        cleaning_steps.append(cleaning.metadata())
-        series = cleaning.cleaned
-
-    out_dir: Path = args.out
-    out_dir = _prepare_output_directory(out_dir, clean=args.clean_output, label="build")
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    rdp = compress_rdp(series, args.rdp_epsilon)
-    fourier = compress_fourier(series, args.fourier_terms)
-    noise = None
-    sparse_residual = None
-    residual_profile = None
-    if args.noise_layer_terms > 0:
-        if not cleaning_steps:
-            raise ValueError("--noise-layer-terms requires --sigma-clip or --smooth-window")
-        residual = residual_time_series(raw_series, series)
-        residual_profile = analyze_residual(raw_series, residual).as_dict()
-        noise = compress_fourier(residual, args.noise_layer_terms)
-    elif args.auto_noise_layer and cleaning_steps:
-        residual = residual_time_series(raw_series, series)
-        residual_profile = analyze_residual(raw_series, residual).as_dict()
-        if residual_profile["recommended_strategy"] == "fourier_residual_layer":
-            noise = compress_fourier(residual, max(16, args.fourier_terms // 2))
-        elif residual_profile["recommended_strategy"] == "sparse_outlier_layer":
-            sparse_residual = compress_sparse_residual(residual)
-    profile = analyze_time_series(series).as_dict()
-    if cleaning_steps:
-        profile["cleaning"] = cleaning_steps
-    channel = None
-    if args.channel:
-        channel = compress_fourier_channel(
-            series,
-            args.fourier_terms,
-            band_method=args.channel_band,
-            window=args.channel_window,
-            k=args.channel_k,
-            band_epsilon=args.channel_band_epsilon,
-        )
-    report = CompressionReport(
-        input_samples=series.sample_count,
-        rdp=rdp,
-        fourier=fourier,
-        channel=channel,
-        input_profile=profile,
-        noise=noise,
-        sparse_residual=sparse_residual,
-        residual_profile=residual_profile,
-    )
-
-    rdp_svg = write_rdp_svg(out_dir / "rdp_vectorized.svg", series, rdp)
-    fourier_svg = write_fourier_svg(
-        out_dir / "fourier_vectorized.svg",
-        series,
-        fourier,
-        args.svg_samples,
-    )
-    outputs = []
-    baseline_files = {}
-    if args.direct_svg:
-        direct_svg = write_direct_svg(out_dir / "direct.svg", series)
-        outputs.append(direct_svg.name)
-        baseline_files["direct_svg"] = direct_svg
-    outputs.extend([rdp_svg.name, fourier_svg.name])
-    if channel is not None:
-        channel_svg = write_channel_svg(
-            out_dir / "fourier_channel.svg",
-            series,
-            channel,
-            args.svg_samples,
-        )
-        outputs.append(channel_svg.name)
-    demo = write_demo(out_dir / "demo.py", series.sample_count, args.fourier_terms)
-    outputs.append(demo.name)
-    metrics = write_metrics(
-        out_dir / "metrics.json",
-        report,
-        [*outputs, "metrics.json"],
-    )
-    if args.package:
-        package_report = report
-        if args.package_profile == "clean":
-            package_report = CompressionReport(
-                input_samples=report.input_samples,
-                rdp=report.rdp,
-                fourier=report.fourier,
-                channel=report.channel,
-                input_profile=report.input_profile,
-                residual_profile=report.residual_profile,
+    try:
+        summary = run_build(
+            BuildConfig(
+                synthetic=args.synthetic,
+                csv=args.csv,
+                synthetic_kind=args.synthetic_kind,
+                x_column=args.x_column,
+                y_column=args.y_column,
+                out=args.out,
+                rdp_epsilon=args.rdp_epsilon,
+                fourier_terms=args.fourier_terms,
+                svg_samples=args.svg_samples,
+                smooth_window=args.smooth_window,
+                sigma_clip=args.sigma_clip,
+                noise_layer_terms=args.noise_layer_terms,
+                auto_noise_layer=args.auto_noise_layer,
+                direct_svg=args.direct_svg,
+                channel=args.channel,
+                channel_band=args.channel_band,
+                channel_window=args.channel_window,
+                channel_k=args.channel_k,
+                channel_band_epsilon=args.channel_band_epsilon,
+                package=args.package,
+                package_profile=args.package_profile,
+                package_name=args.package_name,
+                x_domain_policy=args.x_domain_policy,
+                x_domain_epsilon=args.x_domain_epsilon,
+                x_domain_max_error=args.x_domain_max_error,
+                review_packet=args.review_packet,
+                review_source=args.review_source,
+                review_max_rmse=args.review_max_rmse,
+                review_max_mae=args.review_max_mae,
+                review_max_error=args.review_max_error,
+                require_review_pass=args.require_review_pass,
+                clean_output=args.clean_output,
             )
-        preview = out_dir / ("fourier_channel.svg" if channel is not None else "fourier_vectorized.svg")
-        package_name = args.package_name or _default_package_name(args.package_profile)
-        package = write_vizasset(
-            out_dir / package_name,
-            series=series,
-            report=package_report,
-            preview_svg=preview,
-            metrics_json=metrics,
-            demo_py=demo,
-            package_profile=args.package_profile,
-            x_domain_policy=args.x_domain_policy,
-            x_domain_epsilon=args.x_domain_epsilon,
-            x_domain_max_error=args.x_domain_max_error,
         )
-        outputs.append(str(package))
-        if args.review_packet:
-            review_source = raw_series if args.review_source == "raw-input" else series
-            review = write_review_packet(
-                package / "review.json",
-                package,
-                review_source,
-                baseline_files=baseline_files,
-                max_rmse=args.review_max_rmse,
-                max_mae=args.review_max_mae,
-                max_error=args.review_max_error,
-            )
-            outputs.append(str(Path(package.name) / review.name))
-            if args.require_review_pass:
-                review_data = json.loads(review.read_text(encoding="utf-8"))
-                if not bool(review_data.get("accepted")):
-                    raise SystemExit(f"review packet did not pass verification: {review}")
-
-    summary = report.as_dict()
-    rendered_outputs = [
-        str(name) if _is_package_output(str(name)) else str(out_dir / name)
-        for name in outputs
-    ]
-    summary["outputs"] = rendered_outputs + [str(metrics)]
+    except ValueError as exc:
+        raise SystemExit(str(exc))
     print(json.dumps(summary, indent=2))
     return 0
 
@@ -813,65 +1103,34 @@ def _bench(args: argparse.Namespace) -> int:
 
 
 def _inspect(args: argparse.Namespace) -> int:
-    manifest = load_vizasset_manifest(args.package)
-    manifest_errors: list[str] = []
-    manifest_warnings: list[str] = []
-    _validate_manifest_shape(manifest, manifest_errors, manifest_warnings)
-    if manifest_errors:
-        raise SystemExit(
-            f"{args.package}: manifest validation failed: " + "; ".join(manifest_errors)
+    try:
+        summary = run_inspect(
+            InspectConfig(
+                package=args.package,
+                samples=args.samples,
+            )
         )
-    reconstructed = reconstruct_fourier(args.package, samples=args.samples)
-    has_channel = manifest["model"]["primary_method"] == "fourier_channel"
-    channel_summary = None
-    if has_channel:
-        channel = reconstruct_channel(args.package, samples=args.samples)
-        channel_summary = {
-            "samples": int(channel["x"].shape[0]),
-            "upper_max": float(channel["upper_y"].max()),
-            "lower_min": float(channel["lower_y"].min()),
-        }
-    sparse_summary = None
-    if "sparse_residual_layer" in manifest.get("metrics", {}):
-        sparse = reconstruct_sparse_residual(args.package)
-        sparse_summary = {
-            "points": int(sparse["indices"].shape[0]),
-            "max_abs_delta": float(abs(sparse["delta_y"]).max()) if sparse["delta_y"].size else 0.0,
-        }
-    noise_summary = None
-    if "noise_layer" in manifest.get("metrics", {}):
-        noise = reconstruct_noise_layer(args.package, samples=args.samples)
-        noise_summary = {
-            "samples": noise.sample_count,
-            "max_abs": float(abs(noise.y).max()),
-        }
-    retained = reconstruct_retained_signal(args.package, samples=args.samples)
-    summary = {
-        "package": str(args.package),
-        "asset_type": manifest["asset_type"],
-        "schema_version": manifest["schema_version"],
-        "package_profile": manifest.get("package_profile", "unknown"),
-        "source": manifest["source"],
-        "primary_method": manifest["model"]["primary_method"],
-        "contains_noise_layer": "noise_layer" in manifest.get("metrics", {}),
-        "contains_sparse_residual_layer": "sparse_residual_layer" in manifest.get("metrics", {}),
-        "reconstructed": {
-            "samples": reconstructed.sample_count,
-            "x_min": float(reconstructed.x.min()),
-            "x_max": float(reconstructed.x.max()),
-            "y_min": float(reconstructed.y.min()),
-            "y_max": float(reconstructed.y.max()),
-        },
-        "retained": {
-            "samples": retained.sample_count,
-            "y_min": float(retained.y.min()),
-            "y_max": float(retained.y.max()),
-        },
-        "channel": channel_summary,
-        "sparse_residual": sparse_summary,
-        "noise_layer": noise_summary,
-        "files": manifest["files"],
-    }
+    except ValueError as exc:
+        raise SystemExit(str(exc))
+    print(json.dumps(summary, indent=2))
+    return 0
+
+
+def _reconstruct(args: argparse.Namespace) -> int:
+    try:
+        summary = run_reconstruct(
+            ReconstructConfig(
+                package=args.package,
+                samples=args.samples,
+                signal=args.signal,
+                include_channel=args.include_channel,
+                include_sparse_residual=args.include_sparse_residual,
+                include_noise_layer=args.include_noise_layer,
+                include_retained=args.include_retained,
+            )
+        )
+    except ValueError as exc:
+        raise SystemExit(str(exc))
     print(json.dumps(summary, indent=2))
     return 0
 
@@ -889,32 +1148,24 @@ def _recommend(args: argparse.Namespace) -> int:
 
 
 def _verify(args: argparse.Namespace) -> int:
-    if args.synthetic is not None:
-        source = make_synthetic_dataset(args.synthetic, kind=args.synthetic_kind)
-        result = validate_vizasset_source(
-            args.package,
-            source,
+    result = run_verify(
+        VerifyConfig(
+            package=args.package,
+            samples=args.samples,
+            synthetic=args.synthetic,
+            csv=args.csv,
+            synthetic_kind=args.synthetic_kind,
+            x_column=args.x_column,
+            y_column=args.y_column,
             signal=args.signal,
             max_rmse=args.max_rmse,
             max_mae=args.max_mae,
             max_error=args.max_error,
             max_x_error=args.max_x_error,
         )
-    elif args.csv is not None:
-        source = read_csv_timeseries(args.csv, args.x_column, args.y_column)
-        result = validate_vizasset_source(
-            args.package,
-            source,
-            signal=args.signal,
-            max_rmse=args.max_rmse,
-            max_mae=args.max_mae,
-            max_error=args.max_error,
-            max_x_error=args.max_x_error,
-        )
-    else:
-        result = validate_vizasset(args.package, reconstruction_samples=args.samples)
-    print(json.dumps(result.as_dict(), indent=2))
-    return 0 if result.ok else 1
+    )
+    print(json.dumps(result, indent=2))
+    return 0 if bool(result.get("ok")) else 1
 
 
 def _compare(args: argparse.Namespace) -> int:

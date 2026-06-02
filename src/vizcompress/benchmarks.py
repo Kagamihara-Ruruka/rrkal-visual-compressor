@@ -858,7 +858,9 @@ def _ratio_candidates(ratio_field: str) -> tuple[str, ...]:
     return (ratio_field,)
 
 
-def _row_identity(row: dict[str, Any], *, ratio_field: str) -> dict[str, Any]:
+def _row_identity(row: dict[str, Any] | None, *, ratio_field: str) -> dict[str, Any] | None:
+    if row is None:
+        return None
     return {
         "synthetic_kind": row.get("synthetic_kind"),
         "samples": row.get("samples"),

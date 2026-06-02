@@ -212,7 +212,8 @@ Tasks:
   approved.
 - Align project documentation with the actual workspace boundaries:
   - `L:\rrkal-visual-compressor` as the development workspace.
-  - `L:\AGENT_EXCHANGE` as the non-product coordination forum.
+  - `Notion Agents討論區` as the non-product coordination forum.
+  - `L:\AGENT_EXCHANGE` as archive/history reference only.
 - Add a checkpoint-close flow that records unresolved recommendations and
   required follow-ups.
 
@@ -274,6 +275,23 @@ Next package work:
 - Add source-backed fidelity verification when original input is available.
 - Emit review packets that record accepted error budgets and baseline comparison.
 - Add schema fixtures so future agents can verify backward compatibility.
+
+### Phase 3.1: Renderer Skin Asset Compatibility Notes
+
+Goal: prepare the handoff path for RRKAL renderer/runtime consumers.
+
+- Define how `.vizasset` manifest fields map to `RendererSkinAsset` expectations.
+- Lock down `compatibility` schema and renderer-readiness flags.
+- Identify required conversion layer between `review.json` / `verify` outputs and registry gate checks.
+
+Current output:  
+`docs/RENDERER_SKIN_ASSET_COMPATIBILITY_NOTES.zh-TW.md`
+
+Completion criteria:
+
+- Documented compatibility matrix from `.vizasset` fields to renderer/core assumptions.
+- Explicit acceptance conditions (`schema_version`, `compatibility`, `files`, `review`) for bridge ingestion.
+- Traceable open questions for RRKAL runtime implementation (e.g., native loader + render-state).
 
 ## Phase 4: 2D Curve And Shape Compression
 

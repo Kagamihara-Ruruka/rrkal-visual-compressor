@@ -10,9 +10,6 @@ import numpy as np
 from _test_helpers import cli_env as _cli_test_env, run_cli as _run_cli, script_path as _repo_script
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
-PROJECT_SRC = str(ROOT_DIR / "src")
-if PROJECT_SRC not in sys.path:
-    sys.path.insert(0, PROJECT_SRC)
 
 
 from vizcompress.analyzers import analyze_time_series
@@ -32,8 +29,10 @@ from vizcompress.compressors import compress_fourier, compress_fourier_channel, 
 from vizcompress.core import CompressionReport
 from vizcompress.data import SYNTHETIC_KINDS, make_synthetic_dataset, make_synthetic_signal, read_csv_timeseries
 from vizcompress.exporters import write_channel_svg, write_demo, write_direct_svg, write_fourier_svg, write_metrics, write_rdp_svg
+from vizcompress import __version__
 from vizcompress.packages import (
     load_vizasset_manifest,
+    ASSET_SCHEMA_VERSION,
     reconstruct_channel,
     reconstruct_fourier,
     reconstruct_noise_layer,
@@ -221,7 +220,16 @@ def test_write_vizasset_package(tmp_path):
     )
 
     manifest = load_vizasset_manifest(package)
+    assert manifest["schema_version"] == ASSET_SCHEMA_VERSION
+    assert manifest["generated_by"]["tool"] == "rrkal.visual_compressor"
+    assert manifest["generated_by"]["version"] == __version__
+    assert manifest["compatibility"]["schema"] == "rrkal_visual_compressor.package_profile.v0"
+    assert manifest["compatibility"]["package_kind"] == "vizasset"
+    assert manifest["compatibility"]["renderability"]["preview_only"] is True
+    assert manifest["compatibility"]["renderability"]["reconstructable"] is True
+    assert manifest["compatibility"]["renderability"]["renderer_native"] is False
     assert manifest["asset_type"] == "rrkal.visual_compressor.timeseries"
+    assert manifest["model"]["profile"] == "fourier_channel"
     assert manifest["package_profile"] == "retain-residual"
     assert manifest["model"]["primary_method"] == "fourier_channel"
     assert manifest["source"]["profile"]["x_uniform"] is True
@@ -230,6 +238,46 @@ def test_write_vizasset_package(tmp_path):
     assert (package / "asset.json").exists()
     assert (package / "model.npz").exists()
     assert (package / "preview.svg").exists()
+
+
+def test_write_vizasset_includes_review_file_metadata_when_provided(tmp_path):
+    series = make_synthetic_signal(2000)
+    rdp = compress_rdp(series, epsilon=0.012)
+    fourier = compress_fourier(series, terms=48)
+    report = CompressionReport(input_samples=series.sample_count, rdp=rdp, fourier=fourier)
+
+    package_path = tmp_path / "model.vizasset"
+    package_path.mkdir(parents=True)
+    review_path = package_path / "review.json"
+    review_payload = {
+        "schema_version": "0.1",
+        "review_type": "rrkal.visual_compressor.package_review",
+        "accepted": True,
+    }
+    review_path.write_text(json.dumps(review_payload), encoding="utf-8")
+    preview = write_fourier_svg(
+        tmp_path / "preview_source.svg",
+        series,
+        fourier,
+        samples=300,
+    )
+    demo = write_demo(tmp_path / "demo_source.py", series.sample_count, terms=48)
+    metrics = write_metrics(tmp_path / "metrics_source.json", report, ["preview_source.svg", "demo_source.py"])
+
+    package = write_vizasset(
+        package_path,
+        series=series,
+        report=report,
+        preview_svg=preview,
+        metrics_json=metrics,
+        demo_py=demo,
+        review_json=review_path,
+    )
+
+    manifest = load_vizasset_manifest(package)
+    assert "review" in manifest["files"]
+    assert manifest["files"]["review"]["path"] == "review.json"
+    assert len(manifest["files"]["review"]["sha256"]) == 64
 
 
 def test_validate_vizasset_package_checks_hashes_and_reconstruction(tmp_path):
@@ -1424,6 +1472,9 @@ def test_cli_build_can_write_review_packet(tmp_path):
     assert review["accepted"] is True
     assert review["source_fingerprint"]["sample_count"] == 5000
     assert review["baseline_evidence"]["direct_svg"]["present"] is True
+    manifest = json.loads((tmp_path / "model.vizretain" / "asset.json").read_text(encoding="utf-8"))
+    assert manifest["files"]["review"]["path"] == "review.json"
+    assert len(manifest["files"]["review"]["sha256"]) == 64
 
 
 def test_cli_build_can_require_review_pass(tmp_path):

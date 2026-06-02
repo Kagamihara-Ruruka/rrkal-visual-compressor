@@ -112,6 +112,10 @@ py scripts/validate_benchmark_contracts_all.py \
 
 建議 CI 維持 `--fail-on-scan-warning`，並保存 scan + contract 兩份報告供稽核。
 
+```bash
+py scripts/precheck_benchmarks.py --root docs/benchmarks --pattern "*.json" --scan-out docs/benchmarks/scan_report.json --contract-out docs/benchmarks/contract_matrix_precheck.json --fail-on-scan-warning
+```
+
 `scan_report*.json` 與 `contract_matrix*.json` 會在批次預設排除名單中被跳過，避免把上一輪輸出再次納入掃描。
 
 ## 英文版
@@ -170,4 +174,13 @@ py scripts/compare_terms_channel_benchmark_parity.py \
   --right-out-json docs/benchmarks/ci_right.json \
   --report-json docs/benchmarks/ci_compare_report.json \
   --validate-contract
+```
+
+
+## Workspace Candidate Scan (ACL/lock recovery)
+
+If precheck is failing due to stale output or ACL permission issues, run:
+
+```powershell
+py scripts/report_workspace_candidates.py --root . --max-depth 4 --out docs/benchmarks/workspace_candidates.json
 ```

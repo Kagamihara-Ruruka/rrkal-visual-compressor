@@ -1,4 +1,4 @@
-# Benchmark Contract (EN)
+﻿# Benchmark Contract (EN)
 
 This contract defines measurable invariants for CI and repeatable research reports.
 
@@ -106,3 +106,13 @@ This prevents interpretation drift between environments.
 - `channel_k` is optional in row mode and is treated as unspecified when missing.
 - `defensible_channel_coverage_threshold` is optional in `summary`; missing means default `0.9`.
 - ratio checks treat `bool`, `NaN`, `inf`, and non-finite numbers as invalid.
+
+## Workspace Candidate Scan (ACL/lock recovery)
+
+If precheck is failing due to stale output or ACL permission issues, run once before retry:
+
+```powershell
+py scripts/report_workspace_candidates.py --root . --max-depth 4 --out docs/benchmarks/workspace_candidates.json
+```
+
+The report scans common stale-output patterns (`tmp_*`, `tmp-*`, `smoke*`, `*smoke*`, `*model.vizretain*`, `*retry*`, `*artifact*`) and flags unreadable paths.
