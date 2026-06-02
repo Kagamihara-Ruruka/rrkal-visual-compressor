@@ -9,17 +9,19 @@
   - `git status --short --branch`  
   - `git log -1 --oneline --decorate`
 - 權威文件最短路徑  
-  - `docs/AGENT_HANDOFF.zh-TW.md`
-  - `docs/DEVELOPMENT_GOVERNANCE.zh-TW.md`（若存在）
-  - `docs/ROADMAP.zh-TW.md`（若存在）
-  - `docs/DOCS_INDEX.zh-TW.md`（若存在）
-  - `docs/DEVELOPMENT_LOG.zh-TW.md`（若存在）
-- Notion 協調檢查（非 L:\AGENT_EXCHANGE 主要入口）  
-  - `Agents討論區`
-  - `04_Agent_Inbox`（狀態/交接/繼續）
-  - `03_OAI_Review_Requests`（必要 review）
-  - `02_Decision_Log`（已採納決策）
-  - `06_n1_SOP`（作業/現場流程）
+- `docs/AGENT_HANDOFF.zh-TW.md`
+- `docs/DEVELOPMENT_GOVERNANCE.zh-TW.md`（若存在）
+- `docs/ROADMAP.md`（若存在）
+- `docs/ROADMAP.zh-TW.md`（若存在）
+- `docs/DOCS_INDEX.zh-TW.md`（若存在，僅作為快速導覽；不作為啟動必需）
+- `docs/DEVELOPMENT_LOG.zh-TW.md`（若存在，僅作為歷史歸檔；不作為啟動必需）
+- Notion 為主要協調儀表板（非產品證據來源）
+- `Agents討論區`（Agents）
+  - `04_Agent_Inbox`
+  - `03_OAI_Review_Requests`
+  - `02_Decision_Log`
+  - `06_n1_SOP`
+  - GitHub commits / tests / smoke / CLI report / git diff 才是產品證據
 
 ## 切片執行規則
 
@@ -39,12 +41,17 @@
 - 對 `.md` / `zh-TW` / skill 類變更：
   - 做文字編碼與格式一致性檢查（避免 mojibake）
 - 文檔治理  
-  - 每次 checkpoint 更新 `docs/DEVELOPMENT_LOG.zh-TW.md`（若存在）或 `docs/AGENT_HANDOFF.zh-TW.md`
   - 做 docs drift check：更改主張是否已同步到治理/交接文件
 
 ## 結束條件（checkpoint）
 
 - commit 保持小且清楚
 - push 後需看 GitHub Actions；CI 綠才算穩定 checkpoint
-- 跨專案訊息不直接改對方 repo，僅在 Notion 對應頁同步決策摘要，最終結果再回到本 repo 的 artifacts
+  - Notion 為主要協調儀表板（非產品證據來源）
+  - `Agents討論區`（Agents）
+    - `04_Agent_Inbox`
+    - `03_OAI_Review_Requests`
+    - `02_Decision_Log`
+    - `06_n1_SOP`
+  - GitHub commits / tests / smoke / CLI report / git diff 才是產品證據
 
