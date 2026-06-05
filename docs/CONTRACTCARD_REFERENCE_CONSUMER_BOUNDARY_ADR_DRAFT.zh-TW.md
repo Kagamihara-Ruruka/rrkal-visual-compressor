@@ -3,7 +3,7 @@
 ## TL;DR
 
 - `ContractCard` 在本 repo 內，僅作為 `RRKAL visual-compressor` 的 **規劃輸入證據**。
-- `.vizasset` 目前可證明欄位與輸出，仍不等於對下游可直接消費的正式對外 schema。
+- `.vizasset` 目前可證明欄位與輸出，仍不等於供下游規劃與規格草擬使用，不代表正式對外 schema。
 - `Core / Display / Odoriba` 的實際消費 schema 需經 `o_1` + owner 再議。
 
 ## Scope
@@ -105,7 +105,7 @@ contract_card_reference:
 ## Boundary statement
 
 - 這是 docs-only 的「規劃輸入證據」定義。
-- 不建立 `production-ready` 下游消費承諾。
+- 不建立下游正式消費承諾。
 - 不修改 schema / CLI / 套件行為。
 - 不授權跨 repo implementation。
 
@@ -113,4 +113,3 @@ contract_card_reference:
 
 - 禁止將 `ContractCard` 描述為「已可直接生產消費」。
 - 禁止將任何規劃字段宣告為 `Core / Display / Odoriba` 即時可用。
-- 禁止使用 `integration-ready`、`ready for adoption` 類措辭。

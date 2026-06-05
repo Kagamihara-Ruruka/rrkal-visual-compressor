@@ -40,7 +40,7 @@
 | `benchmark_profile` | `bench`/`precheck-benchmarks` 輸出建議 | 尚未綁定為 ContractCard 核心欄位。 |
 | `source_manifest_hash` | 待規劃字段 | 尚未全域輸出與驗證 gate 對齊。 |
 
-### unsafe downstream fields（暫不建議下游直接消費）
+### unsafe downstream fields（暫不建議下游視為正式可消費）
 
 | 欄位 | 風險 |
 |---|---|
@@ -60,7 +60,7 @@
 ### 最小可用證據摘要
 
 - 可作為下一輪規劃輸入（已有命令證據）：`schema_version`, `asset_kind`, `compression_family`, `reconstruct_modes`, `error_metrics`, `evidence_outputs`, `compatibility_profile`, `generated_at`, `tool_version`。
-- 仍需治理授權前不要對下游宣告 production-ready consumption。
+- 仍需治理授權前僅供下游規劃參考，不視為正式可消費。
 
 ## B. startup / SOP drift scan（本分支）
 
