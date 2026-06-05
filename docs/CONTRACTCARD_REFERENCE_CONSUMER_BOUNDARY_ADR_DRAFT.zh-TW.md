@@ -3,7 +3,7 @@
 ## TL;DR
 
 - `ContractCard` 在本 repo 內，僅作為 `RRKAL visual-compressor` 的 **規劃輸入證據**。
-- `.vizasset` 目前可證明欄位與輸出，仍不等於供下游規劃與規格草擬使用，不代表正式對外 schema。
+- `.vizasset` 目前可證明欄位與輸出，可作為下游規劃與規格草擬參考，但不代表正式對外 schema。
 - `Core / Display / Odoriba` 的實際消費 schema 需經 `o_1` + owner 再議。
 
 ## Scope
