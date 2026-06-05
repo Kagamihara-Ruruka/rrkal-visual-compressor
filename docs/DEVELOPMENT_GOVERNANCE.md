@@ -11,8 +11,11 @@ testable through documented commands.
 - SVG, demo scripts, PNGs, and editor views are exports, not the canonical data.
 - Future `.vizasset` packages must keep source metadata, processing parameters,
   fidelity metrics, and lineage together.
-- Renderer/runtime interoperability expectations are tracked at
-  `docs/RENDERER_SKIN_ASSET_COMPATIBILITY_NOTES.zh-TW.md`.
+- Renderer/runtime interoperability assumptions are tracked in scoped review artifacts
+  until downstream owners confirm runtime ownership:
+  - `docs/benchmarks/README.md`
+  - `docs/benchmarks/CONTRACT.md`
+  - `03_OAI_Review_Requests` in Notion.
 
 ## MVP Boundary
 

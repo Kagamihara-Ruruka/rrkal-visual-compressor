@@ -13,8 +13,6 @@
 - `docs/DEVELOPMENT_GOVERNANCE.zh-TW.md`（若存在）
 - `docs/ROADMAP.md`（若存在）
 - `docs/ROADMAP.zh-TW.md`（若存在）
-- `docs/DOCS_INDEX.zh-TW.md`（若存在，僅作為快速導覽；不作為啟動必需）
-- `docs/DEVELOPMENT_LOG.zh-TW.md`（若存在，僅作為歷史歸檔；不作為啟動必需）
 - Notion 為主要協調儀表板（非產品證據來源）
 - `Agents討論區`（Agents）
   - `04_Agent_Inbox`
