@@ -123,3 +123,58 @@
 4. packet 中 `compatibility_profile` / `reconstruct_modes` / `benchmark_profile` 不再頻繁重述。  
 
 當上述條件齊備，才轉入能力碼版本治理與分配。  
+## ContractCard field availability
+
+### Boundary (c_2 docs-only evidence mapping)
+
+- This section is documentation-only.
+- No schema migration, CLI behavior change, algorithm change, or downstream integration is authorized in this slice.
+- It records only what fields can be claimed as planning evidence for Odoriba-style card design.
+
+### Field availability classification
+
+| Field | Source | Status | Notes |
+|---|---|---|---|
+| `contract_id` | evidence draft proposals | `declared-only` | Useful planning identifier, not yet emitted as stable packet contract field. |
+| `schema_version` | packet / manifest + test-visible metadata | `verified` | Present in review and manifest payload. |
+| `asset_kind` | `asset_type` mapping | `verified` | Stable enough for read-only classification in planning docs. |
+| `compression_family` | model profile + metadata | `verified` | Available from current manifest. |
+| `payload_shape` | source and model metadata | `declared-only` | Partial signal-level info only; not normalized across all families. |
+| `reconstruct_modes` | compatibility + reconstruct output | `verified` | Evidence exists via CLI behavior and compatibility flags. |
+| `error_metrics` | metrics/reconstruction summaries | `verified` | Present in manifest and command outputs. |
+| `benchmark_profile` | benchmark/precheck command outputs | `declared-only` | Command outputs exist, but not yet bound as ContractCard schema field. |
+| `evidence_outputs` | `metrics.json`, `review.json`, `scan`/`bench` reports | `verified` | Emitted and discoverable via CLI/docs/tests. |
+| `compatibility_profile` | manifest compatibility block | `verified` | Already present. |
+| `consumer_hints` | draft recommendation sections | `declared-only` | Guidance text only; no stable parser contract yet. |
+| `source_manifest_hash` | not in stable packet fields now | `declared-only` | Planned field with incomplete enforcement. |
+| `generated_at` | packet timestamp | `verified` | Present in review/packet output. |
+| `tool_version` | generated_by metadata | `verified` | Present in manifest generated_by and review metadata. |
+| `contract_matrix` / recommendation matrix | proposal only | `pending_o1` | Requires cross-doc and governance alignment before external claim. |
+| `cross-slice integration mapping` | not productized | `pending_o1` | Needs explicit owner / o_1 acceptance. |
+
+### Minimal evidence-backed fields for downstream planning
+
+- `contract_id` (draft)
+- `schema_version`
+- `asset_kind`
+- `compression_family`
+- `reconstruct_modes`
+- `error_metrics`
+- `evidence_outputs`
+- `compatibility_profile`
+- `generated_at`
+- `tool_version`
+
+### Fields currently unsafe to consume
+
+- `consumer_hints` before governance lock-in
+- `requires` entries that imply cross-repo coupling
+- Unbounded `payload_shape` assumptions for `.npz` payload internals
+- Benchmark claims without traceability to CI/gate version lock
+
+### Missing evidence for next slice
+
+- Deterministic `contract_id` binding in every packet
+- Signed / auditable hash chain (manifest + reviewed artifacts)
+- Formal policy on benchmark evidence freshness and scope
+- Approved compatibility schema version negotiation with o_1 / owner

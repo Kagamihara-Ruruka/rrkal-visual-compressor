@@ -173,3 +173,58 @@
 
 若以上 1~5 通過，才可啟動下一輪能力碼方案設計。
 
+## ContractCard field availability
+
+### Boundary (c_2 docs-only slice)
+
+- This section is documentation-only and does not change product code, schema, CLI behavior, or integration policy.
+- It is a mapping for planning only.
+- Canonical policy remains: `python -m vizcompress` and `python -m vizcompress.cli`.
+- No downstream contract is asserted as production-ready.
+
+### Field availability classification (for Odoriba mapping discussion)
+
+| Field | Source | Status | Why |
+|---|---|---|---|
+| `schema_version` | `.vizasset` manifest (`asset.json`) | `verified` | Required field currently emitted by `src/vizcompress/packages.py` and consumed by verify/inspect paths. |
+| `asset_kind` | `asset_type` + existing contract draft | `verified` | Present in manifest now, currently fixed to timeseries. |
+| `compression_family` | `model.primary_method` + `model.methods` | `verified` | Present in manifest and observable from inspect output. |
+| `reconstruct_modes` | `compatibility.renderability*` + reconstruct CLI behavior | `verified` | Verified by command-level behavior and compatibility block. |
+| `error_metrics` | `metrics` payload | `verified` | RMSE/MAE/max-error style outputs are currently emitted and test-covered. |
+| `evidence_outputs` | `files` / review packet / CLI reports | `verified` | Manifest file references and benchmark/inspect/reconstruct command outputs exist. |
+| `compatibility_profile` | `compatibility` block | `verified` | Schema/reconstructable/preview flags are currently present. |
+| `contract_id` | drafted pseudo-structure only | `declared-only` | Referenced in draft examples, not emitted as stable contract field. |
+| `consumer_hints` | draft sections and notes | `declared-only` | Guidance text only, not enforceable downstream field set. |
+| `payload_shape` | partially from `source.sample_count` / `source.kind` | `declared-only` | Partial support exists; full shape contract (`dim / channels / dtype`) is not normalized. |
+| `package_profile` / raw `requires` payload | internal implementation metadata | `unsafe` | Internal tuning/implementation intent; can drift and is not guaranteed stable for downstream consumers. |
+| `review_schema` / `review` linkage | current `review.json` + validation packets | `pending_o1` | Requires explicit cross-team packet policy before downstream dependence. |
+| `ContractCard schema finalization` | this section only | `pending_o1` | Requires o_1 / owner decision before formal consumption. |
+
+### Minimal recommended ContractCard draft shape (subset only)
+
+- `contract_id` (draft only)
+- `schema_version`
+- `asset_kind`
+- `compression_family`
+- `payload_profile` (`source.sample_count`, `source.kind`)
+- `reconstruct_modes`
+- `error_metrics`
+- `evidence_outputs`
+- `compatibility_profile`
+- `tool_version`
+- `generated_at`
+
+### Unsafe for downstream consumption (current slice)
+
+- `model.primary_method` string values (without versioned method ontology)
+- `model.methods` detailed internal list
+- `compatibility.requires` entries for `displaytools` / `rrkal_core`
+- `package_profile` interpretation outside canonical policy
+- `.npz` internal layout assumptions
+
+### Missing evidence gaps
+
+- Canonical contract ID strategy and lifecycle semantics
+- Stable `payload_shape` schema for non-timeseries assets
+- Stable linkage between manifest and benchmark/precheck contracts
+- Provenance-safe evidence hashes suitable for cross-repo auditing
