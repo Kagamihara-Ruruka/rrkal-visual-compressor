@@ -191,3 +191,40 @@ JSON mode:
 
 - `python scripts/docs_readability_checkpoint.py --json`
 - JSON output includes all required keys above with `boundary` and `status`.
+
+## 12) Checkpoint contract index
+
+For each docs-touching lane, treat
+`docs/DOCS_READABILITY_CHECKPOINT_CONTRACT.md` as the local contract/index reference.
+Before concluding lane, ensure the following contract points are satisfied:
+
+- contract schema: `docs-readability-checkpoint/v1`
+- required booleans:
+  - `clean_docs_scan_passed`
+  - `negative_fixture_detection_passed`
+  - `cli_help_passed`
+  - `no_manifest_schema_change`
+  - `readability_pytest_passed`
+  - `checkpoint_passed`
+- boundary booleans:
+  - `no_manifest_schema_change_required`
+  - `cli_behavior_unchanged`
+  - `algorithm_unchanged`
+  - `cross_repo_integration_not_touched`
+  - `leaf_tests_only`
+  - `recursion_guard_set`
+- topology separation:
+  - checkpoint executes only `test_leaf_*`
+  - validator checks checkpoint output and boundary
+  - meta tests validate JSON purity, negative mutation, and validator behavior
+- timeout rule:
+  - command-level timeout target is 30s
+- process fan-out evidence:
+  - record `c2_python_process_count`
+  - if unusually high, include PID/CMD reason and stop condition statement
+- negative fixture behavior:
+  - strict mode must flag `U+FFFD present` on `contains_fffd.md`
+  - strict mode must flag `PUA chars found` on `contains_pua.md`
+
+Do not treat this contract as cross-repo consumption-ready schema.
+It is an internal evidence gate for docs-readability lane work.
