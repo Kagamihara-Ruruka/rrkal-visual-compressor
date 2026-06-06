@@ -1,4 +1,4 @@
-# C2 Quick Startup + Delivery SOP (Docs/Readiness Lane)
+﻿# C2 Quick Startup + Delivery SOP (Docs/Readiness Lane)
 
 Scope: c_2 docs/evidence/startup/handoff/taxonomy/encoding.
 
@@ -80,7 +80,8 @@ For every touched `.md` / `.zh-TW` file:
 2. U+FFFD scan (`U+FFFD` presence) to detect decode artifacts
 3. Encoding drift check for known startup docs and new/edited startup references
 4. PUA / mojibake marker scan via repo-local script:
-   - `python scripts/check_docs_readability.py scripts/check_docs_readability.py docs/AGENT_START_HERE.zh-TW.md docs/AGENT_HANDOFF.md docs/C2_QUICK_STARTUP_DELIVERY_SOP.md`
+   - `python scripts/check_docs_readability.py scripts/check_docs_readability.py docs/AGENT_START_HERE.zh-TW.md docs/AGENT_HANDOFF.md docs/C2_QUICK_STARTUP_DELIVERY_SOP.md` (`non-warning baseline`)
+   - `python scripts/check_docs_readability.py --strict tests/fixtures/docs_readability/contains_fffd.md tests/fixtures/docs_readability/contains_pua.md` (`fixture guard: expects warning for negative fixtures`)
 5. Required-token presence check for startup docs:
    - `git status --short --branch`
    - `git log -1 --oneline --decorate`
@@ -140,3 +141,16 @@ Final classification:
 - Evidence-first wording is preferred over certainty-first wording:
   - prefer `planning input` over `directly consumable`
   - prefer `supported for review` over `officially adopted`
+
+## 10) Negative fixtures for readability checker (docs-readability lane)
+
+Use `tests/fixtures/docs_readability/` for reproducible negative cases:
+
+- `clean.md` (PASS)
+- `contains_fffd.md` (warning with `U+FFFD` marker)
+- `contains_pua.md` (warning with PUA marker)
+
+Local execution:
+
+- `python -m pytest tests/test_docs_readability_checker.py -q`
+- `python scripts/check_docs_readability.py --strict tests/fixtures/docs_readability/contains_fffd.md tests/fixtures/docs_readability/contains_pua.md`
