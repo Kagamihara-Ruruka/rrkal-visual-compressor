@@ -19,7 +19,7 @@ Forbidden within this lane:
 - .vizasset manifest/schema changes
 - CLI behavior changes
 - compression algorithm changes
-- downstream-ready claims (no `ready for adoption`, `production-ready`, `directly consumable`, etc.)
+- consumer handoff completion or product-readiness-style claims
 - cross-repo implementation
 
 ## 2) Preflight (must-run in every slice)
@@ -134,7 +134,7 @@ Final classification:
 - no manifest/schema change
 - no CLI behavior change
 - no compression algorithm change
-- no integration-ready claim
+- no cross-repo completion claim
 - no RRKAL Core / Display / Odoriba schema alignment claim
 
 ## 9) Notes for c_2
@@ -142,8 +142,8 @@ Final classification:
 - This SOP is for documentation-readiness and encoding hygiene.
 - Code changes in this lane require o_1 review reclassification before scope extension.
 - Evidence-first wording is preferred over certainty-first wording:
-  - prefer `planning input` over `directly consumable`
-  - prefer `supported for review` over `officially adopted`
+  - prefer `planning input` over consumer-completion wording
+  - prefer `supported for review` over `formally selected as product policy`
 
 ## 10) Negative fixtures for readability checker (docs-readability lane)
 
@@ -196,6 +196,9 @@ JSON mode:
 
 For each docs-touching lane, treat
 `docs/DOCS_READABILITY_CHECKPOINT_CONTRACT.md` as the local contract/index reference.
+Also consult
+`docs/DOCS_READABILITY_CHECKPOINT_FAILURE_MODES.md`
+as the incident-response index when checkpoint runs fail.
 Before concluding lane, ensure the following contract points are satisfied:
 
 - contract schema: `docs-readability-checkpoint/v1`
