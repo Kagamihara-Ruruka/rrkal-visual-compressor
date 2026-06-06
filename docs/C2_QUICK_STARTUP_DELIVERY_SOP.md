@@ -79,11 +79,13 @@ For every touched `.md` / `.zh-TW` file:
 1. UTF-8 strict decode check
 2. U+FFFD scan (`U+FFFD` presence) to detect decode artifacts
 3. Encoding drift check for known startup docs and new/edited startup references
-4. Required-token presence check for startup docs:
+4. PUA / mojibake marker scan via repo-local script:
+   - `python scripts/check_docs_readability.py scripts/check_docs_readability.py docs/AGENT_START_HERE.zh-TW.md docs/AGENT_HANDOFF.md docs/C2_QUICK_STARTUP_DELIVERY_SOP.md`
+5. Required-token presence check for startup docs:
    - `git status --short --branch`
    - `git log -1 --oneline --decorate`
    - Notion spaces (`04_Agent_Inbox`, `03_OAI_Review_Requests`, `02_Decision_Log`, `06_n1_SOP`)
-5. If new missing-doc references are found, downgrade them (e.g., "if exists", "if available") rather than hard-require unknown files.
+6. If new missing-doc references are found, downgrade them (e.g., "if exists", "if available") rather than hard-require unknown files.
 
 ## 6) Delivery output format (required handoff artifact)
 
