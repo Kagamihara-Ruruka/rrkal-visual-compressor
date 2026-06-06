@@ -61,6 +61,7 @@ If any required file is unreadable/absent, stop and escalate as documentation de
 - `python -m vizcompress --help`
 - `python -m vizcompress.cli --help`
 - relevant docs/README consistency checks for command signature text changes
+- `python scripts/docs_readability_checkpoint.py` (docs readability checkpoint bundle)
 
 ### Tier 2 (docs-only, optional/skip-if-doc-only)
 
@@ -154,3 +155,14 @@ Local execution:
 
 - `python -m pytest tests/test_docs_readability_checker.py -q`
 - `python scripts/check_docs_readability.py --strict tests/fixtures/docs_readability/contains_fffd.md tests/fixtures/docs_readability/contains_pua.md`
+
+## 11) Checkpoint bundle (required for docs-touching lane close)
+
+- `python scripts/docs_readability_checkpoint.py`
+
+Expected checkpoint report flags:
+
+- `clean_docs_scan_passed=true`
+- `negative_fixture_detection_passed=true`
+- `cli_help_passed=true`
+- `no_manifest_schema_change=true`
