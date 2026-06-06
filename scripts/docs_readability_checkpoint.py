@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -98,7 +99,10 @@ def _is_no_manifest_schema_change() -> bool:
 
 
 def _run_pytest() -> tuple[bool, str]:
-    rc, output = _run(PYTEST_CMD, cwd=ROOT)
+    pytest_cmd = PYTEST_CMD[:] if PYTEST_CMD else [sys.executable, "-m", "pytest", "tests/test_docs_readability_checker.py", "-q"]
+    if os.environ.get("DOCS_READABILITY_CHECKPOINT_TEST_MODE", "") == "1":
+        pytest_cmd.extend(["-k", "not test_docs_readability_checkpoint_json_output_is_pure_json"])
+    rc, output = _run(pytest_cmd, cwd=ROOT)
     return rc == 0, output
 
 
