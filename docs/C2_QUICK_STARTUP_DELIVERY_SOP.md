@@ -55,6 +55,8 @@ If any required file is unreadable/absent, stop and escalate as documentation de
 - "RRKAL doc readability guard" checks (see section 5)
 - repo clean-state checks before/after required by report (or staged delta expected)
 - avoid changing command behavior; if docs only, keep behavior tests skipped unless command docs are altered.
+- checkpoint topology guard: do not include tests that call `docs_readability_checkpoint.py` or validator script.
+- must enforce subprocess timeout (`<=30s`) for checkpoint/validator internal commands.
 
 ### Tier 1 (must-run only if CLI behavior docs changed)
 
@@ -162,6 +164,16 @@ Local execution:
 - `python scripts/validate_docs_readability_checkpoint.py`
 - `python scripts/validate_docs_readability_checkpoint.py --self-test-negative`
 - `python scripts/docs_readability_checkpoint.py --json | python -c "import sys,json; d=json.load(sys.stdin); assert d['checkpoint_passed'] is True"`
+
+Leaf/meta split command contract:
+
+- `tests/test_docs_readability_checker.py` includes:
+  - leaf tests: `test_leaf_*` (checker/fixtures/CLI sanity)
+  - meta tests: `test_meta_*` (checkpoint JSON, validator, negative mutation)
+- checkpoint runner must execute only leaf tests and must not execute meta tests.
+- after checkpoint run, capture:
+  - `c2_python_process_count=<N>`
+  - non-zero fan-out evidence with PID/command when necessary.
 
 Expected checkpoint report flags:
 

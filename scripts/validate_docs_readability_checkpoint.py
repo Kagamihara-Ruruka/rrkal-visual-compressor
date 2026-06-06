@@ -17,6 +17,9 @@ ROOT = Path(__file__).resolve().parents[1]
 CHECKPOINT_SCRIPT = ROOT / "scripts" / "docs_readability_checkpoint.py"
 SCHEMA = "docs-readability-checkpoint/v1"
 CHECKPOINT_TEST_ENV = "DOCS_READABILITY_CHECKPOINT_TEST_MODE"
+CHECKPOINT_RUNNER_ENV = "DOCS_READABILITY_CHECKPOINT_RUNNER"
+PROCESS_FANOUT_WARNING_LIMIT = 20
+SUBPROCESS_TIMEOUT_SECONDS = 30
 
 REQUIRED_KEYS = (
     "clean_docs_scan_passed",
@@ -37,11 +40,13 @@ BOUNDARY_KEYS = (
 def _run_checkpoint_json() -> dict[str, Any]:
     env = dict(os.environ)
     env[CHECKPOINT_TEST_ENV] = "1"
+    env[CHECKPOINT_RUNNER_ENV] = "1"
     result = subprocess.run(
         [sys.executable, str(CHECKPOINT_SCRIPT), "--json"],
         text=True,
         capture_output=True,
         encoding="utf-8",
+        timeout=SUBPROCESS_TIMEOUT_SECONDS,
         env=env,
         check=False,
     )
@@ -89,6 +94,17 @@ def _check_report(data: dict[str, Any]) -> list[str]:
 
 def _validate(data: dict[str, Any]) -> bool:
     return not _check_report(data)
+
+
+def _check_process_fanout(data: dict[str, Any]) -> bool:
+    if "c2_python_process_count" not in data:
+        return False
+    count = data["c2_python_process_count"]
+    if not isinstance(count, int):
+        return False
+    if count < 0:
+        return False
+    return True
 
 
 def _mutation_suite(report: dict[str, Any]) -> bool:
@@ -147,7 +163,9 @@ def _mutation_suite(report: dict[str, Any]) -> bool:
 
 def run_validation() -> bool:
     report = _run_checkpoint_json()
-    return _validate(report)
+    if not _validate(report):
+        return False
+    return _check_process_fanout(report)
 
 
 def run_self_test_negative() -> bool:
@@ -163,11 +181,23 @@ def run() -> int:
     args = parser.parse_args()
 
     ok = run_validation()
+    try:
+        report = _run_checkpoint_json()
+        count = report.get("c2_python_process_count")
+    except Exception as exc:
+        count = None
+        print(f"WARNING: failed to read process fan-out evidence: {exc}")
     if args.self_test_negative:
         ok = run_self_test_negative()
         print("self-test-negative: PASS" if ok else "self-test-negative: FAIL")
     else:
         print("validator: PASS" if ok else "validator: FAIL")
+    if count is None:
+        print("c2_python_process_count=none")
+    else:
+        print(f"c2_python_process_count={count}")
+        if count > PROCESS_FANOUT_WARNING_LIMIT:
+            print(f"warn: c2_python_process_count={count} > {PROCESS_FANOUT_WARNING_LIMIT}")
     return 0 if ok else 1
 
 
