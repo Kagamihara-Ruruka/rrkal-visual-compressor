@@ -159,6 +159,9 @@ Local execution:
 ## 11) Checkpoint bundle (required for docs-touching lane close)
 
 - `python scripts/docs_readability_checkpoint.py`
+- `python scripts/validate_docs_readability_checkpoint.py`
+- `python scripts/validate_docs_readability_checkpoint.py --self-test-negative`
+- `python scripts/docs_readability_checkpoint.py --json | python -c "import sys,json; d=json.load(sys.stdin); assert d['checkpoint_passed'] is True"`
 
 Expected checkpoint report flags:
 

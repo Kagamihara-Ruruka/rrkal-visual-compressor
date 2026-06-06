@@ -93,3 +93,29 @@ def test_docs_readability_checkpoint_json_output_is_pure_json() -> None:
     assert "usage:" not in stdout
     assert "clean_docs_scan_passed=true" not in stdout
     assert "... [100%]" not in stdout
+
+
+def test_validate_docs_readability_checkpoint_script() -> None:
+    script_path = ROOT_DIR / "scripts" / "validate_docs_readability_checkpoint.py"
+    result = subprocess.run(
+        [sys.executable, str(script_path)],
+        text=True,
+        capture_output=True,
+        encoding="utf-8",
+        check=False,
+    )
+    assert result.returncode == 0
+    assert "validator: PASS" in (result.stdout or "")
+
+
+def test_validate_docs_readability_checkpoint_self_test_negative() -> None:
+    script_path = ROOT_DIR / "scripts" / "validate_docs_readability_checkpoint.py"
+    result = subprocess.run(
+        [sys.executable, str(script_path), "--self-test-negative"],
+        text=True,
+        capture_output=True,
+        encoding="utf-8",
+        check=False,
+    )
+    assert result.returncode == 0
+    assert "self-test-negative: PASS" in (result.stdout or "")
