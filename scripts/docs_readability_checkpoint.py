@@ -3,10 +3,11 @@
 
 from __future__ import annotations
 
+import argparse
+import json
 import subprocess
 import sys
 from pathlib import Path
-from typing import Iterable
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,7 +35,7 @@ def _run(cmd: list[str], *, cwd: Path | None = None) -> tuple[int, str]:
     return result.returncode, output
 
 
-def _is_docs_scan_ok() -> bool:
+def _is_docs_scan_ok(*, verbose: bool) -> bool:
     cmd = [
         sys.executable,
         str(CHECKER),
@@ -42,11 +43,12 @@ def _is_docs_scan_ok() -> bool:
         *map(str, DOCS),
     ]
     rc, output = _run(cmd, cwd=ROOT)
-    print(output.rstrip())
+    if verbose:
+        print(output.rstrip())
     return rc == 0 and "PASS: no decode errors, no marker risks detected" in output
 
 
-def _is_negative_fixture_ok() -> bool:
+def _is_negative_fixture_ok(*, verbose: bool) -> bool:
     cmd = [
         sys.executable,
         str(CHECKER),
@@ -55,7 +57,8 @@ def _is_negative_fixture_ok() -> bool:
         str(PUA_FIXTURE),
     ]
     rc, output = _run(cmd, cwd=ROOT)
-    print(output.rstrip())
+    if verbose:
+        print(output.rstrip())
     return (
         rc == 2
         and "WARN: soft-readability concerns" in output
@@ -64,11 +67,12 @@ def _is_negative_fixture_ok() -> bool:
     )
 
 
-def _is_cli_help_ok() -> bool:
+def _is_cli_help_ok(*, verbose: bool) -> bool:
     rc_mod = 0
     for target in ("vizcompress", "vizcompress.cli"):
         rc, output = _run([sys.executable, "-m", target, "--help"], cwd=ROOT)
-        print(output.rstrip())
+        if verbose:
+            print(output.rstrip())
         if rc != 0 or "usage:" not in output:
             rc_mod += 1
     return rc_mod == 0
@@ -82,14 +86,13 @@ def _is_no_manifest_schema_change() -> bool:
         encoding="utf-8",
         capture_output=True,
     ).stdout.splitlines()
-    no_diff = changed + []
-    if not no_diff:
+    if not changed:
         return True
     blocked_keywords = {"manifest", "schema"}
-    blocked_dirs = {"src/vizcompress", "src/vizcompress/"}
-    for p in changed:
-        low = p.lower()
-        if low in blocked_dirs or any(k in low for k in blocked_keywords):
+    blocked_prefixes = {"src/vizcompress", "src/vizcompress/"}
+    for path in changed:
+        low = path.lower()
+        if low in blocked_prefixes or any(keyword in low for keyword in blocked_keywords):
             return False
     return True
 
@@ -99,37 +102,81 @@ def _run_pytest() -> tuple[bool, str]:
     return rc == 0, output
 
 
-def _print_report(
+def _collect_report(
+    *,
     clean_scan: bool,
     fixture: bool,
     cli_help: bool,
     no_manifest: bool,
     pytest_ok: bool,
-) -> None:
-    print(f"clean_docs_scan_passed={'true' if clean_scan else 'false'}")
-    print(f"negative_fixture_detection_passed={'true' if fixture else 'false'}")
-    print(f"cli_help_passed={'true' if cli_help else 'false'}")
-    print(f"no_manifest_schema_change={'true' if no_manifest else 'false'}")
-    print(f"readability_pytest_passed={'true' if pytest_ok else 'false'}")
+    schema_version: str,
+) -> dict[str, object]:
+    checkpoint_passed = all([clean_scan, fixture, cli_help, no_manifest, pytest_ok])
+    return {
+        "schema": schema_version,
+        "status": "pass" if checkpoint_passed else "fail",
+        "clean_docs_scan_passed": clean_scan,
+        "negative_fixture_detection_passed": fixture,
+        "cli_help_passed": cli_help,
+        "no_manifest_schema_change": no_manifest,
+        "readability_pytest_passed": pytest_ok,
+        "checkpoint_passed": checkpoint_passed,
+        "boundary": {
+            "no_manifest_schema_change_required": True,
+            "cli_behavior_unchanged": True,
+            "algorithm_unchanged": True,
+            "cross_repo_integration_not_touched": True,
+        },
+    }
+
+
+def _print_report(report: dict[str, object]) -> None:
+    print(f"clean_docs_scan_passed={'true' if report['clean_docs_scan_passed'] else 'false'}")
+    print(f"negative_fixture_detection_passed={'true' if report['negative_fixture_detection_passed'] else 'false'}")
+    print(f"cli_help_passed={'true' if report['cli_help_passed'] else 'false'}")
+    print(f"no_manifest_schema_change={'true' if report['no_manifest_schema_change'] else 'false'}")
+    print(f"readability_pytest_passed={'true' if report['readability_pytest_passed'] else 'false'}")
+    print(f"checkpoint_passed={'true' if report['checkpoint_passed'] else 'false'}")
+    print(f"status={report['status']}")
+    print(f"schema={report['schema']}")
+
+
+def _print_json_report(report: dict[str, object], *, indent: int = 2) -> None:
+    print(json.dumps(report, ensure_ascii=False, sort_keys=True, indent=indent))
 
 
 def main() -> int:
-    clean_scan = _is_docs_scan_ok()
-    fixture = _is_negative_fixture_ok()
-    cli_help = _is_cli_help_ok()
+    parser = argparse.ArgumentParser(description="Run docs readability checkpoint")
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit machine-readable JSON report",
+    )
+    args = parser.parse_args()
+
+    clean_scan = _is_docs_scan_ok(verbose=not args.json)
+    fixture = _is_negative_fixture_ok(verbose=not args.json)
+    cli_help = _is_cli_help_ok(verbose=not args.json)
     no_manifest = _is_no_manifest_schema_change()
     pytest_ok, pytest_output = _run_pytest()
-    print(pytest_output.rstrip())
+    if not args.json:
+        print(pytest_output.rstrip())
 
-    _print_report(
+    report = _collect_report(
         clean_scan=clean_scan,
         fixture=fixture,
         cli_help=cli_help,
         no_manifest=no_manifest,
         pytest_ok=pytest_ok,
+        schema_version="docs-readability-checkpoint/v1",
     )
 
-    return 0 if all([clean_scan, fixture, cli_help, no_manifest, pytest_ok]) else 1
+    if args.json:
+        _print_json_report(report)
+    else:
+        _print_report(report)
+
+    return 0 if report["checkpoint_passed"] else 1
 
 
 if __name__ == "__main__":

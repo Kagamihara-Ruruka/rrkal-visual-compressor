@@ -162,7 +162,17 @@ Local execution:
 
 Expected checkpoint report flags:
 
-- `clean_docs_scan_passed=true`
-- `negative_fixture_detection_passed=true`
-- `cli_help_passed=true`
-- `no_manifest_schema_change=true`
+- `clean_docs_scan_passed=true` (`true` if docs scan returns no UTF-8/marker risk)
+- `negative_fixture_detection_passed=true` (`true` if fixtures detect the expected warnings in strict mode)
+- `cli_help_passed=true` (`true` if both CLI help commands render)
+- `no_manifest_schema_change=true` (`true` if no manifest/schema scoped paths changed)
+- `readability_pytest_passed=true` (`true` if `tests/test_docs_readability_checker.py` passes)
+- `checkpoint_passed=true` (`true` if all required checks pass)
+- `schema` (schema tag, e.g. `docs-readability-checkpoint/v1`)
+- `status` (`pass` | `fail`)
+- `boundary` (docs-only checkpoint boundary object)
+
+JSON mode:
+
+- `python scripts/docs_readability_checkpoint.py --json`
+- JSON output includes all required keys above with `boundary` and `status`.
