@@ -568,13 +568,13 @@ The report marks `model.vizretain` entries that are ACL-blocked as `manual_unloc
 - Keep a cleanup note in handoff evidence if any directory required manual intervention.
 ## 0000 Progress Log (2026-06-02 Asia/Taipei)
 
-- K ¼Ñ¤w©w¦ì¬° `K:\rrkal_workspace\rrkal-visual-compressor`¡]`git status` clean¡^¡AHEAD = `03d7232`¡]2026-05-28¡^¡C
-- L ¼Ñ `L:\rrkal-visual-compressor` HEAD = `e1fc225`¡]2026-05-31¡Afeat(cli): add precheck-benchmarks command¡^¡C
-- ¨â´Ê¾ğ¤ñ¹ïµ²ªG¡G`only_in_L = 12`¡A`only_in_K = 0`¡AL ¦³ 12 ­ÓÃB¥~ª©¥»ÀÉ¡]§t `.github/workflows/benchmarks-precheck.yml`¡B`scripts/precheck_benchmarks.py`¡B`scripts/scan_benchmark_fields.py`¡B`tests/*precheck*` µ¥¡^¡C
-- ¤w¦A¦¸ÅçÃÒ¡G`py -m pytest -q` ¥ş³¡³q¹L¡]`157 passed`¡^¡C
-- ¤w¦A¦¸ÅçÃÒ¡G`scripts/precheck_benchmarks.py` ¦b `docs/benchmarks` ¤U¬° `PASS`¡]`scan_ok=true`, `contract_ok=true`, `PASS=9`, `SKIP=4`, `FAIL=0`¡^¡C
-- ¸É»ô `git status` Åv­­ªı¶ë¹ïÀ³²M²z¡G`tmp_cli_smoke*`, `smoke_work*`, `tmp_verify_smoke*`, `tmp_cli_launcher` Ãş scratch ¥Ø¿ı¯Ç¤J `.gitignore`¡A¨¾¤î `permission denied` ¤zÂZ¡C
-- K ½L³ø§i¬yµ{¡G`scripts/report_workspace_candidates.py --root K:\rrkal_workspace\rrkal-visual-compressor --max-depth 4` ¤w¥i¶]¡A¼È¦s­Ô¿ï¦³ 4 ­Ó¡]¥ş³¡¥iÅª¥i¼g¡^¡A¤w§Y®É²M°£¼È¦s³ø§iÀÉ¡C
+- K æ§½å·²å®šä½ç‚º `K:\rrkal_workspace\rrkal-visual-compressor`ï¼ˆ`git status` cleanï¼‰ï¼ŒHEAD = `03d7232`ï¼ˆ2026-05-28ï¼‰ã€‚
+- L æ§½ `L:\rrkal-visual-compressor` HEAD = `e1fc225`ï¼ˆ2026-05-31ï¼Œfeat(cli): add precheck-benchmarks commandï¼‰ã€‚
+- å…©æ£µæ¨¹æ¯”å°çµæœï¼š`only_in_L = 12`ï¼Œ`only_in_K = 0`ï¼ŒL æœ‰ 12 å€‹é¡å¤–ç‰ˆæœ¬æª”ï¼ˆå« `.github/workflows/benchmarks-precheck.yml`ã€`scripts/precheck_benchmarks.py`ã€`scripts/scan_benchmark_fields.py`ã€`tests/*precheck*` ç­‰ï¼‰ã€‚
+- å·²å†æ¬¡é©—è­‰ï¼š`py -m pytest -q` å…¨éƒ¨é€šéï¼ˆ`157 passed`ï¼‰ã€‚
+- å·²å†æ¬¡é©—è­‰ï¼š`scripts/precheck_benchmarks.py` åœ¨ `docs/benchmarks` ä¸‹ç‚º `PASS`ï¼ˆ`scan_ok=true`, `contract_ok=true`, `PASS=9`, `SKIP=4`, `FAIL=0`ï¼‰ã€‚
+- è£œé½Š `git status` æ¬Šé™é˜»å¡å°æ‡‰æ¸…ç†ï¼š`tmp_cli_smoke*`, `smoke_work*`, `tmp_verify_smoke*`, `tmp_cli_launcher` é¡ scratch ç›®éŒ„ç´å…¥ `.gitignore`ï¼Œé˜²æ­¢ `permission denied` å¹²æ“¾ã€‚
+- K ç›¤å ±å‘Šæµç¨‹ï¼š`scripts/report_workspace_candidates.py --root K:\rrkal_workspace\rrkal-visual-compressor --max-depth 4` å·²å¯è·‘ï¼Œæš«å­˜å€™é¸æœ‰ 4 å€‹ï¼ˆå…¨éƒ¨å¯è®€å¯å¯«ï¼‰ï¼Œå·²å³æ™‚æ¸…é™¤æš«å­˜å ±å‘Šæª”ã€‚
 ## 0000 Progress Log (2026-06-02 Evening) - End-to-end smoke sweep
 
 - Executed an end-to-end smoke sweep from one-shot script style using `scripts`-local CLI env (`L:\rrkal-visual-compressor` root):
@@ -610,7 +610,7 @@ The report marks `model.vizretain` entries that are ACL-blocked as `manual_unloc
 
 ## 0000 Progress Log (2026-06-02 Taipei - replay)
 - Ran a fresh end-to-end smoke replay on clean path `tmp_0000_checkpoint2` using `scripts/run_vizcompress_cli.py`:
-  - mvp ¡÷ build ¡÷ inspect ¡÷ verify ¡÷ reconstruct(center/retained) ¡÷ compare(direct) ¡÷ bench.
+  - mvp â†’ build â†’ inspect â†’ verify â†’ reconstruct(center/retained) â†’ compare(direct) â†’ bench.
   - Result: `0000 checkpoint replay: ok`.
   - `overall_ok=true`, `failed_commands=[]` in replay report.
 - Replay artifact generated at `docs/benchmarks/0000_checkpoint_replay_report.json` and classified as scratch (`.gitignore`): no commit.
