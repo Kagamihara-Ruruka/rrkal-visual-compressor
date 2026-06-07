@@ -231,3 +231,7 @@ Before concluding lane, ensure the following contract points are satisfied:
 
 Do not treat this contract as cross-repo consumption-ready schema.
 It is an internal evidence gate for docs-readability lane work.
+
+## 13) Compression contract surface planning notes
+
+For compression-contract planning, use `docs/COMPRESSION_CONTRACT_SURFACE_LONG_SCAN.zh-TW.md` as the surface inventory and `docs/COMPRESSION_CONTRACT_NEXT_SLICE_PLANNING_PACKET.zh-TW.md` as the next-slice planning handoff. These notes are docs/evidence-only and do not authorize manifest/schema, CLI, algorithm, runtime ContractCard/EvidencePacket, or downstream consumer changes.
